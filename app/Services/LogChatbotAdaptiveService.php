@@ -114,8 +114,7 @@ class LogChatbotAdaptiveService
         ?string $idLevel = null,
         ?string $idSoal = null,
         ?string $search = null
-    ): Collection
-    {
+    ): Collection {
         $searchValue = trim((string) ($search ?? ''));
         $logs = $this->buildAdaptiveLogQuery($idKelas, $idLevel, $idSoal, $searchValue)
             ->orderBy('waktu_mulai', 'desc')
@@ -361,12 +360,33 @@ class LogChatbotAdaptiveService
         $totalMessages = $this->extractTotalMessages($detail, count($messages));
         $resolvedLabeling = $this->resolveAdaptiveLabeling($log);
 
-        $strictWaktuDetik = $this->resolveStrictWaktuDetikFromDetail($detail);
-        $completionProgress = is_null($strictWaktuDetik)
-            ? $this->resolveCompletionProgress($log, $detail)
-            : null;
+        $completionProgress = $this->resolveCompletionProgress($log, $detail);
+        $waktuDetik = $completionProgress['waktu_detik']
+            ?? $this->resolveCanonicalWorkSeconds($log, $detail)
+            ?? $this->resolveStrictWaktuDetikFromDetail($detail);
 
-        $waktuDetik = $strictWaktuDetik ?? ($completionProgress['waktu_detik'] ?? $this->resolveWaktuDetik($log, $detail));
+        // Prefer server-side `Ujian` record when it provides a larger (more
+        // authoritative) per-question duration. This fixes cases where the
+        // client-submitted timer under-reports the actual work time.
+        try {
+            if (!empty($log->id_mahasiswa) && !empty($log->id_soal)) {
+                $ujian = $this->ujianModel->newQuery()
+                    ->where('id_mahasiswa', $log->id_mahasiswa)
+                    ->where('id_soal', $log->id_soal)
+                    ->where('status', 1)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if ($ujian && isset($ujian->waktu) && is_numeric($ujian->waktu)) {
+                    $ujianWaktu = max(0, (int) $ujian->waktu);
+                    if (is_null($waktuDetik) || $ujianWaktu > $waktuDetik) {
+                        $waktuDetik = $ujianWaktu;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore DB errors and keep existing waktuDetik
+        }
         $durasiDetik = $this->resolveDurasiDetik($log, $detail, $waktuDetik);
         $jumlahLangkah = (int) ($detail['jumlah_langkah'] ?? ($completionProgress['jumlah_langkah'] ?? ($log->jumlah_langkah ?? 0)));
 
@@ -429,6 +449,14 @@ class LogChatbotAdaptiveService
             try {
                 $parsedSubmitAt = Carbon::parse((string) $detail['submit_benar_at']);
                 $endAt = $parsedSubmitAt;
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if (is_null($endAt) && !empty($detail['popup_closed_at'])) {
+            try {
+                $parsedPopupClosedAt = Carbon::parse((string) $detail['popup_closed_at']);
+                $endAt = $parsedPopupClosedAt;
             } catch (\Throwable $e) {
             }
         }
@@ -618,7 +646,7 @@ class LogChatbotAdaptiveService
 
     private function resolveStrictWaktuDetikFromDetail(array $detail): ?int
     {
-        foreach (['waktu_detik_submit', 'waktu_detik', 'total_waktu_detik', 'waktu_akses_detik', 'waktu_detik_saat_close', 'waktu'] as $key) {
+        foreach (['waktu_detik_submit', 'waktu_detik_saat_close', 'waktu_detik', 'total_waktu_detik', 'waktu'] as $key) {
             if (array_key_exists($key, $detail)) {
                 $seconds = $this->parseDurationValueToSeconds($detail[$key]);
                 if (!is_null($seconds)) {
@@ -718,15 +746,14 @@ class LogChatbotAdaptiveService
 
     private function resolveWaktuDetik(ChatbotAdaptiveLog $log, array $detail): ?int
     {
-        $attemptStart = null;
-        $attemptEnd = null;
+        return $this->resolveCanonicalWorkSeconds($log, $detail)
+            ?? $this->resolveStrictWaktuDetikFromDetail($detail);
+    }
 
-        if (!empty($detail['attempt_start_at'])) {
-            try {
-                $attemptStart = Carbon::parse((string) $detail['attempt_start_at']);
-            } catch (\Throwable $e) {
-            }
-        }
+    private function resolveCanonicalWorkSeconds(ChatbotAdaptiveLog $log, array $detail): ?int
+    {
+        $attemptStart = $this->resolveAttemptStartAtFromAdaptiveLog($log, $detail);
+        $attemptEnd = null;
 
         if (!empty($detail['submit_benar_at'])) {
             try {
@@ -735,11 +762,22 @@ class LogChatbotAdaptiveService
             }
         }
 
+        if (is_null($attemptEnd) && !empty($detail['popup_closed_at'])) {
+            try {
+                $attemptEnd = Carbon::parse((string) $detail['popup_closed_at']);
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if (is_null($attemptEnd) && $log->waktu_selesai) {
+            $attemptEnd = $log->waktu_selesai->copy();
+        }
+
         if ($attemptStart && $attemptEnd && !$attemptStart->gt($attemptEnd)) {
             return (int) $attemptStart->diffInSeconds($attemptEnd);
         }
 
-        foreach (['waktu_detik_submit', 'waktu_detik', 'total_waktu_detik', 'waktu_akses_detik', 'waktu_detik_saat_close', 'waktu'] as $key) {
+        foreach (['waktu_detik_submit', 'waktu_detik_saat_close', 'waktu_detik', 'total_waktu_detik', 'waktu'] as $key) {
             if (array_key_exists($key, $detail)) {
                 $seconds = $this->parseDurationValueToSeconds($detail[$key]);
                 if (!is_null($seconds)) {

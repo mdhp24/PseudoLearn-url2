@@ -27,4 +27,12 @@ class UjianService
 
         return $opr;
     }
+
+    /**
+     * Simpan waktu pengerjaan dari beforeunload (tanpa submit formal).
+     */
+    public function saveTimer(string $soalId, int $waktuDetik): void
+    {
+        $this->ujianRepository->saveTimer($soalId, $waktuDetik);
+    }
 }

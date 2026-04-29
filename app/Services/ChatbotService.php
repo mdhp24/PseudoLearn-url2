@@ -132,7 +132,7 @@ Aturan penting:
 
         // Hitung total drag HANYA dari sesi saat ini (bukan seluruh histori)
         // Session start = waktu sekarang dikurangi elapsed_time
-        $sessionStart = now()->subSeconds($elapsedTime + 5); // +5 detik buffer toleransi
+        $sessionStart = now()->subSeconds($elapsedTime);
         $totalDrag = LogData::where('id_mahasiswa', $idMahasiswa)
             ->where('id_soal', $idSoal)
             ->where('created_at', '>=', $sessionStart)

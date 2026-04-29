@@ -351,7 +351,7 @@ class ChatbotController extends Controller
             'jenis_soal' => $soal?->judul,
             'jumlah_langkah' => $jumlahLangkah,
             'waktu_mulai' => $waktuMulai,
-            'waktu_selesai' => $waktuSelesai,
+            'waktu_selesai' => null,
             'labeling' => $normalizedLabel,
             'durasi_menit' => null,
             'total_akses_chatbot_adaptive' => max(0, $adaptiveAccessCount),
@@ -402,8 +402,26 @@ class ChatbotController extends Controller
         $detail['popup_closed_at'] = $closedAt->toDateTimeString();
         $detail['durasi_detik'] = max(0, $durasiDetik);
 
+        $startAt = $adaptiveLog->waktu_mulai;
+        if (!$startAt && !empty($detail['attempt_start_at'])) {
+            try {
+                $startAt = Carbon::parse((string) $detail['attempt_start_at']);
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if ($startAt) {
+            $workSeconds = max(0, (int) $startAt->diffInSeconds($closedAt));
+            $detail['waktu_detik_saat_close'] = $workSeconds;
+
+            if (empty($detail['waktu_detik']) || $workSeconds > (int) $detail['waktu_detik']) {
+                $detail['waktu_detik'] = $workSeconds;
+            }
+        }
+
         $adaptiveLog->update([
             'durasi_menit' => max(0, $durasiMenit),
+            'waktu_selesai' => $closedAt,
             'detail' => $detail,
         ]);
     }

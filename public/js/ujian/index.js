@@ -43,7 +43,9 @@ function openModalKonfirmasi() {
 function submitForm(confidence) {
     const soalId = new URLSearchParams(window.location.search).get('id');
     const jawabanData = collectJawabanUser();
-    const waktu = window.timerElapsed;
+
+    // Ambil waktu terkini sebelum submit
+    const waktu = UjianTimer.getElapsed();
 
     $.ajax({
         url: APP_URL + "ujian/submit",
@@ -88,6 +90,8 @@ function submitForm(confidence) {
                         }
                     });
                 } else {
+                    // Jawaban benar – hentikan timer & bersihkan localStorage
+                    UjianTimer.stop();
                     openModalFeedbackCorrect(response.pencapaian, response.badge);
                 }
             } else if(confidence == 0) {
@@ -165,29 +169,169 @@ function openModalFeedbackCorrect(pencapaian = null, badge = null) {
     };
 }
 
-window.timerStarted = false;
-window.timerInterval = null;
-window.timerElapsed = 0; // detik berjalan
+/**
+ * UjianTimer – production-ready timer untuk halaman ujian.
+ *
+ * Cara kerja:
+ *  - start_time disimpan di localStorage dengan key per soalId
+ *  - Menggunakan mekanisme last_tick untuk membedakan reload vs ditinggalkan lama.
+ *  - Hanya dimulai saat start() dipanggil pertama kali (drag & drop pertama).
+ */
+/**
+ * UjianTimer – Akurasi 1:1 untuk pengerjaan soal.
+ *
+ * Menggunakan mekanisme akumulasi detik agar:
+ * 1. Timer benar-benar berhenti saat tab ditutup/reload/pindah (tidak menghitung waktu "away").
+ * 2. Timer melanjutkan (resume) dari detik terakhir saat halaman dibuka kembali.
+ * 3. Tidak terjadi lonjakan waktu (bug 13 menit) atau reset prematur (bug 32 detik).
+ */
+const UjianTimer = (function () {
+    'use strict';
 
-function startUjianTimer() {
-    if (window.timerStarted) return;
-    window.timerStarted = true;
+    const _soalId = new URLSearchParams(window.location.search).get('id') || 'unknown';
+    const _STORAGE_ACC   = 'ujian_acc_' + _soalId; // Total detik yang sudah terkumpul
+    const _STORAGE_STATE = 'ujian_state_' + _soalId; // 'running' or 'stopped'
 
-    const el = document.getElementById('timer-ujian');
+    let _rafId          = null;
+    let _isRunning      = false;
+    let _sessionStart   = null; // Waktu (ms) saat sesi aktif dimulai
+    let _accumulatedSec = 0;    // Detik dari sesi sebelumnya
 
-    function render(sec) {
-        const h = String(Math.floor(sec / 3600)).padStart(2,'0');
-        const m = String(Math.floor((sec % 3600) / 60)).padStart(2,'0');
-        const s = String(sec % 60).padStart(2,'0');
-        el.textContent = `${h}:${m}:${s}`;
+    function _getEl() { return document.getElementById('timer-ujian'); }
+
+    function _getNavigationType() {
+        const navEntry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        if (navEntry && navEntry.type) {
+            return navEntry.type;
+        }
+
+        if (performance.navigation && typeof performance.navigation.type === 'number') {
+            if (performance.navigation.type === 1) return 'reload';
+            if (performance.navigation.type === 2) return 'back_forward';
+        }
+
+        return 'navigate';
     }
-    render(window.timerElapsed);
 
-    window.timerInterval = setInterval(() => {
-        window.timerElapsed++;
-        render(window.timerElapsed);
-    }, 1000);
-}
+    function _clearStoredState() {
+        localStorage.removeItem(_STORAGE_ACC);
+        localStorage.removeItem(_STORAGE_STATE);
+    }
+
+    function _render(totalSec) {
+        const el = _getEl();
+        if (!el) return;
+        const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+        const s = String(totalSec % 60).padStart(2, '0');
+        el.textContent = h + ':' + m + ':' + s;
+    }
+
+    function _tick() {
+        if (!_isRunning) return;
+        
+        const currentSessionSec = Math.floor((Date.now() - _sessionStart) / 1000);
+        const totalSec = _accumulatedSec + currentSessionSec;
+        
+        _render(totalSec);
+        _rafId = requestAnimationFrame(_tick);
+    }
+
+    function init() {
+        // Saat masuk dari navigasi baru, reset timer agar tidak mewarisi sesi lama.
+        if (_getNavigationType() === 'navigate') {
+            _clearStoredState();
+        }
+
+        // Load data lama jika ada
+        const savedAcc = localStorage.getItem(_STORAGE_ACC);
+        if (savedAcc !== null) {
+            _accumulatedSec = parseInt(savedAcc, 10) || 0;
+        }
+
+        // Render nilai awal
+        _render(_accumulatedSec);
+
+        // Jika sebelumnya sedang jalan (misal: reload mendadak), otomatis lanjut
+        if (localStorage.getItem(_STORAGE_STATE) === 'running') {
+            start();
+        }
+
+        window.addEventListener('beforeunload', _onBeforeUnload);
+    }
+
+    function start() {
+        if (_isRunning) return;
+        
+        _isRunning = true;
+        _sessionStart = Date.now();
+        localStorage.setItem(_STORAGE_STATE, 'running');
+        
+        _rafId = requestAnimationFrame(_tick);
+    }
+
+    function _onBeforeUnload() {
+        if (!_isRunning) return;
+
+        // Hitung total saat ini dan simpan ke localStorage
+        const currentSessionSec = Math.floor((Date.now() - _sessionStart) / 1000);
+        const totalSec = _accumulatedSec + currentSessionSec;
+        
+        localStorage.setItem(_STORAGE_ACC, String(totalSec));
+        // Kita tidak hapus STATE 'running' agar saat reload otomatis start lagi
+
+        // Kirim ke backend (Beacon)
+        const token   = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+        const payload = JSON.stringify({
+            _token  : token,
+            soal_id : _soalId,
+            waktu   : totalSec,
+            source  : 'beforeunload'
+        });
+
+        const url = (window.APP_URL || '/') + 'ujian/save-timer';
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+        }
+    }
+
+    function getElapsed() {
+        if (!_isRunning) return _accumulatedSec;
+        const currentSessionSec = Math.floor((Date.now() - _sessionStart) / 1000);
+        return _accumulatedSec + currentSessionSec;
+    }
+
+    function isStarted() {
+        return _isRunning || _accumulatedSec > 0;
+    }
+
+    function stop() {
+        _isRunning = false;
+        if (_rafId) cancelAnimationFrame(_rafId);
+        
+        window.removeEventListener('beforeunload', _onBeforeUnload);
+        _clearStoredState();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { getElapsed: getElapsed, isStarted: isStarted, start: start, stop: stop };
+}());
+
+// Backward-compat: beberapa tempat masih memanggil startUjianTimer()
+function startUjianTimer() { UjianTimer.start(); }
+
+// Backward-compat: Chatbot Adaptive & sistem log lama menggunakan variabel global
+Object.defineProperty(window, 'timerElapsed', {
+    get: function() { return UjianTimer.getElapsed(); }
+});
+Object.defineProperty(window, 'timerStarted', {
+    get: function() { return UjianTimer.isStarted(); } 
+});
 
 function logAnswerDrop({ type, itemText, variabel = null, index = null }) {
     try {
@@ -204,7 +348,7 @@ function logAnswerDrop({ type, itemText, variabel = null, index = null }) {
                 item: itemText,
                 variabel: variabel,
                 index: index,
-                timer_second: window.timerElapsed
+                timer_second: UjianTimer.getElapsed()
             }),
             processData: false,
             contentType: "application/json",
@@ -225,6 +369,13 @@ function logAnswerDrop({ type, itemText, variabel = null, index = null }) {
 }
 
 // (PATCH) di handler drop answer-box, setelah this.appendChild(dragged); tambahkan pemicu startUjianTimer()
+document.addEventListener('dragstart', function (e) {
+    const dragged = e.target && e.target.closest ? e.target.closest('.drag-item') : null;
+    if (!dragged) return;
+
+    startUjianTimer();
+});
+
 document.querySelectorAll('.answer-box').forEach(box => {
     box.addEventListener('dragover', e => e.preventDefault());
     box.addEventListener('drop', function (e) {

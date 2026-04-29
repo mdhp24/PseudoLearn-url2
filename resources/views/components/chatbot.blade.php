@@ -790,17 +790,17 @@ async function waitForAdaptiveAccessId(maxWaitMs = 1500) {
 
 // Start performance monitoring — synced dengan waktu pengerjaan soal
 function startPerformanceMonitor() {
-    // Monitor setiap 5 detik apakah timer sudah berjalan
+    // Monitor cepat agar pencatatan adaptive mendekati real time.
     const waitForTimer = setInterval(() => {
         if (window.timerStarted && window.timerElapsed > 0) {
             clearInterval(waitForTimer);
             // Timer sudah mulai (drag pertama sudah terjadi), mulai cek performa
             // Cek pertama kali langsung
             checkPerformance();
-            // Lalu cek berkala setiap 10 detik (sinkron dengan waktu pengerjaan)
-            chatbotPerformanceInterval = setInterval(checkPerformance, 10000);
+            // Lalu cek berkala lebih rapat supaya tidak terlambat merekam waktu
+            chatbotPerformanceInterval = setInterval(checkPerformance, 1000);
         }
-    }, 5000);
+    }, 1000);
 }
 
 // Send welcome message

@@ -318,10 +318,12 @@ class UjianRepository extends BaseRepository
                        
                     }
 
+                                    $submittedWaktu = $request->input('waktu', $request->input('timer'));
+
                                     $this->syncAdaptiveRealtimeLogOnCorrectSubmit(
                                         idMahasiswa: $idMahasiswa,
                                         idSoal: (string) $soal->id,
-                                        totalWaktuDetik: (int) $request->timer
+                                        totalWaktuDetik: (int) $submittedWaktu
                                     );
 
                 $returnData = [
@@ -404,13 +406,9 @@ class UjianRepository extends BaseRepository
         }
 
         $startAt = $adaptiveLog->waktu_mulai;
-        if (!$startAt && !empty($detail['triggered_at'])) {
+        if (!$startAt && !empty($detail['attempt_start_at'])) {
             try {
-                $triggeredAt = Carbon::parse((string) $detail['triggered_at']);
-                $triggerElapsed = isset($detail['waktu_detik']) ? max(0, (int) $detail['waktu_detik']) : null;
-                if (!is_null($triggerElapsed)) {
-                    $startAt = $triggeredAt->copy()->subSeconds($triggerElapsed);
-                }
+                $startAt = Carbon::parse((string) $detail['attempt_start_at']);
             } catch (\Throwable $e) {
             }
         }
@@ -427,10 +425,29 @@ class UjianRepository extends BaseRepository
             ->whereBetween('created_at', [$startAt, $endAt])
             ->count();
 
-        $detail['waktu_detik'] = $safeWaktuDetik;
-        $detail['waktu_akses_detik'] = $safeWaktuDetik;
-        $detail['jumlah_langkah'] = max(0, (int) $jumlahLangkah);
+        $detail['attempt_start_at'] = $startAt->toDateTimeString();
         $detail['submit_benar_at'] = $endAt->toDateTimeString();
+
+        // Store the submitted student time explicitly under a submit-specific key.
+        // Do not blindly overwrite `waktu_akses_detik` (popup access time) which
+        // represents chatbot popup open/close duration. Preserve existing
+        // `waktu_akses_detik` if present.
+        $detail['waktu_detik_submit'] = $safeWaktuDetik;
+
+        // Update `waktu_detik` (used as the primary "waktu pengerjaan" value)
+        // to the student-submitted time so Log Adaptive shows the accurate
+        // per-question work duration.
+        $detail['waktu_detik'] = $safeWaktuDetik;
+
+        // Preserve existing popup access duration if available (do not overwrite),
+        // otherwise fall back to submitted waktu.
+        if (empty($detail['waktu_akses_detik'])) {
+            $detail['waktu_akses_detik'] = $safeWaktuDetik;
+        }
+
+        $detail['waktu_detik_saat_close'] = $safeWaktuDetik;
+
+        $detail['jumlah_langkah'] = max(0, (int) $jumlahLangkah);
 
         $adaptiveLog->update([
             'waktu_mulai' => $startAt,
@@ -449,13 +466,13 @@ class UjianRepository extends BaseRepository
             $idMahasiswa = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
 
             $data = [
-                'id_soal' => $request['soal_id'],
+                'id_soal'      => $request['soal_id'],
                 'id_mahasiswa' => $idMahasiswa,
-                'index' => $request['index'],
-                'itemText' => $request['item'],
+                'index'        => $request['index'],
+                'itemText'     => $request['item'],
                 'timer_second' => $request['timer_second'],
-                'type' => $request['jenis'],
-                'variabel' => $request['variabel']
+                'type'         => $request['jenis'],
+                'variabel'     => $request['variabel']
             ];
 
             $opr = $this->logDataModel->create($data);
@@ -465,6 +482,63 @@ class UjianRepository extends BaseRepository
         } catch (\Exception $e) {
             DB::rollBack();
             return BaseResponse::errorTransaction($e);
+        }
+    }
+
+    /**
+     * Simpan waktu pengerjaan dari beforeunload ke detail ChatbotAdaptiveLog.
+     * Dipanggil fire-and-forget; tidak perlu melempar exception ke caller.
+     */
+    public function saveTimer(string $soalId, int $waktuDetik): void
+    {
+        try {
+            $idMahasiswa = $this->mahasiswaModel->where('id_user', Auth::id())->value('id');
+
+            if (!$idMahasiswa) {
+                return;
+            }
+
+            /** @var ChatbotAdaptiveLog|null $adaptiveLog */
+            $adaptiveLog = $this->chatbotAdaptiveLogModel->newQuery()
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_soal', $soalId)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if (!$adaptiveLog) {
+                return;
+            }
+
+            $safeWaktu = max(0, $waktuDetik);
+
+            $detail = $adaptiveLog->detail;
+            if (!is_array($detail)) {
+                $detail = [];
+            }
+
+            // Hanya update jika waktu yang disimpan lebih besar dari sebelumnya
+            // (hindari menimpa data submit yang sudah benar)
+            $existing = (int) ($detail['waktu_detik_submit'] ?? $detail['waktu_detik'] ?? 0);
+            if ($safeWaktu <= $existing) {
+                return;
+            }
+
+            $detail['waktu_detik_submit'] = $safeWaktu;
+            $detail['waktu_detik']        = $safeWaktu;
+
+            if (empty($detail['waktu_akses_detik'])) {
+                $detail['waktu_akses_detik'] = $safeWaktu;
+            }
+
+            // Sync columns for consistency
+            $updateData = ['detail' => $detail];
+            if ($adaptiveLog->waktu_mulai) {
+                $updateData['waktu_selesai'] = $adaptiveLog->waktu_mulai->copy()->addSeconds($safeWaktu);
+            }
+
+            $adaptiveLog->update($updateData);
+        } catch (\Throwable $e) {
+            // Fire-and-forget — jangan lempar exception
         }
     }
 }
