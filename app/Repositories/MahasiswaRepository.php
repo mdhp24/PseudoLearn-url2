@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Jobs\DeletePencapaianMahasiswa;
-use App\Jobs\GeneratePencapaianKonversi;
+// use App\Jobs\GeneratePencapaianKonversi;
 use App\Jobs\GeneratePencapaianMahasiswa;
 use Prettus\Repository\Eloquent\BaseRepository;
 
