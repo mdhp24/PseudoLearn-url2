@@ -10,6 +10,7 @@ use App\Models\Mahasiswa;
 use App\Models\Soal;
 use App\Models\Level;
 use App\Services\ChatbotService;
+use App\Services\ChatbotAdaptiveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,10 +19,12 @@ use Carbon\Carbon;
 class ChatbotController extends Controller
 {
     protected ChatbotService $chatbotService;
+    protected ChatbotAdaptiveService $chatbotAdaptiveService;
 
-    public function __construct(ChatbotService $chatbotService)
+    public function __construct(ChatbotService $chatbotService, ChatbotAdaptiveService $chatbotAdaptiveService)
     {
         $this->chatbotService = $chatbotService;
+        $this->chatbotAdaptiveService = $chatbotAdaptiveService;
     }
 
     public function send(Request $request): JsonResponse
@@ -266,7 +269,7 @@ class ChatbotController extends Controller
             return response()->json(['success' => false, 'message' => 'Data mahasiswa tidak ditemukan.'], 404);
         }
 
-        $respons = $this->chatbotService->adaptiveChat(
+        $respons = $this->chatbotAdaptiveService->adaptiveChat(
             idMahasiswa: $mahasiswa->id,
             idSoal:      $request->input('id_soal'),
             idLevel:     $request->input('id_level'),

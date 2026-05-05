@@ -247,8 +247,7 @@
                                 data-control="select2"
                                 data-hide-search="true"
                                 data-allow-clear="false">
-                                <option value="">Semua Kelas</option>
-                                @foreach ($list_kelas ?? [] as $kelas)
+                                    @foreach ($list_kelas ?? [] as $kelas)
                                     <option value="{{ $kelas['id'] }}">
                                         {{ $kelas['name'] }}
                                         @if (!empty($kelas['angkatan']))
