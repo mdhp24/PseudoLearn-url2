@@ -2,6 +2,30 @@
 // var blockUI = new KTBlockUI(target);
 var APP_URL = window.APP_URL || "/";
 
+function clearMismatchHighlights() {
+    document.querySelectorAll('.answer-box.wrong').forEach((box) => {
+        box.classList.remove('wrong');
+    });
+}
+
+function applyMismatchHighlights(tipeIndexes = [], algoIndexes = []) {
+    clearMismatchHighlights();
+
+    const tipeBoxes = document.querySelectorAll('.answer-box.box-tipe');
+    (tipeIndexes || []).forEach((index) => {
+        if (typeof index === 'number' && tipeBoxes[index]) {
+            tipeBoxes[index].classList.add('wrong');
+        }
+    });
+
+    const algoBoxes = document.querySelectorAll('.answer-box.box-algo');
+    (algoIndexes || []).forEach((index) => {
+        if (typeof index === 'number' && algoBoxes[index]) {
+            algoBoxes[index].classList.add('wrong');
+        }
+    });
+}
+
 // $(() => {
 //     blockUI.block();
 //     initTable();
@@ -62,6 +86,10 @@ function submitForm(confidence) {
         success: function (response) {
             if(confidence == 1) {
                 if (response.correct === false) {
+                    applyMismatchHighlights(
+                        response.tipe_mismatch_index || [],
+                        response.algoritma_mismatch_index || []
+                    );
                     let feedbackText = '';
                     if (response.correct_tipe_data === false && response.correct_algoritma === false) {
                         feedbackText = 'Jawaban kamu salah pada Tipe Data dan Algoritma';
@@ -90,6 +118,7 @@ function submitForm(confidence) {
                         }
                     });
                 } else {
+                    clearMismatchHighlights();
                     // Jawaban benar – hentikan timer & bersihkan localStorage
                     UjianTimer.stop();
                     openModalFeedbackCorrect(response.pencapaian, response.badge);
@@ -124,7 +153,7 @@ function openModalFeedbackIncorrect(feedbackText, lives = null) {
     // Ganti tombol dan pesan jika nyawa habis
     if (parseInt(lives) <= 0) {
         // Ganti pesan
-        document.getElementById('feedback-ujian').innerHTML = 
+        document.getElementById('feedback-ujian').innerHTML =
             '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
 
         // Ganti tombol modal
@@ -331,6 +360,13 @@ Object.defineProperty(window, 'timerElapsed', {
 });
 Object.defineProperty(window, 'timerStarted', {
     get: function() { return UjianTimer.isStarted(); } 
+});
+
+document.addEventListener('drop', function (event) {
+    const target = event.target && event.target.closest ? event.target.closest('.answer-box') : null;
+    if (target) {
+        target.classList.remove('wrong');
+    }
 });
 
 function logAnswerDrop({ type, itemText, variabel = null, index = null }) {

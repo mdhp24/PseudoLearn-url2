@@ -123,6 +123,22 @@ class UjianRepository extends BaseRepository
             // --- Bandingkan Tipe Data (urutan & nilai) ---
             $tipeMismatch = [];
             $isCorrectTipe = true;
+            $tipeMismatchIndexes = [];
+
+            $maxTipeCount = max(count($kunciTipe), count($jawabanTipe));
+            for ($i = 0; $i < $maxTipeCount; $i++) {
+                $expectedRow = $kunciTipe[$i] ?? [];
+                $givenRow = $jawabanTipe[$i] ?? [];
+                $expectedVariabel = $this->normalizeAnswerText($expectedRow['variabel'] ?? '');
+                $expectedTipe = $this->normalizeAnswerText($expectedRow['tipe_data'] ?? '');
+                $givenVariabel = $this->normalizeAnswerText($givenRow['variabel'] ?? '');
+                $givenTipe = $this->normalizeAnswerText($givenRow['jawaban'] ?? '');
+
+                if (strtolower($expectedVariabel) !== strtolower($givenVariabel)
+                    || strtolower($expectedTipe) !== strtolower($givenTipe)) {
+                    $tipeMismatchIndexes[] = $i;
+                }
+            }
 
             if(count($jawabanTipe) !== count($kunciTipe)){
                 $isCorrectTipe = false;
@@ -130,12 +146,13 @@ class UjianRepository extends BaseRepository
             } else {
                 foreach($kunciTipe as $i => $row){
                     $jawabRow = $jawabanTipe[$i] ?? [];
-                    $expectedVariabel = $row['variabel'] ?? null;
-                    $expectedTipe     = $row['tipe_data'] ?? null;
-                    $givenVariabel    = $jawabRow['variabel'] ?? null;
-                    $givenTipe        = $jawabRow['jawaban'] ?? null;
+                    $expectedVariabel = $this->normalizeAnswerText($row['variabel'] ?? '');
+                    $expectedTipe     = $this->normalizeAnswerText($row['tipe_data'] ?? '');
+                    $givenVariabel    = $this->normalizeAnswerText($jawabRow['variabel'] ?? '');
+                    $givenTipe        = $this->normalizeAnswerText($jawabRow['jawaban'] ?? '');
 
-                    if($expectedVariabel !== $givenVariabel || strtolower($expectedTipe) !== strtolower($givenTipe)){
+                    if (strtolower($expectedVariabel) !== strtolower($givenVariabel)
+                        || strtolower($expectedTipe) !== strtolower($givenTipe)) {
                         $isCorrectTipe = false;
                         $tipeMismatch[] = [
                             'index'=>$i,
@@ -167,8 +184,18 @@ class UjianRepository extends BaseRepository
             $isCorrectAlgo = true;
 
             // Ambil hanya langkah dari kunci (semua, clue apapun)
-            $kunciLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $kunciAlgo);
-            $jawabLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $jawabanAlgo);
+            $kunciLangkah = array_map(fn($r) => $this->normalizeAnswerText($r['langkah'] ?? ''), $kunciAlgo);
+            $jawabLangkah = array_map(fn($r) => $this->normalizeAnswerText($r['langkah'] ?? ''), $jawabanAlgo);
+            $algoMismatchIndexes = [];
+
+            $maxAlgoCount = max(count($kunciLangkah), count($jawabLangkah));
+            for ($i = 0; $i < $maxAlgoCount; $i++) {
+                $expected = $kunciLangkah[$i] ?? '';
+                $given = $jawabLangkah[$i] ?? '';
+                if ($expected !== $given) {
+                    $algoMismatchIndexes[] = $i;
+                }
+            }
 
             if(count($jawabLangkah) !== count($kunciLangkah)){
                 $isCorrectAlgo = false;
@@ -176,7 +203,7 @@ class UjianRepository extends BaseRepository
             } else {
                 foreach($kunciLangkah as $i => $exp){
                     $given = $jawabLangkah[$i] ?? '';
-                    if($exp !== $given){
+                    if ($exp !== $given) {
                         $isCorrectAlgo = false;
                         $algoMismatch[] = [
                             'index'=>$i,
@@ -353,6 +380,8 @@ class UjianRepository extends BaseRepository
                     'correct_algoritma' => $isCorrectAlgo,
                     'tipe_mismatch' => $dataLevel->feedback_data_type ?? null,
                     'algoritma_mismatch' => $dataLevel->feedback_algorithm ?? null,
+                    'tipe_mismatch_index' => $tipeMismatchIndexes,
+                    'algoritma_mismatch_index' => $algoMismatchIndexes,
                     'id_level' => $soal->id_level
                 ]);
             }
@@ -383,6 +412,24 @@ class UjianRepository extends BaseRepository
         } else {
             return [null, null];
         }
+    }
+
+    private function normalizeAnswerText($value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+
+        // Normalize non-breaking spaces and collapse whitespace.
+        $text = str_replace("\xc2\xa0", ' ', $text);
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return $text ?? '';
     }
 
     private function syncAdaptiveRealtimeLogOnCorrectSubmit(string $idMahasiswa, string $idSoal, int $totalWaktuDetik): void

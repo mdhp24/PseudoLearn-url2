@@ -134,6 +134,11 @@
             border-color: red !important;
         }
 
+        .answer-box.wrong {
+            border-color: #dc3545 !important;
+            background-color: #ffe9e9;
+        }
+
         /* Tambahkan di bagian <style> */
         .heart-beat {
             animation: heartBeat 1s infinite;

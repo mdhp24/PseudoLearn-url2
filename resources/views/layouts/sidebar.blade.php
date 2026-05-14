@@ -15,6 +15,15 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
             transform: translateY(-6px);
         }
+        .sidebar-guide-btn {
+            transition: box-shadow 0.2s, transform 0.2s;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .sidebar-guide-btn:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+            transform: translateY(-6px);
+        }
 
         /* Smooth submenu transition */
         #submenu-chatbot {
@@ -72,15 +81,16 @@
         <i class="ki-outline ki-right rotate-180 fs-1"></i>
     </div>
 </div>
+
 <div class="app-sidebar-navs flex-column-fluid py-6" id="kt_app_sidebar_navs">
     <div id="kt_app_sidebar_navs_wrappers" class="app-sidebar-wrapper hover-scroll-y my-2" data-kt-scroll="true"
         data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_sidebar_header"
         data-kt-scroll-wrappers="#kt_app_sidebar_navs" data-kt-scroll-offset="5px">
-        <div id="#kt_app_sidebar_menu" data-kt-menu="true" data-kt-menu-expand="false"
+        <div id="kt_app_sidebar_menu" data-kt-menu="true" data-kt-menu-expand="false"
             class="app-sidebar-menu-primary menu menu-column menu-rounded menu-sub-indention menu-state-bullet-primary">
 
             {{-- Menu untuk Mahasiswa --}}
-            @unless ($isAdmin)
+            @if (! $isAdmin)
                 <div class="menu-item mb-2">
                     <div class="menu-heading text-uppercase fs-7 fw-bold">Menu</div>
                     <div class="app-sidebar-separator separator"></div>
@@ -132,7 +142,7 @@
                         </button>
                     </div>
                 </div>
-            @endunless
+            @endif
 
             {{-- Menu untuk Admin/Dosen --}}
             @if ($isAdmin)
@@ -144,7 +154,7 @@
                     <a class="menu-link{{ request()->is('dashboard') ? ' active' : '' }}"
                         href="{{ url('dashboard') }}">
                         <span class="menu-icon me-2">
-                            <i class="ki-solid ki-home fs-2 "></i>
+                            <i class="ki-solid ki-home fs-2"></i>
                         </span>
                         <span
                             class="menu-title {{ request()->is('dashboard') ? 'fw-bold' : 'fw-semibold' }}">Dashboard</span>
@@ -185,7 +195,8 @@
                                         <i class="ki-solid ki-message-edit fs-2"></i>
                                     </span>
                                     <span
-                                        class="menu-title {{ $isLogChatbotAdaptivePage ? 'fw-bold' : 'fw-semibold' }}">Log Adaptive</span>
+                                        class="menu-title {{ $isLogChatbotAdaptivePage ? 'fw-bold' : 'fw-semibold' }}">Log
+                                        Adaptive</span>
                                 </a>
                             </div>
                         </div>
@@ -246,6 +257,17 @@
                             Konversi</span>
                     </a>
                 </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('log-ujian-kode*') ? ' active' : '' }}"
+                        href="{{ url('log-ujian-kode') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-code fs-2"></i>
+                        </span>
+                        <span
+                            class="menu-title {{ request()->is('log-ujian-kode*') ? 'fw-bold' : 'fw-semibold' }}">Log
+                            Ujian Kode</span>
+                    </a>
+                </div>
                 <div class="menu-item mt-5">
                     <div class="menu-heading text-uppercase fs-7 fw-bold">Master</div>
                     <div class="app-sidebar-separator separator my-2"></div>
@@ -266,7 +288,7 @@
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-category fs-2"></i>
                         </span>
-                        <span class="menu-title {{ request()->is('level') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
+                        <span class="menu-title {{ request()->is('level*') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
                     </a>
                 </div>
                 <div class="menu-item">
@@ -274,7 +296,7 @@
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-text fs-2 "></i>
                         </span>
-                        <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank
+                        <span class="menu-title {{ request()->is('soal*') ? 'fw-bold' : 'fw-semibold' }}">Bank
                             Soal</span>
                     </a>
                 </div>
@@ -284,8 +306,20 @@
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-arrow-mix fs-2 "></i>
                         </span>
-                        <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal
+                        <span
+                            class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal
                             Konversi</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('bank-soal-konversi*') ? ' active' : '' }}"
+                        href="{{ url('bank-soal-konversi') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-book fs-2"></i>
+                        </span>
+                        <span
+                            class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Bank
+                            Soal Konversi</span>
                     </a>
                 </div>
                 <div class="menu-item mt-5">
@@ -298,7 +332,7 @@
                             <i class="ki-solid ki-book-square fs-2 "></i>
                         </span>
                         <span
-                            class="menu-title {{ request()->is('guide') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
+                            class="menu-title {{ request()->is('guide*') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
                     </a>
                 </div>
                 <div class="menu-item">
@@ -307,23 +341,27 @@
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-security-user fs-2 "></i>
                         </span>
-                        <span class="menu-title {{ request()->is('setting-admin') ? 'fw-bold' : 'fw-semibold' }}">Akun
+                        <span
+                            class="menu-title {{ request()->is('setting-admin*') ? 'fw-bold' : 'fw-semibold' }}">Akun
                             Admin</span>
                     </a>
                 </div>
             @endif
         </div>
     </div>
-    {{-- <div class="position-relative">
-        <img src="{{ asset('assets/media/img/book.png') }}" alt="Book" style="max-width:180px; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0px;">
-    </div> --}}
 </div>
 
 @push('scripts')
     <script>
         function toggleSidebarBookContainer() {
-            var isMinimized = $('#kt_app_body').attr('data-kt-app-sidebar-minimize') === 'on';
+            var bodyElement = document.getElementById('kt_app_body');
+            if (!bodyElement) {
+                return;
+            }
+
+            var isMinimized = bodyElement.getAttribute('data-kt-app-sidebar-minimize') === 'on';
             var $bookContainer = $('.sidebar-book-container');
+
             if (isMinimized) {
                 $bookContainer.addClass('d-none');
             } else {
@@ -333,76 +371,77 @@
 
         $(document).ready(function() {
             toggleSidebarBookContainer();
-            // Jika ada event perubahan pada sidebar, panggil lagi
-            // Misal: jika ada event custom, ganti sesuai event yang digunakan
+
             $(document).on('sidebar:minimize sidebar:maximize', function() {
                 toggleSidebarBookContainer();
             });
-            // Atau pantau perubahan attribute secara langsung
-            const observer = new MutationObserver(toggleSidebarBookContainer);
-            observer.observe(document.getElementById('kt_app_body'), {
-                attributes: true,
-                attributeFilter: ['data-kt-app-sidebar-minimize']
-            });
-        });
 
-        // Smooth accordion untuk submenu chatbot
-        $(document).ready(function() {
+            var bodyElement = document.getElementById('kt_app_body');
+            if (bodyElement) {
+                const observer = new MutationObserver(toggleSidebarBookContainer);
+                observer.observe(bodyElement, {
+                    attributes: true,
+                    attributeFilter: ['data-kt-app-sidebar-minimize']
+                });
+            }
+
             const $toggle = $('[data-bs-target="#submenu-chatbot"]');
             const $collapse = $('#submenu-chatbot');
 
-            // Override default Bootstrap collapse dengan animasi smooth
             $toggle.on('click', function(e) {
                 e.stopPropagation();
 
-                if ($collapse.hasClass('collapsing')) return;
+                if ($collapse.hasClass('collapsing')) {
+                    return;
+                }
 
                 if ($collapse.hasClass('show')) {
                     $collapse.css('height', $collapse[0].scrollHeight + 'px');
-                    requestAnimationFrame(() => {
+                    requestAnimationFrame(function() {
                         $collapse.css({
-                            'height': '0px',
-                            'overflow': 'hidden',
-                            'transition': 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                            height: '0px',
+                            overflow: 'hidden',
+                            transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
                         });
                     });
+
                     $collapse.one('transitionend', function() {
                         $collapse.removeClass('show').css({
-                            'height': '',
-                            'overflow': '',
-                            'transition': ''
+                            height: '',
+                            overflow: '',
+                            transition: ''
                         });
                     });
                 } else {
-                    const targetHeight = $collapse.clone()
-                        .css({
-                            position: 'absolute',
-                            visibility: 'hidden',
-                            display: 'block',
-                            height: 'auto'
-                        })
-                        .appendTo('body').outerHeight();
+                    const targetHeight = $collapse.clone().css({
+                        position: 'absolute',
+                        visibility: 'hidden',
+                        display: 'block',
+                        height: 'auto'
+                    }).appendTo('body').outerHeight();
+
                     $collapse.clone().remove();
 
                     $collapse.addClass('show').css({
-                        'height': '0px',
-                        'overflow': 'hidden',
-                        'transition': 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                        height: '0px',
+                        overflow: 'hidden',
+                        transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
                     });
-                    requestAnimationFrame(() => {
+
+                    requestAnimationFrame(function() {
                         $collapse.css('height', targetHeight + 'px');
                     });
+
                     $collapse.one('transitionend', function() {
                         $collapse.css({
-                            'height': '',
-                            'overflow': '',
-                            'transition': ''
+                            height: '',
+                            overflow: '',
+                            transition: ''
                         });
                     });
                 }
             });
 
-            // Smooth highlight saat hover submenu item
             $('.menu-sub .menu-link').on('mouseenter', function() {
                 $(this).css('transition', 'background-color 0.2s ease, padding-left 0.2s ease');
             });
