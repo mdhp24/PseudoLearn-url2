@@ -361,32 +361,48 @@ class LogChatbotAdaptiveService
         $resolvedLabeling = $this->resolveAdaptiveLabeling($log);
 
         $completionProgress = $this->resolveCompletionProgress($log, $detail);
-        $waktuDetik = $completionProgress['waktu_detik']
-            ?? $this->resolveCanonicalWorkSeconds($log, $detail)
-            ?? $this->resolveStrictWaktuDetikFromDetail($detail);
+        $waktuCandidates = [];
+        if (isset($completionProgress['waktu_detik'])) {
+            $waktuCandidates[] = max(0, (int) $completionProgress['waktu_detik']);
+        }
 
-        // Prefer server-side `Ujian` record when it provides a larger (more
-        // authoritative) per-question duration. This fixes cases where the
-        // client-submitted timer under-reports the actual work time.
+        $canonicalWaktu = $this->resolveCanonicalWorkSeconds($log, $detail);
+        if (!is_null($canonicalWaktu)) {
+            $waktuCandidates[] = max(0, (int) $canonicalWaktu);
+        }
+
+        $strictWaktu = $this->resolveStrictWaktuDetikFromDetail($detail);
+        if (!is_null($strictWaktu)) {
+            $waktuCandidates[] = max(0, (int) $strictWaktu);
+        }
+
+        // Prefer the largest value so popup/trigger timestamps never
+        // undercut the actual submit/close timer.
         try {
             if (!empty($log->id_mahasiswa) && !empty($log->id_soal)) {
-                $ujian = $this->ujianModel->newQuery()
+                $triggeredAt = $this->resolveTriggeredAt($log, $detail);
+
+                $ujianQuery = $this->ujianModel->newQuery()
                     ->where('id_mahasiswa', $log->id_mahasiswa)
-                    ->where('id_soal', $log->id_soal)
-                    ->where('status', 1)
+                    ->where('id_soal', $log->id_soal);
+
+                if ($triggeredAt) {
+                    $ujianQuery->where('created_at', '>=', $triggeredAt);
+                }
+
+                $ujian = $ujianQuery
                     ->orderBy('created_at', 'desc')
                     ->first();
 
                 if ($ujian && isset($ujian->waktu) && is_numeric($ujian->waktu)) {
-                    $ujianWaktu = max(0, (int) $ujian->waktu);
-                    if (is_null($waktuDetik) || $ujianWaktu > $waktuDetik) {
-                        $waktuDetik = $ujianWaktu;
-                    }
+                    $waktuCandidates[] = max(0, (int) $ujian->waktu);
                 }
             }
         } catch (\Throwable $e) {
-            // ignore DB errors and keep existing waktuDetik
+            // ignore DB errors and keep existing candidates
         }
+
+        $waktuDetik = !empty($waktuCandidates) ? max($waktuCandidates) : null;
         $durasiDetik = $this->resolveDurasiDetik($log, $detail, $waktuDetik);
         $jumlahLangkah = (int) ($detail['jumlah_langkah'] ?? ($completionProgress['jumlah_langkah'] ?? ($log->jumlah_langkah ?? 0)));
 

@@ -31,28 +31,11 @@ class UjianKodeRepository
             ], 404);
         }
 
-        // Jawaban kunci — handle both JSON array dan plain text format
-        $rawKunci = $soalKonversi->jawaban;
-        $decodedKunci = json_decode($rawKunci, true);
-        
-        if (is_array($decodedKunci)) {
-            // Format JSON array
-            $kunciJawaban = array_values(
-                array_filter(
-                    array_map('trim', $decodedKunci)
-                )
-            );
-        } else {
-            // Format plain text dengan newline
-            $kunciJawaban = array_values(
-                array_filter(
-                    array_map('trim', explode("\n", $rawKunci))
-                )
-            );
-        }
+        // Jawaban kunci — bisa JSON array atau plain text
+        $kunciJawaban = $this->parseJawabanList($soalKonversi->jawaban);
 
         // Jawaban mahasiswa — dari drag & drop
-        $jawabanMahasiswa = array_map('trim', $kodeLangkah);
+        $jawabanMahasiswa = array_map([$this, 'normalizeJawabanLine'], $kodeLangkah);
 
         // Validasi per langkah
         $errors = [];
@@ -90,5 +73,48 @@ class UjianKodeRepository
                 'id' => $soalKonversi->id,
             ],
         ]);
+    }
+
+    private function parseJawabanList($rawJawaban): array
+    {
+        if ($rawJawaban === null) {
+            return [];
+        }
+
+        $rawJawaban = (string) $rawJawaban;
+        $decoded = json_decode($rawJawaban, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $lines = [];
+            foreach ($decoded as $item) {
+                if (is_array($item)) {
+                    foreach ($item as $value) {
+                        $lines[] = $value;
+                        break;
+                    }
+                } else {
+                    $lines[] = $item;
+                }
+            }
+
+            return $this->normalizeJawabanList($lines);
+        }
+
+        $lines = preg_split('/\r\n|\n|\r/', $rawJawaban) ?: [];
+        return $this->normalizeJawabanList($lines);
+    }
+
+    private function normalizeJawabanList(array $lines): array
+    {
+        $normalized = array_map([$this, 'normalizeJawabanLine'], $lines);
+        return array_values(array_filter($normalized, fn($line) => $line !== ''));
+    }
+
+    private function normalizeJawabanLine($line): string
+    {
+        $line = str_replace("\xC2\xA0", ' ', (string) $line);
+        $line = trim($line);
+        $line = preg_replace('/\s+/', ' ', $line);
+        return $line ?? '';
     }
 }

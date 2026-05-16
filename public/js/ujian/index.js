@@ -67,8 +67,8 @@ function openModalKonfirmasi() {
 function submitForm(confidence) {
     const soalId = new URLSearchParams(window.location.search).get('id');
     const jawabanData = collectJawabanUser();
-
-    // Ambil waktu terkini sebelum submit
+    // Pause timer while waiting for server response to avoid drift
+    const pausedForSubmit = UjianTimer.pause();
     const waktu = UjianTimer.getElapsed();
 
     $.ajax({
@@ -86,6 +86,7 @@ function submitForm(confidence) {
         success: function (response) {
             if(confidence == 1) {
                 if (response.correct === false) {
+                    if (pausedForSubmit) UjianTimer.resume();
                     applyMismatchHighlights(
                         response.tipe_mismatch_index || [],
                         response.algoritma_mismatch_index || []
@@ -124,10 +125,12 @@ function submitForm(confidence) {
                     openModalFeedbackCorrect(response.pencapaian, response.badge);
                 }
             } else if(confidence == 0) {
+                if (pausedForSubmit) UjianTimer.resume();
                 $('#modal-konfirmasi-jawaban').modal('hide');
             }
         },
         error: function (xhr) {
+            if (pausedForSubmit) UjianTimer.resume();
             blockUI.release();
             Swal.fire({
                 text:
@@ -299,6 +302,24 @@ const UjianTimer = (function () {
         _rafId = requestAnimationFrame(_tick);
     }
 
+    function pause() {
+        if (!_isRunning) return false;
+
+        const currentSessionSec = Math.floor((Date.now() - _sessionStart) / 1000);
+        _accumulatedSec += currentSessionSec;
+        _sessionStart = null;
+        _isRunning = false;
+        if (_rafId) cancelAnimationFrame(_rafId);
+
+        localStorage.setItem(_STORAGE_ACC, String(_accumulatedSec));
+        return true;
+    }
+
+    function resume() {
+        if (_isRunning) return;
+        start();
+    }
+
     function _onBeforeUnload() {
         if (!_isRunning) return;
 
@@ -348,7 +369,7 @@ const UjianTimer = (function () {
         init();
     }
 
-    return { getElapsed: getElapsed, isStarted: isStarted, start: start, stop: stop };
+    return { getElapsed: getElapsed, isStarted: isStarted, start: start, stop: stop, pause: pause, resume: resume };
 }());
 
 // Backward-compat: beberapa tempat masih memanggil startUjianTimer()

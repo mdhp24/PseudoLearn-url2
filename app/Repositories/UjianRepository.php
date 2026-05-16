@@ -280,6 +280,15 @@ class UjianRepository extends BaseRepository
 
             DB::commit();
 
+            $submittedWaktu = $request->input('waktu', $request->input('timer'));
+
+            $this->syncAdaptiveRealtimeLogOnCorrectSubmit(
+                idMahasiswa: $idMahasiswa,
+                idSoal: (string) $soal->id,
+                totalWaktuDetik: (int) $submittedWaktu,
+                isCorrect: (bool) $isCorrectAll
+            );
+
             if($isCorrectAll) {
                 $ujianQuery = $this->ujianModel->setView('v_ujian')
                     ->where('id_mahasiswa', $idMahasiswa)
@@ -344,14 +353,6 @@ class UjianRepository extends BaseRepository
                         }
                        
                     }
-
-                                    $submittedWaktu = $request->input('waktu', $request->input('timer'));
-
-                                    $this->syncAdaptiveRealtimeLogOnCorrectSubmit(
-                                        idMahasiswa: $idMahasiswa,
-                                        idSoal: (string) $soal->id,
-                                        totalWaktuDetik: (int) $submittedWaktu
-                                    );
 
                 $returnData = [
                     'correct' => true,
@@ -432,7 +433,7 @@ class UjianRepository extends BaseRepository
         return $text ?? '';
     }
 
-    private function syncAdaptiveRealtimeLogOnCorrectSubmit(string $idMahasiswa, string $idSoal, int $totalWaktuDetik): void
+    private function syncAdaptiveRealtimeLogOnCorrectSubmit(string $idMahasiswa, string $idSoal, int $totalWaktuDetik, bool $isCorrect = true): void
     {
         /** @var ChatbotAdaptiveLog|null $adaptiveLog */
         $adaptiveLog = ChatbotAdaptiveLog::query()
@@ -473,7 +474,12 @@ class UjianRepository extends BaseRepository
             ->count();
 
         $detail['attempt_start_at'] = $startAt->toDateTimeString();
-        $detail['submit_benar_at'] = $endAt->toDateTimeString();
+        $detail['submit_at'] = $endAt->toDateTimeString();
+        if ($isCorrect) {
+            $detail['submit_benar_at'] = $endAt->toDateTimeString();
+        } else {
+            $detail['submit_salah_at'] = $endAt->toDateTimeString();
+        }
 
         // Store the submitted student time explicitly under a submit-specific key.
         // Do not blindly overwrite `waktu_akses_detik` (popup access time) which
