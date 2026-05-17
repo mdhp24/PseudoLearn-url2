@@ -124,15 +124,43 @@
             color: #fff;
         }
 
-        .jawaban-preview-chip {
-            display: inline-block;
-            background: #1a2744;
-            color: #e0e8ff;
-            font-family: monospace;
+        .jawaban-code-preview {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .jawaban-code-card {
+            background: #1b2640;
+            border: 1px solid #2b3858;
+            border-radius: 10px;
+            padding: 6px 10px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+            display: inline-flex;
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 100%;
+        }
+
+        .jawaban-code-line-number {
+            display: none;
+            width: 40px;
+            flex-shrink: 0;
+            text-align: right;
+            color: #cbd5e1;
+            font-weight: 700;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+        }
+
+        .jawaban-code-line-content {
+            flex: 1;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #e5e7eb;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
             font-size: 12px;
-            padding: 5px 10px;
-            border-radius: 6px;
-            margin: 3px 4px 3px 0;
+            line-height: 1.6;
         }
 
         #btn-run-konversi.loading {
@@ -230,9 +258,9 @@
                         <div class="row mb-5 d-none" id="row-preview-chip">
                             <div class="fv-row col-md-12">
                                 <label class="form-label fs-6 text-muted">
-                                    Preview tampilan drag &amp; drop siswa (terurut)
+                                    Preview struktur kode Java (urut)
                                 </label>
-                                <div id="preview-chip-wrap" class="p-3 bg-light rounded border"></div>
+                                <div id="preview-chip-wrap" class="jawaban-code-preview"></div>
                             </div>
                         </div>
 
@@ -298,6 +326,96 @@
             editor.enableReadOnlyMode('soal');
             editor.ui.view.editable.element.style.height = '120px';
         });
+
+        function normalizeJawabanCode(value) {
+            if (value === null || typeof value === 'undefined') {
+                return '';
+            }
+
+            if (Array.isArray(value)) {
+                return value
+                    .map(item => {
+                        if (item !== null && typeof item === 'object') {
+                            return JSON.stringify(item);
+                        }
+
+                        return String(item ?? '').replace(/\s+$/g, '');
+                    })
+                    .join('\n');
+            }
+
+            if (typeof value === 'object') {
+                return JSON.stringify(value, null, 2);
+            }
+
+            let text = String(value);
+            if (text.trim() === '') {
+                return '';
+            }
+
+            try {
+                const parsed = JSON.parse(text.trim());
+
+                if (Array.isArray(parsed)) {
+                    return parsed
+                        .map(item => {
+                            if (item !== null && typeof item === 'object') {
+                                return JSON.stringify(item);
+                            }
+
+                            return String(item ?? '').replace(/\s+$/g, '');
+                        })
+                        .join('\n');
+                }
+
+                if (typeof parsed === 'string') {
+                    text = parsed;
+                }
+            } catch (e) {
+                // fallback ke teks mentah
+            }
+
+            const normalized = String(text)
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n');
+
+            const lines = normalized.split('\n').map(line => line.replace(/\s+$/g, ''));
+
+            while (lines.length && lines[0].trim() === '') {
+                lines.shift();
+            }
+
+            while (lines.length && lines[lines.length - 1].trim() === '') {
+                lines.pop();
+            }
+
+            return lines.join('\n');
+        }
+
+        function renderJawabanCodePreview(plainText) {
+            const normalized = normalizeJawabanCode(plainText);
+            const lines = normalized ? normalized.split('\n') : [];
+            const $container = $('#preview-chip-wrap').empty();
+
+            if (lines.length === 0) {
+                $('#row-preview-chip').addClass('d-none');
+                return;
+            }
+
+            lines.forEach((line, index) => {
+                const lineNumber = String(index + 1).padStart(2, '0');
+                const renderedLine = line.length > 0 ? escHtml(line) : '&nbsp;';
+
+                $container.append(`
+                    <div class="jawaban-code-card">
+                        <span class="jawaban-code-line-number">${lineNumber}</span>
+                        <span class="jawaban-code-line-content">${renderedLine}</span>
+                    </div>
+                `);
+            });
+
+            $('#row-preview-chip').removeClass('d-none');
+        }
 
         // Level change -> load soal list
         $('#level_id').on('change', function() {
@@ -425,41 +543,24 @@
 
         // Set jawaban ke textarea + render preview chip
         function setJawaban(plainText) {
-            $('#jawaban-textarea').val(plainText);
-            renderPreviewChip(plainText);
+            const normalized = normalizeJawabanCode(plainText);
+            $('#jawaban-textarea').val(normalized);
+            renderJawabanCodePreview(normalized);
         }
-
-        // Render preview chip terurut
-        function renderPreviewChip(plainText) {
-            const lines = plainText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            if (lines.length === 0) {
-                $('#row-preview-chip').addClass('d-none');
-                return;
-            }
-            const wrap = $('#preview-chip-wrap').empty();
-            lines.forEach(line => {
-                wrap.append(`<span class="jawaban-preview-chip">${escHtml(line)}</span>`);
-            });
-            $('#row-preview-chip').removeClass('d-none');
-        }
-
-        // Update preview tiap kali textarea diketik manual
-        $('#jawaban-textarea').on('input', function() {
-            renderPreviewChip($(this).val());
-        });
 
         // Deteksi apakah kode mengandung Scanner
         function codeHasScanner(text) {
             return /\bScanner\b/.test(text);
         }
 
-        // Update textarea jawaban -> sembunyikan input scanner jika Scanner dihapus
+        // Update preview dan sembunyikan input scanner jika Scanner dihapus
         $('#jawaban-textarea').on('input', function() {
-            renderPreviewChip($(this).val());
+            const normalized = normalizeJawabanCode($(this).val());
+            renderJawabanCodePreview(normalized);
 
-            if (!codeHasScanner($(this).val())) {
+            if (!codeHasScanner(normalized)) {
                 $('#row-input-scanner').addClass('d-none');
-                $('#input-scanner').val('');
+                $('#scanner-fields').empty();
             }
         });
 
@@ -530,7 +631,7 @@
         async function runKonversi() {
             const levelId = $('#level_id').val();
             const soalId = $('#soal_id').val();
-            const jawabanText = $('#jawaban-textarea').val().trim();
+            const jawabanText = normalizeJawabanCode($('#jawaban-textarea').val());
 
             if (!levelId || !soalId) {
                 Swal.fire({
@@ -563,6 +664,8 @@
 
         // Run (klik setelah isi input scanner)
         async function runWithScanner() {
+            normalizeJawabanCode($('#jawaban-textarea').val());
+
             // Kumpulkan semua nilai input -> gabung dengan newline
             const values = [];
             let allFilled = true;
@@ -592,21 +695,11 @@
             await eksekusiJava(scannerInput);
         }
 
-        // Sembunyikan scanner field jika Scanner dihapus dari kode
-        $('#jawaban-textarea').on('input', function() {
-            renderPreviewChip($(this).val());
-
-            if (!codeHasScanner($(this).val())) {
-                $('#row-input-scanner').addClass('d-none');
-                $('#scanner-fields').empty();
-            }
-        });
-
         // Fungsi eksekusi Java (dipakai oleh keduanya)
         async function eksekusiJava(scannerInput) {
             const levelId = $('#level_id').val();
             const soalId = $('#soal_id').val();
-            const jawabanText = $('#jawaban-textarea').val().trim();
+            const jawabanText = normalizeJawabanCode($('#jawaban-textarea').val());
 
             const btnKonversi = document.getElementById('btn-run-konversi');
             const btnScanner = document.getElementById('btn-run-scanner');
@@ -676,11 +769,11 @@
 
         // Submit form
         $('#submit-form-soal').on('click', function() {
-            const jawaban = $('#jawaban-textarea').val().trim();
+            const jawaban = normalizeJawabanCode($('#jawaban-textarea').val());
             const output = $('#output').val().trim();
             const idKonversi = $('#id_konversi').val().trim();
 
-            if (!jawaban) {
+            if (!jawaban.trim()) {
                 Swal.fire({
                     icon: 'warning',
                     text: 'Jawaban belum diisi.',
@@ -696,6 +789,8 @@
                 });
                 return;
             }
+
+            $('#jawaban-textarea').val(jawaban);
 
             if (idKonversi) {
                 $('#form-soal').attr('action', APP_URL + 'bank-soal-konversi/update/' + idKonversi);

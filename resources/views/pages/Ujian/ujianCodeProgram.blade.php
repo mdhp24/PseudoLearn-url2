@@ -313,13 +313,15 @@
     <script src="{!! asset('assets/plugins/custom/iconify/iconify-icon.min.js') !!}"></script>
 
     <script>
-        // ====== Timer logic (count up) ======
+        // ====== Timer logic (count up, starts on page load) ======
         let timerInterval = null;
         let timerStarted = false;
         let elapsedSeconds = 0;
 
         // expose ke global
         window.waktuUjianDetik = 0;
+        window.timerElapsed = 0;
+        window.timerStarted = false;
 
         function formatHHMMSS(sec) {
             sec = Math.max(0, sec | 0);
@@ -332,16 +334,17 @@
         function updateTimerDisplay() {
             const el = document.getElementById('timer-ujian');
             if (el) el.textContent = formatHHMMSS(elapsedSeconds);
+            window.waktuUjianDetik = elapsedSeconds;
+            window.timerElapsed = elapsedSeconds;
         }
 
         function startTimer() {
             if (timerStarted) return;
             timerStarted = true;
+            window.timerStarted = true;
 
             timerInterval = setInterval(() => {
                 elapsedSeconds += 1;
-                window.waktuUjianDetik = elapsedSeconds;
-
                 updateTimerDisplay();
 
                 // update hidden input
@@ -354,6 +357,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // set tampilan awal 00:00:00
             updateTimerDisplay();
+            startTimer();
 
             const container = document.querySelector('.input-panel');
             if (container) {

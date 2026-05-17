@@ -52,14 +52,8 @@ class BankSoalKonversiRepository
             $query->where('soal.judul', 'like', "%{$keyword}%");
         })
 
-        // Format Jawaban
         ->editColumn('jawaban', function ($item) {
-            if (empty($item->jawaban)) return '-';
-
-            return collect(explode("\n", $item->jawaban))
-                ->map(fn($line) => trim($line))
-                ->filter(fn($line) => $line !== '')
-                ->implode('<br>');
+            return $this->formatJawabanHtml($item->jawaban);
         })
 
         ->editColumn('output', function ($item) {
@@ -69,6 +63,58 @@ class BankSoalKonversiRepository
         ->rawColumns(['jawaban'])
         ->make(true);
 }
+
+    protected function formatJawabanHtml($jawaban): string
+    {
+        $lines = $this->normalizeJawabanLines($jawaban);
+
+        if (empty($lines)) {
+            return '-';
+        }
+
+        $formatted = collect($lines)
+            ->map(function ($line, $index) {
+                $lineNumber = str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT);
+
+                return $lineNumber . '. ' . $line;
+            })
+            ->implode("\n");
+
+        return '<pre class="bank-soal-jawaban-code mb-0">' . e($formatted) . '</pre>';
+    }
+
+    protected function normalizeJawabanLines($jawaban): array
+    {
+        if (is_array($jawaban)) {
+            $rawLines = $jawaban;
+        } else {
+            $text = (string) $jawaban;
+
+            if (trim($text) === '') {
+                return [];
+            }
+
+            $decoded = json_decode(trim($text), true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $rawLines = $decoded;
+            } else {
+                $normalized = str_replace(["\r\n", "\r"], "\n", $text);
+                $rawLines = explode("\n", $normalized);
+            }
+        }
+
+        return collect($rawLines)
+            ->map(function ($line) {
+                if (is_array($line) || is_object($line)) {
+                    $line = json_encode($line, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+
+                return rtrim((string) $line);
+            })
+            ->filter(fn($line) => trim($line) !== '')
+            ->values()
+            ->all();
+    }
 
     public function getOrderListByLevel(string $levelId)
     {

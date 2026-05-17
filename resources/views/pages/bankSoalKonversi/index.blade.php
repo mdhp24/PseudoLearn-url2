@@ -5,6 +5,23 @@
         .form-select {
             width: 200px;
         }
+
+        .bank-soal-jawaban-code {
+            margin: 0;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #dbe4f0;
+            border-radius: 12px;
+            color: #0f172a;
+            font-family: "JetBrains Mono", "Fira Code", monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: none;
+            overflow: visible;
+            display: block;
+        }
     </style>
 @endpush
 

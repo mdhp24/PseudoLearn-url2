@@ -20,8 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $host = request()->getHost();
-        if (str_contains($host, 'ngrok-free.dev')) {
+        if (request()->header('x-forwarded-proto') === 'https') {
             URL::forceScheme('https');
         }
     }

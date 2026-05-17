@@ -668,10 +668,24 @@ function handleChatbotOverlayClick() {
     closeChatbot();
 }
 
+function getExamElapsedSeconds() {
+    const candidates = [window.timerElapsed, window.waktuUjianDetik, window.elapsedSeconds];
+
+    for (const candidate of candidates) {
+        const value = Number(candidate);
+        if (Number.isFinite(value) && value >= 0) {
+            return value;
+        }
+    }
+
+    return 0;
+}
+
 // Check student performance periodically (synced with exam timer)
 async function checkPerformance() {
     // Hanya cek jika timer sudah berjalan (mahasiswa sudah mulai drag pertama)
-    if (!window.timerStarted || window.timerElapsed === 0) return;
+    const elapsedSeconds = getExamElapsedSeconds();
+    if (elapsedSeconds <= 0) return;
 
     const idSoal  = document.getElementById('id-soal')?.value;
     const idLevel = document.getElementById('id-level')?.value;
@@ -689,7 +703,7 @@ async function checkPerformance() {
             body: JSON.stringify({
                 id_soal:      idSoal,
                 id_level:     idLevel,
-                elapsed_time: window.timerElapsed,  // waktu pengerjaan real-time
+                elapsed_time: elapsedSeconds,  // waktu pengerjaan real-time
             }),
         });
 
@@ -699,7 +713,7 @@ async function checkPerformance() {
             chatbotLowPerformance   = true;
             chatbotPerformanceLabel = data.label;
             chatbotPerformanceTotalDrag = Number.isFinite(data.total_drag) ? Number(data.total_drag) : null;
-            chatbotPerformanceElapsed = Number.isFinite(data.total_waktu) ? Number(data.total_waktu) : window.timerElapsed;
+            chatbotPerformanceElapsed = Number.isFinite(data.total_waktu) ? Number(data.total_waktu) : elapsedSeconds;
 
             // Langsung tampilkan pop up chatbot adaptive dan bunyikan suara ceting
             if (!chatbotAdaptiveGuideSent) {
@@ -723,6 +737,7 @@ async function sendAdaptiveGuide() {
 
     const idSoal  = document.getElementById('id-soal')?.value;
     const idLevel = document.getElementById('id-level')?.value;
+    const elapsedSeconds = getExamElapsedSeconds();
 
     if (!idSoal || !idLevel || !chatbotPerformanceLabel) return;
 
@@ -754,7 +769,7 @@ async function sendAdaptiveGuide() {
                 id_soal:  idSoal,
                 id_level: idLevel,
                 label:    chatbotPerformanceLabel,
-                elapsed_time: Number.isFinite(chatbotPerformanceElapsed) ? chatbotPerformanceElapsed : window.timerElapsed,
+                elapsed_time: Number.isFinite(chatbotPerformanceElapsed) ? chatbotPerformanceElapsed : elapsedSeconds,
                 total_drag: Number.isFinite(chatbotPerformanceTotalDrag) ? chatbotPerformanceTotalDrag : null,
                 access_id: adaptiveAccessId,
             }),
@@ -792,9 +807,9 @@ async function waitForAdaptiveAccessId(maxWaitMs = 1500) {
 function startPerformanceMonitor() {
     // Monitor cepat agar pencatatan adaptive mendekati real time.
     const waitForTimer = setInterval(() => {
-        if (window.timerStarted && window.timerElapsed > 0) {
+        if (getExamElapsedSeconds() > 0) {
             clearInterval(waitForTimer);
-            // Timer sudah mulai (drag pertama sudah terjadi), mulai cek performa
+            // Timer sudah mulai, mulai cek performa
             // Cek pertama kali langsung
             checkPerformance();
             // Lalu cek berkala lebih rapat supaya tidak terlambat merekam waktu

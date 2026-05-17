@@ -441,12 +441,14 @@
 
     <script>
         // ══════════════════════════════════════════
-        //  Timer (count-up, starts on first drop)
+        //  Timer (count-up, starts on page load)
         // ══════════════════════════════════════════
         let timerInterval = null;
         let timerStarted = false;
         let elapsedSeconds = 0;
         window.waktuUjianDetik = 0;
+        window.timerElapsed = 0;
+        window.timerStarted = false;
 
         function formatHHMMSS(sec) {
             sec = Math.max(0, sec | 0);
@@ -459,14 +461,16 @@
         function updateTimerDisplay() {
             const el = document.getElementById('timer-ujian');
             if (el) el.textContent = formatHHMMSS(elapsedSeconds);
+            window.waktuUjianDetik = elapsedSeconds;
+            window.timerElapsed = elapsedSeconds;
         }
 
         function startTimer() {
             if (timerStarted) return;
             timerStarted = true;
+            window.timerStarted = true;
             timerInterval = setInterval(() => {
                 elapsedSeconds++;
-                window.waktuUjianDetik = elapsedSeconds;
                 updateTimerDisplay();
                 const hidden = document.getElementById('waktu-ujian-detik');
                 if (hidden) hidden.value = elapsedSeconds;
@@ -476,6 +480,7 @@
         //  Drag & Drop – Java code
         document.addEventListener('DOMContentLoaded', function() {
             updateTimerDisplay();
+            startTimer();
 
             // Semua drag-item yang ada bisa di-drag
             document.querySelectorAll('.drag-item[data-source="java"]').forEach(makeDraggable);
