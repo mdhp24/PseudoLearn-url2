@@ -32,7 +32,7 @@ class UjianCodeProgramController extends Controller
         $idUser = Auth::id();
         $nyawa = Nyawa::where('id_user', $idUser)->first();
 
-        return view('pages.ujian.ujianCodeProgram', [
+        return view('pages.Ujian.ujianCodeProgram', [
             'title' => 'Ujian Code Program',
             'soal' => $soal,
             'konversi' => $soalKonversi,

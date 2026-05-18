@@ -303,7 +303,7 @@
         </div>
     </div>
     @extends('pages.guide.index')
-    @extends('pages.ujian.modal')
+    @extends('pages.Ujian.modal')
     <script>
         var hostUrl = "assets/";
     </script>
