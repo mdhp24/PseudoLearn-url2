@@ -36,6 +36,7 @@
             min-height: 100vh;
             background: transparent;
             overflow-x: hidden;
+            isolation: isolate;
         }
 
         body::before {
@@ -43,10 +44,11 @@
             position: fixed;
             inset: 0;
             /* Geser background sedikit ke atas (dari center center -> center 75%) */
-            background: url("{{ secure_asset('assets/media/img/bg-login3.webp') }}") center 80% / cover no-repeat;
+            background: url("{{ asset('assets/media/img/bg-login3.webp') }}") center 80% / cover no-repeat;
             filter: blur(1px) brightness(0.8);
             transform: scale(1.06);
             z-index: -1;
+            pointer-events: none;
 
             /* 🔹 Tambahkan animasi brightness */
             animation: brightnessPulse 20s ease-in-out infinite;
