@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\UjianKode;
 use App\Models\BankSoalKonversi;
+use App\Models\Nyawa;
 use Illuminate\Support\Facades\Auth;
 
 class UjianKodeRepository
@@ -46,6 +47,8 @@ class UjianKodeRepository
         }
 
         if (!empty($errors)) {
+            $this->decrementNyawaOnWrongAnswer($idUser);
+
             return response()->json([
                 'success' => false,
                 'message' => [
@@ -73,6 +76,23 @@ class UjianKodeRepository
                 'id' => $soalKonversi->id,
             ],
         ]);
+    }
+
+    protected function decrementNyawaOnWrongAnswer(string $idUser): void
+    {
+        $nyawa = Nyawa::where('id_user', $idUser)->first();
+
+        if (!$nyawa || $nyawa->nyawa <= 0) {
+            return;
+        }
+
+        $nyawa->nyawa -= 1;
+
+        if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
+            $nyawa->next_regen_at = now()->addMinutes(10);
+        }
+
+        $nyawa->save();
     }
 
     private function parseJawabanList($rawJawaban): array

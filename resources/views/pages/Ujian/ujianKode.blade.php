@@ -411,12 +411,12 @@
     </div>
 
     @include('pages.guide.index')
-    @include('pages.Ujian.modal')
+    @include('pages.ujian.modal')
 
     <script>
         var hostUrl = "assets/";
     </script>
-    <script src="{{ asset('js/ujian/indexUjianKode.js') }}"></script>
+    <script src="{{ asset('js/ujian/indexujianKode.js') }}"></script>
     <script src="{!! asset('assets/plugins/global/plugins.bundle.js') !!}"></script>
     <script src="{!! asset('assets/js/scripts.bundle.js') !!}"></script>
     <script src="{!! asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js') !!}"></script>
@@ -441,7 +441,7 @@
 
     <script>
         // ══════════════════════════════════════════
-        //  Timer (count-up, starts on page load)
+        //  Timer (count-up, starts on first drop)
         // ══════════════════════════════════════════
         let timerInterval = null;
         let timerStarted = false;
@@ -480,7 +480,6 @@
         //  Drag & Drop – Java code
         document.addEventListener('DOMContentLoaded', function() {
             updateTimerDisplay();
-            startTimer();
 
             // Semua drag-item yang ada bisa di-drag
             document.querySelectorAll('.drag-item[data-source="java"]').forEach(makeDraggable);
@@ -503,7 +502,6 @@
                     // Kembalikan ke panel pilihan
                     panelPilihan.appendChild(dragged);
                     dragged.classList.remove('dragging');
-                    startTimer();
                 });
             }
         });
@@ -514,7 +512,6 @@
             item.addEventListener('dragstart', function(e) {
                 e.dataTransfer.setData('text/plain', e.target.innerText.trim());
                 setTimeout(() => e.target.classList.add('dragging'), 0);
-                startTimer();
             });
 
             item.addEventListener('dragend', function() {
