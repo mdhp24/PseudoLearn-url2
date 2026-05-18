@@ -7,7 +7,6 @@ use App\Core\BaseResponse;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class BankSoalKonversiRepository
 {
@@ -298,27 +297,14 @@ class BankSoalKonversiRepository
             $filePath = $dirPath . '/' . $className . '.java';
             file_put_contents($filePath, $javaCode);
 
-            // Kompilasi
+            // Jalankan langsung source file Java agar tidak bergantung pada javac di server.
+            // Java 11+ bisa mengeksekusi source file secara langsung.
             $javaHome = env('JAVA_HOME', '');
-            $javacBin = $javaHome
-                ? rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'javac'
-                : 'javac';
             $javaBin  = $javaHome
                 ? rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'java'
                 : 'java';
 
-            $compile = new Process([$javacBin, $filePath], $dirPath);
-            $compile->setTimeout(30);
-            $compile->run();
-
-            if (!$compile->isSuccessful()) {
-                throw new \RuntimeException(
-                    'Kompilasi gagal:' . "\n" . $compile->getErrorOutput()
-                );
-            }
-
-            // Jalankan dengan stdin dari form
-            $process = new Process([$javaBin, '-cp', $dirPath, $className], $dirPath);
+            $process = new Process([$javaBin, basename($filePath)], $dirPath);
             $process->setTimeout(15);
             $process->setInput($soalInput); // input dari form ke Scanner
             $process->run();
@@ -331,16 +317,13 @@ class BankSoalKonversiRepository
 
             $output = $process->getOutput();
 
-            // Bersihkan file .class
-            @unlink($dirPath . '/' . $className . '.class');
-
             return BaseResponse::json([
                 'status' => true,
                 'output' => trim($output),
                 'path'   => $filePath,
             ]);
         } catch (\Exception $e) {
-            return BaseResponse::errorTransaction($e);
+            return BaseResponse::errorMessage($e->getMessage(), 500);
         }
     }
 

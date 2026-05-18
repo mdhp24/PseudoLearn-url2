@@ -18,7 +18,6 @@ use App\Jobs\DeletePencapaianKonversi;
 use Symfony\Component\Process\Process;
 use App\Jobs\GeneratePencapaianKonversi;
 use Prettus\Repository\Eloquent\BaseRepository;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * Class KelasRepository.
@@ -201,24 +200,22 @@ class KonversiRepository extends BaseRepository
             $filePath = $dirPath . "/Main_$safeSoalId.java";
             file_put_contents($filePath, $javaCode);
 
-            // Compile Java
-            $compile = new Process(['javac', $filePath], $dirPath);
-            $compile->run();
-            if (!$compile->isSuccessful()) {
-                throw new ProcessFailedException($compile);
-            }
+            // Jalankan langsung source file Java agar tidak bergantung pada javac di server.
+            // Java 11+ bisa mengeksekusi source file secara langsung.
+            $javaHome = env('JAVA_HOME', '');
+            $javaBin = $javaHome
+                ? rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'java'
+                : 'java';
 
-            // Jalankan Java
-            $process = new Process(['java', '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
+            $process = new Process([$javaBin, basename($filePath)], $dirPath);
             $process->run();
             if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
+                throw new \RuntimeException(
+                    'Eksekusi gagal:' . "\n" . $process->getErrorOutput()
+                );
             }
 
             $output = $process->getOutput();
-
-            // Hapus file class jika berhasil
-            @unlink($dirPath . "/Main_$safeSoalId.class");
 
             $output = [
                 'status' => true,
@@ -227,7 +224,7 @@ class KonversiRepository extends BaseRepository
             ];
             return BaseResponse::json($output);
         } catch (\Exception $e) {
-            return BaseResponse::errorTransaction($e);
+            return BaseResponse::errorMessage($e->getMessage(), 500);
         }
     }
 
