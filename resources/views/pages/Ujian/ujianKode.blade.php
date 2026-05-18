@@ -411,7 +411,7 @@
     </div>
 
     @include('pages.guide.index')
-    @include('pages.ujian.modal')
+    @include('pages.Ujian.modal')
 
     <script>
         var hostUrl = "assets/";

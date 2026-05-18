@@ -50,7 +50,7 @@ class UjianKodeController extends Controller
         // Check dan regenerate lives (1 life per 10 minutes)
         $nyawa->checkAndRegenerate();
 
-        return view('pages.ujian.ujiankode', [
+        return view('pages.Ujian.ujianKode', [
             'title' => 'Ujian Code Program',
             'soal' => $soal,
             'konversi' => $bankSoalKonversi,

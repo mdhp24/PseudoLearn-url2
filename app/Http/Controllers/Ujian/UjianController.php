@@ -32,7 +32,7 @@ class UjianController extends Controller
         // Check and regenerate lives (1 life per 10 minutes)
         $nyawa->checkAndRegenerate();
 
-        return view('pages.ujian.index', [
+        return view('pages.Ujian.index', [
             'title' => 'Ujian Pseudocode',
             'soal' => $soal,
             'id_level' => $soal->id_level,

@@ -281,7 +281,7 @@
         </div>
     </div>
     @extends('pages.guide.index')
-    @extends('pages.ujian.modal')
+    @extends('pages.Ujian.modal')
     
     {{-- Chatbot Component --}}
     @include('components.chatbot')
