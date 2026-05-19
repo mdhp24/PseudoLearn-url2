@@ -28,21 +28,44 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
-        $query = DB::table('v_ujian_kode as uk')
-            ->where('id_mahasiswa', $this->idMahasiswa)
+        $query = DB::table('ujian_kode as uk')
+            ->leftJoin('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->leftJoin('soal as s', 'bsk.id_soal', '=', 's.id')
+            ->select(
+                'uk.id',
+                'uk.id_level',
+                'uk.id_bank_soal_konversi',
+                'bsk.id_soal',
+                'uk.id_mahasiswa',
+                's.judul as judul_soal',
+                'uk.jawaban',
+                'uk.output',
+                'uk.nilai',
+                'uk.waktu',
+                'uk.created_at',
+                'uk.updated_at',
+                'uk.deleted_at'
+            )
+            ->where('uk.id_mahasiswa', $this->idMahasiswa)
             ->whereNull('uk.deleted_at');
 
         if (!empty($this->idLevel)) {
             $query->where('uk.id_level', $this->idLevel);
         }
         if (!empty($this->idSoal)) {
-            $query->join('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
-                ->where('bsk.id_soal', $this->idSoal);
+            $query->where('bsk.id_soal', $this->idSoal);
         }
 
         $data = $query->orderBy('uk.created_at', 'desc')->get();
 
         return $data->map(function ($row) {
+            if (empty($row->judul_soal)) {
+                $row->judul_soal = $this->resolveSoalJudul(
+                    $row->id_soal ?? null,
+                    $row->id_bank_soal_konversi ?? null
+                ) ?? '-';
+            }
+
             $row->drag_drop = DB::table('log_ujian_kode')
                 ->where('id_mahasiswa', $this->idMahasiswa)
                 ->where('id_bank_soal_konversi', $row->id_bank_soal_konversi)
@@ -84,5 +107,31 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
             $row->total_submit,
             $row->waktu,
         ];
+    }
+
+    protected function resolveSoalJudul(?string $idSoal, ?string $idBankSoalKonversi): ?string
+    {
+        if (!empty($idSoal)) {
+            $judul = DB::table('soal')
+                ->where('id', $idSoal)
+                ->value('judul');
+
+            if (!empty($judul)) {
+                return $judul;
+            }
+        }
+
+        if (!empty($idBankSoalKonversi)) {
+            $judul = DB::table('bank_soal_konversi as bsk')
+                ->join('soal as s', 'bsk.id_soal', '=', 's.id')
+                ->where('bsk.id', $idBankSoalKonversi)
+                ->value('s.judul');
+
+            if (!empty($judul)) {
+                return $judul;
+            }
+        }
+
+        return null;
     }
 }

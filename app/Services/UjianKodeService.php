@@ -131,6 +131,13 @@ class UjianKodeService
 
         // ── Tambah kolom drag_drop & total_submit per baris ──
         $data = $data->map(function ($row) use ($idMahasiswa) {
+            if (empty($row->judul_soal)) {
+                $row->judul_soal = $this->resolveSoalJudul(
+                    $row->id_soal ?? null,
+                    $row->id_bank_soal_konversi ?? null
+                ) ?? '-';
+            }
+
             // Total drag & drop untuk soal ini
             $row->drag_drop = DB::table('log_ujian_kode')
                 ->where('id_mahasiswa', $idMahasiswa)
@@ -154,5 +161,31 @@ class UjianKodeService
             'recordsFiltered' => $total,
             'data'            => $data,
         ]);
+    }
+
+    protected function resolveSoalJudul(?string $idSoal, ?string $idBankSoalKonversi): ?string
+    {
+        if (!empty($idSoal)) {
+            $judul = DB::table('soal')
+                ->where('id', $idSoal)
+                ->value('judul');
+
+            if (!empty($judul)) {
+                return $judul;
+            }
+        }
+
+        if (!empty($idBankSoalKonversi)) {
+            $judul = DB::table('bank_soal_konversi as bsk')
+                ->join('soal as s', 'bsk.id_soal', '=', 's.id')
+                ->where('bsk.id', $idBankSoalKonversi)
+                ->value('s.judul');
+
+            if (!empty($judul)) {
+                return $judul;
+            }
+        }
+
+        return null;
     }
 }
