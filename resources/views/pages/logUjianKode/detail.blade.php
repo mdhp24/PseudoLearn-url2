@@ -73,14 +73,14 @@
                                     <dl class="row mb-0">
                                         <dt class="col-4 text-gray-700">Level</dt>
                                         <dd class="col-8 text-gray-900" id="info-level">
-                                            @if (!empty($level?->name))
-                                                <span class="badge badge-primary">{{ $level->name }}</span>
+                                            @if (!empty($infoLevelName))
+                                                <span class="badge badge-primary">{{ $infoLevelName }}</span>
                                             @else
                                                 -
                                             @endif
                                         </dd>
                                         <dt class="col-sm-4 text-gray-600 fw-semibold">Nama Soal</dt>
-                                        <dd class="col-sm-8 text-gray-900 mb-0" id="info-soal">-</dd>
+                                        <dd class="col-sm-8 text-gray-900 mb-0" id="info-soal">{{ $infoSoalName ?? '-' }}</dd>
                                     </dl>
                                 </div>
                             </div>

@@ -80,6 +80,16 @@ class LogUjianKodeController extends Controller
         $level = $levelId ? $this->levelModel->find($levelId) : null;
         $soal  = $soalId  ? Soal::find($soalId) : null;
 
+        $latestUjian = $this->ujianKodeModel->setView('v_ujian_kode')
+            ->where('id_mahasiswa', $id)
+            ->when(!empty($levelId), fn($query) => $query->where('id_level', $levelId))
+            ->when(!empty($soalId), fn($query) => $query->where('id_soal', $soalId))
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $infoLevelName = $level?->name ?? ($latestUjian->level_name ?? null);
+        $infoSoalName  = $soal?->judul ?? ($latestUjian->judul_soal ?? null);
+
         $list_level = $this->levelModel->orderBy('order', 'asc')->get(['id', 'name'])
             ->map(fn($item) => ['id' => $item->id, 'name' => $item->name])
             ->values()
@@ -119,6 +129,8 @@ class LogUjianKodeController extends Controller
             'mahasiswa' => $mahasiswa,
             'level' => $level,
             'soal' => $soal,
+            'infoLevelName' => $infoLevelName,
+            'infoSoalName' => $infoSoalName,
             'id_user' => $id,
             'list_level' => $list_level,
             'totalSubmit' => $totalSubmit,
