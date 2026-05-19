@@ -12,6 +12,7 @@ use App\Models\BankSoalKonversi;
 use App\Models\UjianKode;
 use App\Models\LogUjianKode;
 use App\Services\UjianKodeService;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\LogUjianKodeExport;
 
@@ -104,9 +105,7 @@ class LogUjianKodeController extends Controller
             $totalWaktuDetik % 60
         );
 
-        $dragQuery = $this->logUjianKodeModel
-            ->newQuery()
-            ->from('log_ujian_kode as luk')
+        $dragQuery = DB::table('log_ujian_kode as luk')
             ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
             ->where('luk.id_mahasiswa', $id);
 
@@ -179,9 +178,7 @@ class LogUjianKodeController extends Controller
         $totalSubmit     = (clone $ujianQuery)->count();
         $totalWaktuDetik = (clone $ujianQuery)->sum('waktu');
 
-        $dragQuery = $this->logUjianKodeModel
-            ->newQuery()
-            ->from('log_ujian_kode as luk')
+        $dragQuery = DB::table('log_ujian_kode as luk')
             ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
             ->where('luk.id_mahasiswa', $idMahasiswa);
 
