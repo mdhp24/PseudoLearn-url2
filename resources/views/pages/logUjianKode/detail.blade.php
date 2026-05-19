@@ -138,5 +138,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/logujiankode/detail.js') }}"></script>
+    <script>
+{!! file_get_contents(public_path('js/logujiankode/detail.js')) !!}
+    </script>
 @endpush

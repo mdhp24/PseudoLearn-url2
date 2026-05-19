@@ -67,5 +67,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/logujiankode/index.js') }}"></script>
+    <script>
+{!! file_get_contents(public_path('js/logujiankode/index.js')) !!}
+    </script>
 @endpush
