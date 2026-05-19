@@ -553,6 +553,44 @@
             return /\bScanner\b/.test(text);
         }
 
+        function getScannerCallCount(line) {
+            const scannerPattern = /\.\s*next(?:Int|Double|Float|Long|Line|Boolean|Short|Byte)?\s*\(\s*\)/gi;
+            const matches = line.match(scannerPattern);
+
+            return matches ? matches.length : 0;
+        }
+
+        function getLoopRepeatCount(line) {
+            const forMatch = line.match(/for\s*\(\s*([^;]*);\s*([^;]*);\s*([^)]+)\)/i);
+
+            if (!forMatch) {
+                return 1;
+            }
+
+            const init = forMatch[1];
+            const condition = forMatch[2];
+            const startMatch = init.match(/=\s*(-?\d+)\b/);
+            const startValue = startMatch ? parseInt(startMatch[1], 10) : null;
+
+            if (startValue === null) {
+                return 1;
+            }
+
+            const lessThanMatch = condition.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*<\s*(-?\d+)\b/);
+            if (lessThanMatch) {
+                const endValue = parseInt(lessThanMatch[2], 10);
+                return Math.max(endValue - startValue, 1);
+            }
+
+            const lessOrEqualMatch = condition.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*<=\s*(-?\d+)\b/);
+            if (lessOrEqualMatch) {
+                const endValue = parseInt(lessOrEqualMatch[2], 10);
+                return Math.max(endValue - startValue + 1, 1);
+            }
+
+            return 1;
+        }
+
         // Update preview dan sembunyikan input scanner jika Scanner dihapus
         $('#jawaban-textarea').on('input', function() {
             const normalized = normalizeJawabanCode($(this).val());
@@ -573,21 +611,32 @@
 
             const fields = [];
             const printPattern = /System\.out\.print(?:ln)?\s*\(\s*["'](.+?)["']\s*\)/;
-            const scannerPattern = /\.\s*next(?:Int|Double|Float|Long|Line|Boolean|Short|Byte)?\s*\(\s*\)/i;
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
 
-                // Cek apakah baris ini adalah scanner input
-                if (scannerPattern.test(line)) {
-                    // Cari label dari baris sebelumnya (System.out.print/println)
-                    let label = '';
-                    if (i > 0 && printPattern.test(lines[i - 1])) {
-                        const match = lines[i - 1].match(printPattern);
-                        label = match ? match[1] : '';
-                    }
+                const scannerCount = getScannerCallCount(line);
+                if (scannerCount === 0) {
+                    continue;
+                }
+
+                // Cari label dari baris sebelumnya (System.out.print/println)
+                let label = '';
+                if (i > 0 && printPattern.test(lines[i - 1])) {
+                    const match = lines[i - 1].match(printPattern);
+                    label = match ? match[1] : '';
+                }
+
+                const repeatCount = Math.max(
+                    getLoopRepeatCount(line),
+                    i > 0 ? getLoopRepeatCount(lines[i - 1]) : 1,
+                    i > 1 ? getLoopRepeatCount(lines[i - 2]) : 1
+                );
+                const totalCount = scannerCount * repeatCount;
+
+                for (let occurrence = 0; occurrence < totalCount; occurrence++) {
                     fields.push({
-                        label: label || 'Input',
+                        label: totalCount > 1 ? `${label || 'Input'} ${occurrence + 1}` : (label || 'Input'),
                         index: fields.length
                     });
                 }
