@@ -93,20 +93,38 @@ class UjianKodeService
         $start       = $request->input('start', 0);
         $length      = $request->input('length', 10);
 
-        $query = DB::table('v_ujian_kode')
-            ->where('id_mahasiswa', $idMahasiswa);
+        $query = DB::table('ujian_kode as uk')
+            ->leftJoin('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->leftJoin('soal as s', 'bsk.id_soal', '=', 's.id')
+            ->select(
+                'uk.id',
+                'uk.id_level',
+                'uk.id_bank_soal_konversi',
+                'bsk.id_soal',
+                'uk.id_mahasiswa',
+                's.judul as judul_soal',
+                'uk.jawaban',
+                'uk.output',
+                'uk.nilai',
+                'uk.waktu',
+                'uk.created_at',
+                'uk.updated_at',
+                'uk.deleted_at'
+            )
+            ->where('uk.id_mahasiswa', $idMahasiswa)
+            ->whereNull('uk.deleted_at');
 
         if (!empty($idLevel)) {
-            $query->where('id_level', $idLevel);
+            $query->where('uk.id_level', $idLevel);
         }
 
         if (!empty($idSoal)) {
-            $query->where('id_soal', $idSoal);
+            $query->where('bsk.id_soal', $idSoal);
         }
 
         $total = (clone $query)->count();
         $data  = (clone $query)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('uk.created_at', 'desc')
             ->offset($start)
             ->limit($length)
             ->get();
