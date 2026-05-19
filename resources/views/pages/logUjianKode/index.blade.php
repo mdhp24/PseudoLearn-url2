@@ -67,5 +67,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/logUjianKode/index.js') }}"></script>
+    <script src="{{ asset('js/logujiankode/index.js') }}"></script>
 @endpush

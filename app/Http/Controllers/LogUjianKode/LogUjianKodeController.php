@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Level;
 use App\Models\Kelas;
+use App\Models\Soal;
 use App\Models\Mahasiswa;
 use App\Models\BankSoalKonversi;
 use App\Models\UjianKode;
@@ -72,11 +73,11 @@ class LogUjianKodeController extends Controller
             ->setView('v_mahasiswa')
             ->where('id_user', $id)
             ->first();
-        $levelId   = request()->query('level');
-        $soalId    = request()->query('soal');
+        $levelId   = request()->query('level', request()->query('id_level'));
+        $soalId    = request()->query('soal', request()->query('id_soal'));
 
         $level = $levelId ? $this->levelModel->find($levelId) : null;
-        $soal  = $soalId  ? $this->bankSoalKonversiModel->find($soalId) : null;
+        $soal  = $soalId  ? Soal::find($soalId) : null;
 
         $list_level = $this->levelModel->orderBy('order', 'asc')->get(['id', 'name'])
             ->map(fn($item) => ['id' => $item->id, 'name' => $item->name])
@@ -90,7 +91,7 @@ class LogUjianKodeController extends Controller
             $ujianQuery->where('id_level', $levelId);
         }
         if (!empty($soalId)) {
-            $ujianQuery->where('id_bank_soal_konversi', $soalId);
+            $ujianQuery->where('id_soal', $soalId);
         }
 
         $totalSubmit    = (clone $ujianQuery)->count();
@@ -104,10 +105,13 @@ class LogUjianKodeController extends Controller
         );
 
         $dragQuery = $this->logUjianKodeModel
-            ->where('id_mahasiswa', $id);
+            ->newQuery()
+            ->from('log_ujian_kode as luk')
+            ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->where('luk.id_mahasiswa', $id);
 
-        if (!empty($levelId)) $dragQuery->where('id_level', $levelId);
-        if (!empty($soalId))  $dragQuery->where('id_bank_soal_konversi', $soalId);
+        if (!empty($levelId)) $dragQuery->where('luk.id_level', $levelId);
+        if (!empty($soalId))  $dragQuery->where('bsk.id_soal', $soalId);
 
         $totalDrag = (clone $dragQuery)->count();
 
@@ -163,23 +167,26 @@ class LogUjianKodeController extends Controller
     public function summaryStats(Request $request)
     {
         $idMahasiswa = $request->query('id_mahasiswa');
-        $idLevel     = $request->query('id_level');
-        $idSoal      = $request->query('id_soal');
+        $idLevel     = $request->query('id_level', $request->query('level'));
+        $idSoal      = $request->query('id_soal', $request->query('soal'));
 
         $ujianQuery = $this->ujianKodeModel->setView('v_ujian_kode')
             ->where('id_mahasiswa', $idMahasiswa);
 
         if (!empty($idLevel)) $ujianQuery->where('id_level', $idLevel);
-        if (!empty($idSoal))  $ujianQuery->where('id_bank_soal_konversi', $idSoal);
+        if (!empty($idSoal))  $ujianQuery->where('id_soal', $idSoal);
 
         $totalSubmit     = (clone $ujianQuery)->count();
         $totalWaktuDetik = (clone $ujianQuery)->sum('waktu');
 
         $dragQuery = $this->logUjianKodeModel
-            ->where('id_mahasiswa', $idMahasiswa);
+            ->newQuery()
+            ->from('log_ujian_kode as luk')
+            ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->where('luk.id_mahasiswa', $idMahasiswa);
 
-        if (!empty($idLevel)) $dragQuery->where('id_level', $idLevel);
-        if (!empty($idSoal))  $dragQuery->where('id_bank_soal_konversi', $idSoal);
+        if (!empty($idLevel)) $dragQuery->where('luk.id_level', $idLevel);
+        if (!empty($idSoal))  $dragQuery->where('bsk.id_soal', $idSoal);
 
         $totalDrag = $dragQuery->count();
 
@@ -198,8 +205,8 @@ class LogUjianKodeController extends Controller
     public function exportDetail(Request $request)
     {
         $idMahasiswa = $request->query('id_mahasiswa');
-        $idLevel     = $request->query('id_level');
-        $idSoal      = $request->query('id_soal');
+        $idLevel     = $request->query('id_level', $request->query('level'));
+        $idSoal      = $request->query('id_soal', $request->query('soal'));
 
         $filename = 'Log_Ujian_Kode_' . date('Y-m-d_H-i-s') . '.xlsx';
 

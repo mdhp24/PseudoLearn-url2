@@ -47,7 +47,7 @@ class UjianKodeService
                         ->whereNull('u.deleted_at');
 
                     if (!empty($level)) $sub->where('u.id_level', $level);
-                    if (!empty($soal))  $sub->where('u.id_bank_soal_konversi', $soal);
+                    if (!empty($soal))  $sub->where('u.id_soal', $soal);
                 });
             }
 

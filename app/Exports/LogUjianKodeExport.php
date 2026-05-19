@@ -28,18 +28,19 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
-        $query = DB::table('v_ujian_kode')
+        $query = DB::table('v_ujian_kode as uk')
             ->where('id_mahasiswa', $this->idMahasiswa)
-            ->whereNull('deleted_at');
+            ->whereNull('uk.deleted_at');
 
         if (!empty($this->idLevel)) {
-            $query->where('id_level', $this->idLevel);
+            $query->where('uk.id_level', $this->idLevel);
         }
         if (!empty($this->idSoal)) {
-            $query->where('id_bank_soal_konversi', $this->idSoal);
+            $query->join('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
+                ->where('bsk.id_soal', $this->idSoal);
         }
 
-        $data = $query->orderBy('created_at', 'desc')->get();
+        $data = $query->orderBy('uk.created_at', 'desc')->get();
 
         return $data->map(function ($row) {
             $row->drag_drop = DB::table('log_ujian_kode')
