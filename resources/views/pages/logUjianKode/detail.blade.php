@@ -138,7 +138,12 @@
 @endsection
 
 @push('scripts')
-    <script>
-{!! file_get_contents(public_path('js/logujiankode/detail.js')) !!}
-    </script>
+    @php($logUjianKodeDetailScript = public_path('js/logujiankode/detail.js'))
+    @if (is_file($logUjianKodeDetailScript))
+        <script>
+{!! file_get_contents($logUjianKodeDetailScript) !!}
+        </script>
+    @else
+        <script src="{{ asset('js/logujiankode/detail.js') }}"></script>
+    @endif
 @endpush
