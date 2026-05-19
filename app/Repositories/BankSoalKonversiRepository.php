@@ -190,6 +190,7 @@ class BankSoalKonversiRepository
             $soalInput  = $request->input('scanner_input', '');
 
             $safeSoalId = str_replace('-', '_', $soalId);
+            $className   = 'Main_' . $safeSoalId;
 
             // Gabungkan semua baris kode
             $rawJoined = collect($codes)
@@ -197,16 +198,12 @@ class BankSoalKonversiRepository
                 ->filter(fn($line) => $line !== null && trim($line) !== '')
                 ->implode("\n");
 
-            // Jika user paste full class, ambil isi main() saja
+            // Jika user paste full class, pertahankan seluruh source dan hanya sesuaikan nama class.
             $mainCode = '';
-            if (preg_match('/\bclass\b/i', $rawJoined) && preg_match('/\bmain\s*\(/i', $rawJoined)) {
-                $mainBody = $this->extractMainBody($rawJoined);
-                if (!empty($mainBody)) {
-                    foreach ($mainBody as $line) {
-                        $trimmedLine = rtrim($line);
-                        $mainCode .= ($trimmedLine === '' ? '' : ' ' . $trimmedLine) . "\n";
-                    }
-                }
+            $isFullClassSource = preg_match('/\bclass\s+[A-Za-z_][A-Za-z0-9_]*/i', $rawJoined) === 1;
+
+            if ($isFullClassSource) {
+                $mainCode = $this->renameJavaClassName($rawJoined, $className);
             } else {
                 foreach ($codes as $code) {
                     if (isset($code['value']) && trim($code['value']) !== '') {
@@ -279,14 +276,16 @@ class BankSoalKonversiRepository
             $importBlock = !empty($imports) ? implode("\n", $imports) . "\n\n" : '';
 
             // Rakit file Java final
-            $className = 'Main_' . $safeSoalId;
-
-            $javaCode = $importBlock
-                . 'public class ' . $className . ' {' . "\n"
-                . '    public static void main(String[] args) {' . "\n"
-                . $mainCode
-                . '    }' . "\n"
-                . '}' . "\n";
+            if ($isFullClassSource) {
+                $javaCode = $importBlock . $mainCode;
+            } else {
+                $javaCode = $importBlock
+                    . 'public class ' . $className . ' {' . "\n"
+                    . '    public static void main(String[] args) {' . "\n"
+                    . $mainCode
+                    . '    }' . "\n"
+                    . '}' . "\n";
+            }
 
             // Tulis file .java
             $dirPath = storage_path('app/java/' . $soalId);
@@ -325,6 +324,20 @@ class BankSoalKonversiRepository
         } catch (\Exception $e) {
             return BaseResponse::errorMessage($e->getMessage(), 500);
         }
+    }
+
+    protected function renameJavaClassName(string $javaCode, string $className): string
+    {
+        $updatedCode = preg_replace_callback(
+            '/\b((?:public\s+)?(?:abstract\s+|final\s+)?)class\s+[A-Za-z_][A-Za-z0-9_]*/i',
+            function ($matches) use ($className) {
+                return $matches[1] . 'class ' . $className;
+            },
+            $javaCode,
+            1
+        );
+
+        return $updatedCode ?? $javaCode;
     }
 
     protected function extractMainBody(string $javaCode): array
