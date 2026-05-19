@@ -67,5 +67,19 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/logujiankode/index.js') }}"></script>
+    @php
+        $logUjianKodeIndexScripts = [
+            public_path('js/logujiankode/index.js'),
+            public_path('js/logUjianKode/index.js'),
+        ];
+        $logUjianKodeIndexScript = collect($logUjianKodeIndexScripts)->first(fn ($path) => is_file($path));
+    @endphp
+
+    @if ($logUjianKodeIndexScript)
+        <script>
+{!! file_get_contents($logUjianKodeIndexScript) !!}
+        </script>
+    @else
+        <script src="{{ asset('js/logujiankode/index.js') }}"></script>
+    @endif
 @endpush
