@@ -9,7 +9,6 @@ use App\Models\Konversi;
 use App\Models\Mahasiswa;
 use App\Core\BaseResponse;
 use App\Models\Pencapaian;
-use Illuminate\Support\Str;
 use App\Models\DebugKonversi;
 use App\Models\UjianKonversi;
 use Illuminate\Support\Facades\DB;
@@ -247,23 +246,27 @@ class KonversiRepository extends BaseRepository
     public function getSoalByLevel($request)
     {
         $levelId = $request->query('level_id');
-
-        // Ambil id_soal yang sudah ada di tabel konversi
-        $usedSoalIds = $this->model->pluck('id_soal')->toArray();
-
-        // Jika ada request soal_id, ambil soal dengan id tersebut tanpa filter usedSoalIds
         $soalId = $request->query('soal_id');
+
+        $soalQuery = $this->soalModel
+            ->where('id_level', $levelId)
+            ->orderBy('order', 'asc');
+
         if (!empty($soalId)) {
-            $soal = $this->soalModel
-            ->where('id', $soalId)
-            ->where('id_level', $levelId)
-            ->get(['id', 'judul']);
+            $soal = (clone $soalQuery)
+                ->where('id', $soalId)
+                ->get(['id', 'judul']);
         } else {
-            // Ambil soal sesuai level, kecuali yang sudah ada di konversi
-            $soal = $this->soalModel
-            ->where('id_level', $levelId)
-            ->whereNotIn('id', $usedSoalIds)
-            ->get(['id', 'judul']);
+            // Coba tampilkan soal yang belum pernah dipakai lebih dulu.
+            // Jika semua soal pada level ini sudah terpakai, tetap tampilkan semua soal agar dropdown tidak kosong.
+            $usedSoalIds = $this->model->pluck('id_soal')->toArray();
+            $soal = (clone $soalQuery)
+                ->whereNotIn('id', $usedSoalIds)
+                ->get(['id', 'judul']);
+
+            if ($soal->isEmpty()) {
+                $soal = $soalQuery->get(['id', 'judul']);
+            }
         }
 
         return BaseResponse::json($soal);
