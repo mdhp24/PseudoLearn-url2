@@ -167,14 +167,18 @@ class KonversiRepository extends BaseRepository
             // Setelah membersihkan, lakukan penyesuaian tipe sederhana (casting) jika diperlukan
             $fixed = [];
             $varTypes = [];
+            // Hapus modifier yang tidak boleh ada di dalam method (mis. static/public/private)
+            $sanitized = array_map(function($l){
+                return preg_replace('/\b(static|public|private|protected|final|synchronized)\b\s*/', '', $l);
+            }, $filtered);
             // Step 1: ambil deklarasi variabel seperti "int x;"
-            foreach ($filtered as $line) {
+            foreach ($sanitized as $line) {
                 if (preg_match('/^(int|float|double)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;?$/', $line, $m)) {
                     $varTypes[$m[2]] = $m[1];
                 }
             }
             // Step 2: cek assignment dan tambahkan cast jika perlu
-            foreach ($filtered as $line) {
+            foreach ($sanitized as $line) {
                 if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+);$/', $line, $m)) {
                     $var = $m[1];
                     $expr = $m[2];
