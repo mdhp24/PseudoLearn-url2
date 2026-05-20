@@ -204,8 +204,17 @@
                                                 <div class="panel-header">Pseudocode</div>
                                                 <div class="panel-body">
                                                     @php
-                                                        $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
-                                                        $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
+                                                        $tipeDataList = collect(
+                                                            is_array($soal['kunci_tipe_data'])
+                                                                ? $soal['kunci_tipe_data']
+                                                                : json_decode($soal['kunci_tipe_data'], true)
+                                                        );
+
+                                                        $algoritmaList = collect(
+                                                            is_array($soal['kunci_algoritma'])
+                                                                ? $soal['kunci_algoritma']
+                                                                : json_decode($soal['kunci_algoritma'], true)
+                                                        );
                                                         $dataLangkah = 1;
 
                                                         // Filter algoritma yang punya data konversi = 1 (field bisa 'data_konversi' atau 'konversi')
@@ -246,7 +255,11 @@
                                                 <div class="code-box-input">Public class HitungBatasUmur{</div>
                                                 <div class="code-box-input">Public static void main(String[] args) {</div>
                                                 @php
-                                                    $jawabanList = collect(json_decode(is_string($konversi['jawaban']) ? $konversi['jawaban'] : json_encode($konversi['jawaban']), true));
+                                                    $jawabanList = collect(
+                                                        is_array($konversi['jawaban'])
+                                                            ? $konversi['jawaban']
+                                                            : json_decode($konversi['jawaban'], true)
+                                                    );
                                                     $totalLangkah = $jawabanList->count();
                                                 @endphp
 
@@ -353,21 +366,27 @@
             }, 1000);
         }
 
-        // Mulai timer saat pertama kali user mengetik di input
+        // Mulai timer saat interaksi pertama pada soal
         document.addEventListener('DOMContentLoaded', function () {
             // set tampilan awal 00:00:00
             updateTimerDisplay();
-            startTimer();
 
-            const container = document.querySelector('.input-panel');
-            if (container) {
-                container.addEventListener('input', function onFirstType(e) {
-                    if (e.target && e.target.matches('input[type="text"]')) {
-                        startTimer();
-                        container.removeEventListener('input', onFirstType);
-                    }
-                });
-            }
+            const startOnFirstInteraction = function (event) {
+                const isTextInput = event.type === 'input' && event.target && event.target.matches('input[type="text"]');
+                const isDragStart = event.type === 'dragstart' && event.target && event.target.closest && event.target.closest('.drag-item');
+                const isDrop = event.type === 'drop' && event.target && event.target.closest && (event.target.closest('.answer-box') || event.target.closest('.panel-body') || event.target.closest('.panel-body-algoritma'));
+
+                if (isTextInput || isDragStart || isDrop) {
+                    startTimer();
+                    document.removeEventListener('input', startOnFirstInteraction, true);
+                    document.removeEventListener('dragstart', startOnFirstInteraction, true);
+                    document.removeEventListener('drop', startOnFirstInteraction, true);
+                }
+            };
+
+            document.addEventListener('input', startOnFirstInteraction, true);
+            document.addEventListener('dragstart', startOnFirstInteraction, true);
+            document.addEventListener('drop', startOnFirstInteraction, true);
         });
         // ====== End timer logic ======
 

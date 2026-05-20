@@ -18,7 +18,7 @@ class BankSoalKonversi extends BaseModel
         'id',
         'id_level',
         'id_soal',
-        'order',
+        'difficulty',
         'jawaban',
         'output',
     ];
@@ -32,5 +32,76 @@ class BankSoalKonversi extends BaseModel
                 $model->id = (string) Str::uuid();
             }
         });
+    }
+
+    public static function parseJawabanLines($rawJawaban): array
+    {
+        if ($rawJawaban === null) {
+            return [];
+        }
+
+        if (is_array($rawJawaban)) {
+            $rawLines = $rawJawaban;
+        } else {
+            $text = trim((string) $rawJawaban);
+
+            if ($text === '') {
+                return [];
+            }
+
+            $decoded = json_decode($text, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $rawLines = $decoded;
+            } else {
+                $normalized = str_replace(["\r\n", "\r"], "\n", $text);
+                $rawLines = preg_split('/\n/', $normalized) ?: [];
+            }
+        }
+
+        $lines = [];
+
+        foreach ($rawLines as $line) {
+            $normalizedLine = static::extractJawabanLineValue($line);
+
+            if ($normalizedLine !== '') {
+                $lines[] = $normalizedLine;
+            }
+        }
+
+        return array_values($lines);
+    }
+
+    public static function linesMatch($expected, $actual): bool
+    {
+        return static::normalizeJawabanLine($expected) === static::normalizeJawabanLine($actual);
+    }
+
+    protected static function extractJawabanLineValue($line): string
+    {
+        if (is_array($line)) {
+            foreach ($line as $value) {
+                $normalized = static::extractJawabanLineValue($value);
+                if ($normalized !== '') {
+                    return $normalized;
+                }
+            }
+
+            return '';
+        }
+
+        if (is_object($line)) {
+            return static::extractJawabanLineValue((array) $line);
+        }
+
+        return static::normalizeJawabanLine($line);
+    }
+
+    protected static function normalizeJawabanLine($line): string
+    {
+        $line = str_replace("\xC2\xA0", ' ', (string) $line);
+        $line = trim($line);
+        $line = preg_replace('/\s+/u', ' ', $line);
+
+        return $line ?? '';
     }
 }

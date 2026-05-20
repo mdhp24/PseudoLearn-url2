@@ -6,6 +6,7 @@ use App\Models\BankSoalKonversi;
 use App\Core\BaseResponse;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 class BankSoalKonversiRepository
@@ -296,14 +297,18 @@ class BankSoalKonversiRepository
             $filePath = $dirPath . '/' . $className . '.java';
             file_put_contents($filePath, $javaCode);
 
-            // Jalankan langsung source file Java agar tidak bergantung pada javac di server.
-            // Java 11+ bisa mengeksekusi source file secara langsung.
-            $javaHome = env('JAVA_HOME', '');
-            $javaBin  = $javaHome
-                ? rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'java'
-                : 'java';
+            $javacPath = $this->resolveJavaToolPath('javac');
+            $javaPath  = $this->resolveJavaToolPath('java');
 
-            $process = new Process([$javaBin, basename($filePath)], $dirPath);
+            $compile = new Process([$javacPath, basename($filePath)], $dirPath);
+            $compile->setTimeout(15);
+            $compile->run();
+
+            if (!$compile->isSuccessful()) {
+                throw new ProcessFailedException($compile);
+            }
+
+            $process = new Process([$javaPath, '-cp', $dirPath, $className], $dirPath);
             $process->setTimeout(15);
             $process->setInput($soalInput); // input dari form ke Scanner
             $process->run();
@@ -315,6 +320,8 @@ class BankSoalKonversiRepository
             }
 
             $output = $process->getOutput();
+
+            @unlink($dirPath . '/' . $className . '.class');
 
             return BaseResponse::json([
                 'status' => true,
@@ -336,8 +343,71 @@ class BankSoalKonversiRepository
             $javaCode,
             1
         );
-
         return $updatedCode ?? $javaCode;
+    }
+
+    protected function resolveJavaToolPath(string $toolName): string
+    {
+        $toolName = trim($toolName);
+
+        $javaHome = getenv('JAVA_HOME') ?: getenv('JDK_HOME');
+        if (!empty($javaHome)) {
+            $javaHome = rtrim($javaHome, "\\/");
+
+            $candidates = [
+                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName . '.exe',
+                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName,
+            ];
+
+            foreach ($candidates as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        $commonRoots = [
+            'C:\\Program Files\\Java',
+            'C:\\Program Files\\Eclipse Adoptium',
+            'C:\\Program Files\\Microsoft',
+            'C:\\Program Files\\Amazon Corretto',
+            'C:\\Program Files (x86)\\Java',
+        ];
+
+        foreach ($commonRoots as $root) {
+            foreach (glob($root . '\\jdk*\\bin\\' . $toolName . '.exe') ?: [] as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        $where = Process::fromShellCommandline('where ' . $toolName);
+        $where->run();
+
+        if ($where->isSuccessful()) {
+            $paths = preg_split('/\r?\n/', trim($where->getOutput()));
+
+            foreach ($paths as $path) {
+                $path = trim((string) $path);
+
+                if ($path === '') {
+                    continue;
+                }
+
+                $normalizedPath = strtolower(str_replace('/', '\\', $path));
+
+                if (str_contains($normalizedPath, '\\oracle\\java\\javapath\\')) {
+                    continue;
+                }
+
+                if (file_exists($path)) {
+                    return $path;
+                }
+            }
+        }
+
+        return $toolName;
     }
 
     protected function extractMainBody(string $javaCode): array

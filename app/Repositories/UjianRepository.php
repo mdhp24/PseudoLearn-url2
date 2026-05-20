@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Prettus\Repository\Eloquent\BaseRepository;
+// use App\Models\ArsResult;
     
 /**
  * Class KelasRepository.
@@ -48,7 +49,7 @@ class UjianRepository extends BaseRepository
         $this->historyJawabanModel = new HistoryJawaban();
         $this->historyConfidenceModel = new HistoryConfidence();
         $this->labelSkorModel = new LabelSkor();
-        $this->chatbotAdaptiveLogModel = new ChatbotAdaptiveLog();
+        // $this->chatbotAdaptiveLogModel = new ChatbotAdaptiveLog();
     }
 
     /**
@@ -77,11 +78,12 @@ class UjianRepository extends BaseRepository
 
             $idMahasiswa = $this->mahasiswaModel->where('id_user', Auth::id())->value('id');
             $soal = $this->model->where('id', $request->input('soal_id'))->first();
-            $dataLevel = $this->levelModel->find($soal->id_level);
-
             if(!$soal){
+                DB::rollBack();
                 return BaseResponse::errorMessage('Soal tidak ditemukan');
             }
+
+            $dataLevel = $this->levelModel->find($soal->id_level);
 
             $jawaban = $request->input('jawaban', []);
             $jawabanTipe = $jawaban['tipe_data'] ?? [];
@@ -94,7 +96,6 @@ class UjianRepository extends BaseRepository
 
                 $clean = trim($raw);
 
-                // jika string diawali & diakhiri tanda kutip → hapus
                 if ((Str::startsWith($clean, '"') && Str::endsWith($clean, '"')) ||
                     (Str::startsWith($clean, "'") && Str::endsWith($clean, "'"))) {
                     $clean = substr($clean, 1, -1);
@@ -102,14 +103,12 @@ class UjianRepository extends BaseRepository
 
                 $decoded = json_decode($clean, true);
 
-                // kalau masih gagal, coba sekali lagi (data bisa escaped)
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $decoded = json_decode(stripslashes($clean), true);
                 }
 
                 return is_array($decoded) ? $decoded : [];
             };
-
 
             $kunciTipe = collect($decodeJson($soal->kunci_tipe_data))
                 ->filter(fn($r) => ($r['variabel'] ?? null) !== null)
@@ -120,7 +119,6 @@ class UjianRepository extends BaseRepository
                 ->values()
                 ->toArray();
 
-            // --- Bandingkan Tipe Data (urutan & nilai) ---
             $tipeMismatch = [];
             $isCorrectTipe = true;
             $tipeMismatchIndexes = [];
@@ -161,7 +159,6 @@ class UjianRepository extends BaseRepository
                         ];
                     }
 
-                    // Simpan history jawaban tipe data
                     $historyJawabanTipe[] = [
                         'id' => (string) Str::uuid(),
                         'id_level' => $soal->id_level,
@@ -179,7 +176,6 @@ class UjianRepository extends BaseRepository
                 }
             }
 
-            // --- Bandingkan Algoritma (urutan & langkah) ---
             $algoMismatch = [];
             $isCorrectAlgo = true;
 
@@ -212,7 +208,6 @@ class UjianRepository extends BaseRepository
                         ];
                     }
 
-                    // Simpan history jawaban algoritma
                     $historyJawabanAlgo[] = [
                         'id' => (string) Str::uuid(),
                         'id_level' => $soal->id_level,
@@ -244,7 +239,6 @@ class UjianRepository extends BaseRepository
                 'deleted_at' => null,
             ];
 
-            // Simpan history confidence
             $dataHistoryConfidence = [
                 'id_level' => $soal->id_level,
                 'id_soal' => $soal->id,
@@ -280,15 +274,6 @@ class UjianRepository extends BaseRepository
 
             DB::commit();
 
-            $submittedWaktu = $request->input('waktu', $request->input('timer'));
-
-            $this->syncAdaptiveRealtimeLogOnCorrectSubmit(
-                idMahasiswa: $idMahasiswa,
-                idSoal: (string) $soal->id,
-                totalWaktuDetik: (int) $submittedWaktu,
-                isCorrect: (bool) $isCorrectAll
-            );
-
             if($isCorrectAll) {
                 $ujianQuery = $this->ujianModel->setView('v_ujian')
                     ->where('id_mahasiswa', $idMahasiswa)
@@ -304,7 +289,6 @@ class UjianRepository extends BaseRepository
 
                 [$label, $skor] = $this->determineLabelAndScore($totalDrag, $totalWaktuDetik);
 
-                // Cek apakah sudah ada data
                 $existing = $this->labelSkorModel
                     ->where('id_level', $soal->id_level)
                     ->where('id_soal', $soal->id)
@@ -312,14 +296,12 @@ class UjianRepository extends BaseRepository
                     ->first();
 
                 if ($existing) {
-                    // Update jika sudah ada
                     $existing->update([
                         'label' => $label,
                         'skor' => $skor,
                         'updated_at' => now(),
                     ]);
                 } else {
-                    // Insert jika belum ada
                     $this->labelSkorModel->create([
                         'id' => (string) Str::uuid(),
                         'id_level' => $soal->id_level,
@@ -331,6 +313,20 @@ class UjianRepository extends BaseRepository
                         'updated_at' => now(),
                     ]);
                 }
+
+                // $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+                //     ->where('id_level', $soal->id_level)
+                //     ->where('id_soal', $soal->id)
+                //     ->first();
+
+                // if ($arsResult) {
+                //     $arsResult->update([
+                //         'pseudo_label'   => $label,
+                //         'pseudo_score'   => $skor,
+                //         'pseudo_langkah' => $totalDrag,      
+                //         'pseudo_durasi'  => $totalWaktuDetik,
+                //     ]);
+                // }
                     
                 if($label === 'Ideal' || $label === 'Normal'){
                         $dataPencapaianBadge = Pencapaian::where('id_mahasiswa', $idMahasiswa)
@@ -367,7 +363,6 @@ class UjianRepository extends BaseRepository
                 if ($nyawa->nyawa > 0) {
                     $nyawa->nyawa -= 1;
 
-                    // kalau nyawa belum penuh dan tidak ada timer → set regen
                     if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
                         $nyawa->next_regen_at = now()->addMinutes(10);
                     }
@@ -433,82 +428,82 @@ class UjianRepository extends BaseRepository
         return $text ?? '';
     }
 
-    private function syncAdaptiveRealtimeLogOnCorrectSubmit(string $idMahasiswa, string $idSoal, int $totalWaktuDetik, bool $isCorrect = true): void
-    {
-        /** @var ChatbotAdaptiveLog|null $adaptiveLog */
-        $adaptiveLog = ChatbotAdaptiveLog::query()
-            ->where('id_mahasiswa', $idMahasiswa)
-            ->where('id_soal', $idSoal)
-            ->orderBy('created_at', 'desc')
-            ->first();
+    // private function syncAdaptiveRealtimeLogOnCorrectSubmit(string $idMahasiswa, string $idSoal, int $totalWaktuDetik, bool $isCorrect = true): void
+    // {
+    //     /** @var ChatbotAdaptiveLog|null $adaptiveLog */
+    //     $adaptiveLog = ChatbotAdaptiveLog::query()
+    //         ->where('id_mahasiswa', $idMahasiswa)
+    //         ->where('id_soal', $idSoal)
+    //         ->orderBy('created_at', 'desc')
+    //         ->first();
 
-        if (!$adaptiveLog) {
-            return;
-        }
+    //     if (!$adaptiveLog) {
+    //         return;
+    //     }
 
-        $safeWaktuDetik = max(0, $totalWaktuDetik);
+    //     $safeWaktuDetik = max(0, $totalWaktuDetik);
 
-        $detail = $adaptiveLog->detail;
-        if (!is_array($detail)) {
-            $detail = [];
-        }
+    //     $detail = $adaptiveLog->detail;
+    //     if (!is_array($detail)) {
+    //         $detail = [];
+    //     }
 
-        $startAt = $adaptiveLog->waktu_mulai;
-        if (!$startAt && !empty($detail['attempt_start_at'])) {
-            try {
-                $startAt = Carbon::parse((string) $detail['attempt_start_at']);
-            } catch (\Throwable $e) {
-            }
-        }
+    //     $startAt = $adaptiveLog->waktu_mulai;
+    //     if (!$startAt && !empty($detail['attempt_start_at'])) {
+    //         try {
+    //             $startAt = Carbon::parse((string) $detail['attempt_start_at']);
+    //         } catch (\Throwable $e) {
+    //         }
+    //     }
 
-        if (!$startAt) {
-            $startAt = now()->subSeconds($safeWaktuDetik);
-        }
+    //     if (!$startAt) {
+    //         $startAt = now()->subSeconds($safeWaktuDetik);
+    //     }
 
-        $endAt = $startAt->copy()->addSeconds($safeWaktuDetik);
+    //     $endAt = $startAt->copy()->addSeconds($safeWaktuDetik);
 
-        $jumlahLangkah = $this->logDataModel->newQuery()
-            ->where('id_mahasiswa', $idMahasiswa)
-            ->where('id_soal', $idSoal)
-            ->whereBetween('created_at', [$startAt, $endAt])
-            ->count();
+    //     $jumlahLangkah = $this->logDataModel->newQuery()
+    //         ->where('id_mahasiswa', $idMahasiswa)
+    //         ->where('id_soal', $idSoal)
+    //         ->whereBetween('created_at', [$startAt, $endAt])
+    //         ->count();
 
-        $detail['attempt_start_at'] = $startAt->toDateTimeString();
-        $detail['submit_at'] = $endAt->toDateTimeString();
-        if ($isCorrect) {
-            $detail['submit_benar_at'] = $endAt->toDateTimeString();
-        } else {
-            $detail['submit_salah_at'] = $endAt->toDateTimeString();
-        }
+    //     $detail['attempt_start_at'] = $startAt->toDateTimeString();
+    //     $detail['submit_at'] = $endAt->toDateTimeString();
+    //     if ($isCorrect) {
+    //         $detail['submit_benar_at'] = $endAt->toDateTimeString();
+    //     } else {
+    //         $detail['submit_salah_at'] = $endAt->toDateTimeString();
+    //     }
 
-        // Store the submitted student time explicitly under a submit-specific key.
-        // Do not blindly overwrite `waktu_akses_detik` (popup access time) which
-        // represents chatbot popup open/close duration. Preserve existing
-        // `waktu_akses_detik` if present.
-        $detail['waktu_detik_submit'] = $safeWaktuDetik;
+    //     // Store the submitted student time explicitly under a submit-specific key.
+    //     // Do not blindly overwrite `waktu_akses_detik` (popup access time) which
+    //     // represents chatbot popup open/close duration. Preserve existing
+    //     // `waktu_akses_detik` if present.
+    //     $detail['waktu_detik_submit'] = $safeWaktuDetik;
 
-        // Update `waktu_detik` (used as the primary "waktu pengerjaan" value)
-        // to the student-submitted time so Log Adaptive shows the accurate
-        // per-question work duration.
-        $detail['waktu_detik'] = $safeWaktuDetik;
+    //     // Update `waktu_detik` (used as the primary "waktu pengerjaan" value)
+    //     // to the student-submitted time so Log Adaptive shows the accurate
+    //     // per-question work duration.
+    //     $detail['waktu_detik'] = $safeWaktuDetik;
 
-        // Preserve existing popup access duration if available (do not overwrite),
-        // otherwise fall back to submitted waktu.
-        if (empty($detail['waktu_akses_detik'])) {
-            $detail['waktu_akses_detik'] = $safeWaktuDetik;
-        }
+    //     // Preserve existing popup access duration if available (do not overwrite),
+    //     // otherwise fall back to submitted waktu.
+    //     if (empty($detail['waktu_akses_detik'])) {
+    //         $detail['waktu_akses_detik'] = $safeWaktuDetik;
+    //     }
 
-        $detail['waktu_detik_saat_close'] = $safeWaktuDetik;
+    //     $detail['waktu_detik_saat_close'] = $safeWaktuDetik;
 
-        $detail['jumlah_langkah'] = max(0, (int) $jumlahLangkah);
+    //     $detail['jumlah_langkah'] = max(0, (int) $jumlahLangkah);
 
-        $adaptiveLog->update([
-            'waktu_mulai' => $startAt,
-            'waktu_selesai' => $endAt,
-            'jumlah_langkah' => max(0, (int) $jumlahLangkah),
-            'detail' => $detail,
-        ]);
-    }
+    //     $adaptiveLog->update([
+    //         'waktu_mulai' => $startAt,
+    //         'waktu_selesai' => $endAt,
+    //         'jumlah_langkah' => max(0, (int) $jumlahLangkah),
+    //         'detail' => $detail,
+    //     ]);
+    // }
 
     public function sendLog($request)
     {
@@ -542,56 +537,56 @@ class UjianRepository extends BaseRepository
      * Simpan waktu pengerjaan dari beforeunload ke detail ChatbotAdaptiveLog.
      * Dipanggil fire-and-forget; tidak perlu melempar exception ke caller.
      */
-    public function saveTimer(string $soalId, int $waktuDetik): void
-    {
-        try {
-            $idMahasiswa = $this->mahasiswaModel->where('id_user', Auth::id())->value('id');
+    // public function saveTimer(string $soalId, int $waktuDetik): void
+    // {
+    //     try {
+    //         $idMahasiswa = $this->mahasiswaModel->where('id_user', Auth::id())->value('id');
 
-            if (!$idMahasiswa) {
-                return;
-            }
+    //         if (!$idMahasiswa) {
+    //             return;
+    //         }
 
-            /** @var ChatbotAdaptiveLog|null $adaptiveLog */
-            $adaptiveLog = $this->chatbotAdaptiveLogModel->newQuery()
-                ->where('id_mahasiswa', $idMahasiswa)
-                ->where('id_soal', $soalId)
-                ->orderBy('created_at', 'desc')
-                ->first();
+    //         /** @var ChatbotAdaptiveLog|null $adaptiveLog */
+    //         $adaptiveLog = $this->chatbotAdaptiveLogModel->newQuery()
+    //             ->where('id_mahasiswa', $idMahasiswa)
+    //             ->where('id_soal', $soalId)
+    //             ->orderBy('created_at', 'desc')
+    //             ->first();
 
-            if (!$adaptiveLog) {
-                return;
-            }
+    //         if (!$adaptiveLog) {
+    //             return;
+    //         }
 
-            $safeWaktu = max(0, $waktuDetik);
+    //         $safeWaktu = max(0, $waktuDetik);
 
-            $detail = $adaptiveLog->detail;
-            if (!is_array($detail)) {
-                $detail = [];
-            }
+    //         $detail = $adaptiveLog->detail;
+    //         if (!is_array($detail)) {
+    //             $detail = [];
+    //         }
 
-            // Hanya update jika waktu yang disimpan lebih besar dari sebelumnya
-            // (hindari menimpa data submit yang sudah benar)
-            $existing = (int) ($detail['waktu_detik_submit'] ?? $detail['waktu_detik'] ?? 0);
-            if ($safeWaktu <= $existing) {
-                return;
-            }
+    //         // Hanya update jika waktu yang disimpan lebih besar dari sebelumnya
+    //         // (hindari menimpa data submit yang sudah benar)
+    //         $existing = (int) ($detail['waktu_detik_submit'] ?? $detail['waktu_detik'] ?? 0);
+    //         if ($safeWaktu <= $existing) {
+    //             return;
+    //         }
 
-            $detail['waktu_detik_submit'] = $safeWaktu;
-            $detail['waktu_detik']        = $safeWaktu;
+    //         $detail['waktu_detik_submit'] = $safeWaktu;
+    //         $detail['waktu_detik']        = $safeWaktu;
 
-            if (empty($detail['waktu_akses_detik'])) {
-                $detail['waktu_akses_detik'] = $safeWaktu;
-            }
+    //         if (empty($detail['waktu_akses_detik'])) {
+    //             $detail['waktu_akses_detik'] = $safeWaktu;
+    //         }
 
-            // Sync columns for consistency
-            $updateData = ['detail' => $detail];
-            if ($adaptiveLog->waktu_mulai) {
-                $updateData['waktu_selesai'] = $adaptiveLog->waktu_mulai->copy()->addSeconds($safeWaktu);
-            }
+    //         // Sync columns for consistency
+    //         $updateData = ['detail' => $detail];
+    //         if ($adaptiveLog->waktu_mulai) {
+    //             $updateData['waktu_selesai'] = $adaptiveLog->waktu_mulai->copy()->addSeconds($safeWaktu);
+    //         }
 
-            $adaptiveLog->update($updateData);
-        } catch (\Throwable $e) {
-            // Fire-and-forget — jangan lempar exception
-        }
-    }
+    //         $adaptiveLog->update($updateData);
+    //     } catch (\Throwable $e) {
+    //         // Fire-and-forget — jangan lempar exception
+    //     }
+    // }
 }

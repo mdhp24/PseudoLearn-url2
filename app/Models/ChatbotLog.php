@@ -34,6 +34,6 @@ class ChatbotLog extends Model
 
     public function soal(): BelongsTo
     {
-        return $this->belongsTo(Soal::class, 'id_soal', 'id');
+        return $this->belongsTo(Soal::class, 'id_soal', 'id')->withTrashed();
     }
 }

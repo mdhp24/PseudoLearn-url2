@@ -1,7 +1,7 @@
 @php
     $isAdmin = Auth::check() && Auth::user()->is_admin;
     $isLogDataChatbotPage = request()->is('log-data-chatbot*');
-    $isLogChatbotAdaptivePage = request()->is('log-chatbot-adaptive*');
+    // $isLogChatbotAdaptivePage = request()->is('log-chatbot-adaptive*');
 @endphp
 
 @push('styles')
@@ -15,6 +15,7 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
             transform: translateY(-6px);
         }
+
         .sidebar-guide-btn {
             transition: box-shadow 0.2s, transform 0.2s;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
@@ -142,310 +143,302 @@
                         </button>
                     </div>
                 </div>
-            @endif
+                @endif
 
-            {{-- Menu untuk Admin/Dosen --}}
-            @if ($isAdmin)
-                <div class="menu-item">
-                    <div class="menu-heading text-uppercase fs-7 fw-bold">Menu</div>
-                    <div class="app-sidebar-separator separator my-2"></div>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('dashboard') ? ' active' : '' }}"
-                        href="{{ url('dashboard') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-home fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('dashboard') ? 'fw-bold' : 'fw-semibold' }}">Dashboard</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('log-activity*') ? ' active' : '' }}"
-                        href="{{ url('log-activity') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-tablet-text-up fs-2"></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data
-                            Log Aktivitas</span>
-                    </a>
-                </div>
-                <div
-                    class="menu-item menu-accordion {{ $isLogDataChatbotPage || $isLogChatbotAdaptivePage ? 'show' : '' }}">
-                    <span
-                        class="menu-link{{ $isLogDataChatbotPage ? ' active' : '' }}{{ $isLogChatbotAdaptivePage ? ' menu-link-no-hover' : '' }}"
-                        data-bs-toggle="collapse" data-bs-target="#submenu-chatbot"
-                        aria-expanded="{{ $isLogDataChatbotPage || $isLogChatbotAdaptivePage ? 'true' : 'false' }}"
-                        onclick="window.location='{{ url('log-data-chatbot') }}'">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-message-text-2 fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ $isLogDataChatbotPage ? 'fw-bold' : 'fw-semibold' }}">Log
-                            Data Chatbot</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="collapse {{ $isLogDataChatbotPage || $isLogChatbotAdaptivePage ? 'show' : '' }}"
-                        id="submenu-chatbot">
-                        <div class="menu-sub menu-sub-accordion">
-                            <div class="menu-item">
-                                <a class="menu-link{{ $isLogChatbotAdaptivePage ? ' active' : '' }}"
-                                    href="{{ url('log-chatbot-adaptive') }}">
-                                    <span class="menu-icon me-2">
-                                        <i class="ki-solid ki-message-edit fs-2"></i>
-                                    </span>
-                                    <span
-                                        class="menu-title {{ $isLogChatbotAdaptivePage ? 'fw-bold' : 'fw-semibold' }}">Log
-                                        Adaptive</span>
-                                </a>
-                            </div>
-                        </div>
+                {{-- Menu untuk Admin/Dosen --}}
+                @if ($isAdmin)
+                    <div class="menu-item">
+                        <div class="menu-heading text-uppercase fs-7 fw-bold">Menu</div>
+                        <div class="app-sidebar-separator separator my-2"></div>
                     </div>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('confidence*') ? ' active' : '' }}"
-                        href="{{ url('confidence') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-arrow-circle-left fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('confidence*') ? 'fw-bold' : 'fw-semibold' }}">Confidence
-                            Tag</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('overlapping*') ? ' active' : '' }}"
-                        href="{{ url('overlapping') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-chart fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('overlapping*') ? 'fw-bold' : 'fw-semibold' }}">Overlapping
-                            Analysis</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('labeling*') ? ' active' : '' }}"
-                        href="{{ url('labeling') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-flag fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('labeling*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
-                            Labeling</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('scoring*') ? ' active' : '' }}"
-                        href="{{ url('scoring') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-percentage fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('scoring*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
-                            Scoring</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('ujian-konversi*') ? ' active' : '' }}"
-                        href="{{ url('ujian-konversi') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-underlining fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('ujian-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Ujian
-                            Konversi</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('log-ujian-kode*') ? ' active' : '' }}"
-                        href="{{ url('log-ujian-kode') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-code fs-2"></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('log-ujian-kode*') ? 'fw-bold' : 'fw-semibold' }}">Log
-                            Ujian Kode</span>
-                    </a>
-                </div>
-                <div class="menu-item mt-5">
-                    <div class="menu-heading text-uppercase fs-7 fw-bold">Master</div>
-                    <div class="app-sidebar-separator separator my-2"></div>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('mahasiswa*') || request()->is('kelas*') ? ' active' : '' }}"
-                        href="{{ url('mahasiswa') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-user-square fs-2 "></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('mahasiswa*') || request()->is('kelas*') ? 'fw-bold' : 'fw-semibold' }}">Data
-                            Mahasiswa</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('level*') ? ' active' : '' }}" href="{{ url('level') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-category fs-2"></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('level*') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('soal*') ? ' active' : '' }}" href="{{ url('soal') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-text fs-2 "></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank
-                            Soal</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('konversi*') ? ' active' : '' }}"
-                        href="{{ url('konversi') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-arrow-mix fs-2 "></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal
-                            Konversi</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('bank-soal-konversi*') ? ' active' : '' }}"
-                        href="{{ url('bank-soal-konversi') }}">
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('dashboard') ? ' active' : '' }}"
+                            href="{{ url('dashboard') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-home fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('dashboard') ? 'fw-bold' : 'fw-semibold' }}">Dashboard</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('log-activity*') ? ' active' : '' }}"
+                            href="{{ url('log-activity') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-tablet-text-up fs-2"></i>
+                            </span>
+                            <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data
+                                Log Aktivitas</span>
+                        </a>
+                    </div>
+                    <div class="menu-item menu-accordion {{ $isLogDataChatbotPage ? 'show' : '' }}">
+                        <span class="menu-link{{ $isLogDataChatbotPage ? ' active' : '' }}"
+                            onclick="window.location='{{ url('log-data-chatbot') }}'">
 
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-book fs-2"></i>
-                        </span>
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-message-text-2 fs-2"></i>
+                            </span>
 
-                        <span
-                            class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">
-                            Bank Soal Konversi
+                            <span class="menu-title {{ $isLogDataChatbotPage ? 'fw-bold' : 'fw-semibold' }}">
+                                Log Data Chatbot
+                            </span>
+
                         </span>
-                    </a>
-                </div>
-                <div class="menu-item mt-5">
-                    <div class="menu-heading text-uppercase fs-7 fw-bold">Pengaturan</div>
-                    <div class="app-sidebar-separator separator my-2"></div>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('guide*') ? ' active' : '' }}" href="{{ url('guide') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-book-square fs-2 "></i>
-                        </span>
-                        <span
-                            class="menu-title {{ request()->is('guide') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
-                    </a>
-                </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('setting-admin*') ? ' active' : '' }}"
-                        href="{{ url('setting-admin') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-security-user fs-2 "></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('setting-admin') ? 'fw-bold' : 'fw-semibold' }}">Akun
-                            Admin</span>
-                    </a>
-                </div>
-            @endif
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('confidence*') ? ' active' : '' }}"
+                            href="{{ url('confidence') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-arrow-circle-left fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('confidence*') ? 'fw-bold' : 'fw-semibold' }}">Confidence
+                                Tag</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('overlapping*') ? ' active' : '' }}"
+                            href="{{ url('overlapping') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-chart fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('overlapping*') ? 'fw-bold' : 'fw-semibold' }}">Overlapping
+                                Analysis</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('labeling*') ? ' active' : '' }}"
+                            href="{{ url('labeling') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-flag fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('labeling*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
+                                Labeling</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('scoring*') ? ' active' : '' }}"
+                            href="{{ url('scoring') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-percentage fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('scoring*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
+                                Scoring</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('ujian-konversi*') ? ' active' : '' }}"
+                            href="{{ url('ujian-konversi') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-underlining fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('ujian-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Ujian
+                                Konversi</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('log-ujian-kode*') ? ' active' : '' }}"
+                            href="{{ url('log-ujian-kode') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-code fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('log-ujian-kode*') ? 'fw-bold' : 'fw-semibold' }}">Log
+                                Ujian Kode</span>
+                        </a>
+                    </div>
+                    {{-- <div class="menu-item">
+                        <a class="menu-link{{ request()->is('ars*') ? ' active' : '' }}" href="{{ url('ars') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-book-open fs-2"></i>
+                            </span>
+                            <span class="menu-title {{ request()->is('ars*') ? 'fw-bold' : 'fw-semibold' }}">ARS
+                                Report</span>
+                        </a>
+                    </div> --}}
+                    <div class="menu-item mt-5">
+                        <div class="menu-heading text-uppercase fs-7 fw-bold">Master</div>
+                        <div class="app-sidebar-separator separator my-2"></div>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('mahasiswa*') || request()->is('kelas*') ? ' active' : '' }}"
+                            href="{{ url('mahasiswa') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-user-square fs-2 "></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('mahasiswa*') || request()->is('kelas*') ? 'fw-bold' : 'fw-semibold' }}">Data
+                                Mahasiswa</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('level*') ? ' active' : '' }}" href="{{ url('level') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-category fs-2"></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('level*') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('soal*') ? ' active' : '' }}" href="{{ url('soal') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-text fs-2 "></i>
+                            </span>
+                            <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank
+                                Soal</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('konversi*') ? ' active' : '' }}"
+                            href="{{ url('konversi') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-arrow-mix fs-2 "></i>
+                            </span>
+                            <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal
+                                Konversi</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('bank-soal-konversi*') ? ' active' : '' }}"
+                            href="{{ url('bank-soal-konversi') }}">
+
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-book fs-2"></i>
+                            </span>
+
+                            <span
+                                class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">
+                                Bank Soal Konversi
+                            </span>
+                        </a>
+                    </div>
+                    <div class="menu-item mt-5">
+                        <div class="menu-heading text-uppercase fs-7 fw-bold">Pengaturan</div>
+                        <div class="app-sidebar-separator separator my-2"></div>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('guide*') ? ' active' : '' }}" href="{{ url('guide') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-book-square fs-2 "></i>
+                            </span>
+                            <span
+                                class="menu-title {{ request()->is('guide') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
+                        </a>
+                    </div>
+                    <div class="menu-item">
+                        <a class="menu-link{{ request()->is('setting-admin*') ? ' active' : '' }}"
+                            href="{{ url('setting-admin') }}">
+                            <span class="menu-icon me-2">
+                                <i class="ki-solid ki-security-user fs-2 "></i>
+                            </span>
+                            <span class="menu-title {{ request()->is('setting-admin') ? 'fw-bold' : 'fw-semibold' }}">Akun
+                                Admin</span>
+                        </a>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-</div>
 
-@push('scripts')
-    <script>
-        function toggleSidebarBookContainer() {
-            var bodyElement = document.getElementById('kt_app_body');
-            if (!bodyElement) {
-                return;
-            }
-
-            var isMinimized = bodyElement.getAttribute('data-kt-app-sidebar-minimize') === 'on';
-            var $bookContainer = $('.sidebar-book-container');
-
-            if (isMinimized) {
-                $bookContainer.addClass('d-none');
-            } else {
-                $bookContainer.removeClass('d-none');
-            }
-        }
-
-        $(document).ready(function() {
-            toggleSidebarBookContainer();
-
-            $(document).on('sidebar:minimize sidebar:maximize', function() {
-                toggleSidebarBookContainer();
-            });
-
-            var bodyElement = document.getElementById('kt_app_body');
-            if (bodyElement) {
-                const observer = new MutationObserver(toggleSidebarBookContainer);
-                observer.observe(bodyElement, {
-                    attributes: true,
-                    attributeFilter: ['data-kt-app-sidebar-minimize']
-                });
-            }
-
-            const $toggle = $('[data-bs-target="#submenu-chatbot"]');
-            const $collapse = $('#submenu-chatbot');
-
-            $toggle.on('click', function(e) {
-                e.stopPropagation();
-
-                if ($collapse.hasClass('collapsing')) {
+    @push('scripts')
+        <script>
+            function toggleSidebarBookContainer() {
+                var bodyElement = document.getElementById('kt_app_body');
+                if (!bodyElement) {
                     return;
                 }
 
-                if ($collapse.hasClass('show')) {
-                    $collapse.css('height', $collapse[0].scrollHeight + 'px');
-                    requestAnimationFrame(function() {
-                        $collapse.css({
+                var isMinimized = bodyElement.getAttribute('data-kt-app-sidebar-minimize') === 'on';
+                var $bookContainer = $('.sidebar-book-container');
+
+                if (isMinimized) {
+                    $bookContainer.addClass('d-none');
+                } else {
+                    $bookContainer.removeClass('d-none');
+                }
+            }
+
+            $(document).ready(function() {
+                toggleSidebarBookContainer();
+
+                $(document).on('sidebar:minimize sidebar:maximize', function() {
+                    toggleSidebarBookContainer();
+                });
+
+                var bodyElement = document.getElementById('kt_app_body');
+                if (bodyElement) {
+                    const observer = new MutationObserver(toggleSidebarBookContainer);
+                    observer.observe(bodyElement, {
+                        attributes: true,
+                        attributeFilter: ['data-kt-app-sidebar-minimize']
+                    });
+                }
+
+                const $toggle = $('[data-bs-target="#submenu-chatbot"]');
+                const $collapse = $('#submenu-chatbot');
+
+                $toggle.on('click', function(e) {
+                    e.stopPropagation();
+
+                    if ($collapse.hasClass('collapsing')) {
+                        return;
+                    }
+
+                    if ($collapse.hasClass('show')) {
+                        $collapse.css('height', $collapse[0].scrollHeight + 'px');
+                        requestAnimationFrame(function() {
+                            $collapse.css({
+                                height: '0px',
+                                overflow: 'hidden',
+                                transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                            });
+                        });
+
+                        $collapse.one('transitionend', function() {
+                            $collapse.removeClass('show').css({
+                                height: '',
+                                overflow: '',
+                                transition: ''
+                            });
+                        });
+                    } else {
+                        const targetHeight = $collapse.clone().css({
+                            position: 'absolute',
+                            visibility: 'hidden',
+                            display: 'block',
+                            height: 'auto'
+                        }).appendTo('body').outerHeight();
+
+                        $collapse.clone().remove();
+
+                        $collapse.addClass('show').css({
                             height: '0px',
                             overflow: 'hidden',
                             transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
                         });
-                    });
 
-                    $collapse.one('transitionend', function() {
-                        $collapse.removeClass('show').css({
-                            height: '',
-                            overflow: '',
-                            transition: ''
+                        requestAnimationFrame(function() {
+                            $collapse.css('height', targetHeight + 'px');
                         });
-                    });
-                } else {
-                    const targetHeight = $collapse.clone().css({
-                        position: 'absolute',
-                        visibility: 'hidden',
-                        display: 'block',
-                        height: 'auto'
-                    }).appendTo('body').outerHeight();
 
-                    $collapse.clone().remove();
-
-                    $collapse.addClass('show').css({
-                        height: '0px',
-                        overflow: 'hidden',
-                        transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-                    });
-
-                    requestAnimationFrame(function() {
-                        $collapse.css('height', targetHeight + 'px');
-                    });
-
-                    $collapse.one('transitionend', function() {
-                        $collapse.css({
-                            height: '',
-                            overflow: '',
-                            transition: ''
+                        $collapse.one('transitionend', function() {
+                            $collapse.css({
+                                height: '',
+                                overflow: '',
+                                transition: ''
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
 
-            $('.menu-sub .menu-link').on('mouseenter', function() {
-                $(this).css('transition', 'background-color 0.2s ease, padding-left 0.2s ease');
+                $('.menu-sub .menu-link').on('mouseenter', function() {
+                    $(this).css('transition', 'background-color 0.2s ease, padding-left 0.2s ease');
+                });
             });
-        });
-    </script>
-@endpush
+        </script>
+    @endpush

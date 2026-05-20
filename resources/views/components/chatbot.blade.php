@@ -519,52 +519,23 @@
 let chatbotOpen = false;
 let chatbotAccessId = null;
 const chatbotMessages = [];
-
-// Adaptive chatbot state
-let chatbotLowPerformance = false;
-let chatbotPerformanceLabel = null;
-let chatbotAdaptiveGuideSent = false;
-let chatbotPerformanceInterval = null;
-let chatbotAdaptiveActive = false; // true saat popup bimbingan adaptif mengunci layar
-let chatbotPerformanceTotalDrag = null;
-let chatbotPerformanceElapsed = null;
-const chatbotAdaptiveSoundSrc = @json(asset('assets/media/audio/sound_notif_chatbot_adaptive.mp3'));
-
-// Play sound ceting ketika chatbot adaptive muncul
-function playChatbotCetingSound() {
-    try {
-        const audio = new Audio(chatbotAdaptiveSoundSrc);
-        audio.preload = 'auto';
-        audio.volume = 1;
-        audio.play().catch((error) => {
-            console.error('Chatbot sound error:', error);
-        });
-    } catch (error) {
-        console.error('Chatbot sound error:', error);
-    }
-}
+const chatbotContextDefaults = {
+    idSoal: @json($id_soal ?? null),
+    idLevel: @json($id_level ?? null),
+};
     
 function openChatbotPopup(options = {}) {
-    const { playAdaptiveSound = false, adaptive = false } = options;
     const container = document.getElementById('chatbot-container');
     const overlay = document.getElementById('chatbot-overlay');
     const toggleBtn = document.getElementById('chatbot-toggle-btn');
     const headerIconWrapper = document.querySelector('.chatbot-header-icon-wrapper');
 
     chatbotOpen = true;
-    if (adaptive) {
-        chatbotAdaptiveActive = true;
-    }
     container.classList.remove('chatbot-hidden');
     container.classList.add('chatbot-visible');
     overlay.classList.remove('chatbot-hidden');
     overlay.classList.add('chatbot-visible');
-
-    if (chatbotAdaptiveActive) {
-        overlay.classList.add('chatbot-dim');
-    } else {
-        overlay.classList.remove('chatbot-dim');
-    }
+    overlay.classList.remove('chatbot-dim');
 
     // Tampilkan status aktif (hijau) pada logo/tombol ketika popup terbuka
     if (toggleBtn) {
@@ -576,10 +547,6 @@ function openChatbotPopup(options = {}) {
 
     logChatbotOpen();
 
-    if (playAdaptiveSound && !chatbotAdaptiveGuideSent) {
-        playChatbotCetingSound();
-    }
-
     if (chatbotMessages.length === 0) {
         sendWelcomeMessage();
     }
@@ -589,40 +556,10 @@ function openChatbotPopup(options = {}) {
     }, 300);
 }
 
-async function triggerAdaptiveGuidePopup() {
-    if (chatbotOpen) {
-        // Jika chatbot sudah terbuka, aktifkan mode adaptif: layar digelapkan & terkunci
-        chatbotAdaptiveActive = true;
-        const overlay = document.getElementById('chatbot-overlay');
-        overlay.classList.remove('chatbot-hidden');
-        overlay.classList.add('chatbot-visible', 'chatbot-dim');
-
-        if (chatbotAccessId) {
-            await logChatbotClose();
-        }
-
-        await logChatbotOpen('adaptive');
-
-        sendAdaptiveGuide();
-        return;
-    }
-
-    openChatbotPopup({ playAdaptiveSound: true, adaptive: true });
-
-    if (!chatbotAdaptiveGuideSent) {
-        sendAdaptiveGuide();
-    }
-}
-
 // Toggle chatbot visibility
 function toggleChatbot() {
     const container = document.getElementById('chatbot-container');
     const overlay   = document.getElementById('chatbot-overlay');
-
-    // Saat mode adaptif aktif, chatbot tidak boleh ditutup dengan klik tombol mengambang
-    if (chatbotAdaptiveActive) {
-        return;
-    }
 
     chatbotOpen = !chatbotOpen;
 
@@ -640,7 +577,6 @@ function closeChatbot() {
     const toggleBtn = document.getElementById('chatbot-toggle-btn');
     const headerIconWrapper = document.querySelector('.chatbot-header-icon-wrapper');
     chatbotOpen = false;
-    chatbotAdaptiveActive = false;
 
     container.classList.remove('chatbot-visible');
     container.classList.add('chatbot-hidden');
@@ -659,12 +595,8 @@ function closeChatbot() {
     logChatbotClose();
 }
 
-// Handler klik overlay: hanya menutup chatbot saat mode biasa (non-adaptif)
+// Handler klik overlay: menutup chatbot
 function handleChatbotOverlayClick() {
-    if (chatbotAdaptiveActive) {
-        // Mode adaptif: klik di luar tidak melakukan apa-apa
-        return;
-    }
     closeChatbot();
 }
 
@@ -679,143 +611,6 @@ function getExamElapsedSeconds() {
     }
 
     return 0;
-}
-
-// Check student performance periodically (synced with exam timer)
-async function checkPerformance() {
-    // Hanya cek jika timer sudah berjalan (mahasiswa sudah mulai drag pertama)
-    const elapsedSeconds = getExamElapsedSeconds();
-    if (elapsedSeconds <= 0) return;
-
-    const idSoal  = document.getElementById('id-soal')?.value;
-    const idLevel = document.getElementById('id-level')?.value;
-
-    if (!idSoal || !idLevel) return;
-
-    try {
-        const response = await fetch('/chatbot/check-performance', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept'      : 'application/json',
-            },
-            body: JSON.stringify({
-                id_soal:      idSoal,
-                id_level:     idLevel,
-                elapsed_time: elapsedSeconds,  // waktu pengerjaan real-time
-            }),
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.status === 'low_performance') {
-            chatbotLowPerformance   = true;
-            chatbotPerformanceLabel = data.label;
-            chatbotPerformanceTotalDrag = Number.isFinite(data.total_drag) ? Number(data.total_drag) : null;
-            chatbotPerformanceElapsed = Number.isFinite(data.total_waktu) ? Number(data.total_waktu) : elapsedSeconds;
-
-            // Langsung tampilkan pop up chatbot adaptive dan bunyikan suara ceting
-            if (!chatbotAdaptiveGuideSent) {
-                triggerAdaptiveGuidePopup();
-            }
-        } else {
-            chatbotLowPerformance   = false;
-            chatbotPerformanceLabel = data.label || null;
-            chatbotPerformanceTotalDrag = null;
-            chatbotPerformanceElapsed = null;
-        }
-    } catch (error) {
-        console.error('Performance check error:', error);
-    }
-}
-
-// Send adaptive guide automatically
-async function sendAdaptiveGuide() {
-    if (chatbotAdaptiveGuideSent) return;
-    chatbotAdaptiveGuideSent = true;
-
-    const idSoal  = document.getElementById('id-soal')?.value;
-    const idLevel = document.getElementById('id-level')?.value;
-    const elapsedSeconds = getExamElapsedSeconds();
-
-    if (!idSoal || !idLevel || !chatbotPerformanceLabel) return;
-
-    // Tampilkan pesan adaptif dari sistem sesuai kondisi performance
-    let labelText = '';
-    if (chatbotPerformanceLabel === 'Struggling') {
-        labelText = '😟 Sepertinya kamu mengalami kesulitan pada soal ini (banyak mencoba, waktu lama). Jangan khawatir, saya akan membantu menjelaskan konsepnya!';
-    } else if (chatbotPerformanceLabel === 'Gaming the System') {
-        labelText = '⚡ Sepertinya kamu sedang menebak-nebak (banyak mencoba, tapi terlalu cepat). Mari kita pahami konsep soal ini dengan lebih teliti!';
-    } else {
-        labelText = '💡 Saya akan memberikan bimbingan untuk membantu kamu!';
-    }
-
-    addBotMessage(`${labelText} Tenang, saya akan memberikan bimbingan bantuan penjelasan untuk membantumu! 💡\n\nMohon tunggu sebentar...`);
-
-    showTypingIndicator();
-
-    const adaptiveAccessId = await waitForAdaptiveAccessId();
-
-    try {
-        const response = await fetch('/chatbot/adaptive-guide', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept'      : 'application/json',
-            },
-            body: JSON.stringify({
-                id_soal:  idSoal,
-                id_level: idLevel,
-                label:    chatbotPerformanceLabel,
-                elapsed_time: Number.isFinite(chatbotPerformanceElapsed) ? chatbotPerformanceElapsed : elapsedSeconds,
-                total_drag: Number.isFinite(chatbotPerformanceTotalDrag) ? chatbotPerformanceTotalDrag : null,
-                access_id: adaptiveAccessId,
-            }),
-        });
-
-        const data = await response.json();
-        hideTypingIndicator();
-
-        if (data.success) {
-            addBotMessage(data.respons);
-            addBotMessage('Kamu bisa bertanya lebih lanjut jika masih ada yang belum dipahami! 😊');
-        } else {
-            addBotMessage('Maaf, saya belum bisa memberikan bimbingan saat ini. Silakan coba lagi.');
-        }
-    } catch (error) {
-        hideTypingIndicator();
-        addBotMessage('Maaf, terjadi kesalahan. Silakan ketik pertanyaanmu secara manual.');
-        console.error('Adaptive guide error:', error);
-    }
-}
-
-async function waitForAdaptiveAccessId(maxWaitMs = 1500) {
-    const intervalMs = 100;
-    let waitedMs = 0;
-
-    while (!chatbotAccessId && waitedMs < maxWaitMs) {
-        await new Promise((resolve) => setTimeout(resolve, intervalMs));
-        waitedMs += intervalMs;
-    }
-
-    return chatbotAccessId;
-}
-
-// Start performance monitoring — synced dengan waktu pengerjaan soal
-function startPerformanceMonitor() {
-    // Monitor cepat agar pencatatan adaptive mendekati real time.
-    const waitForTimer = setInterval(() => {
-        if (getExamElapsedSeconds() > 0) {
-            clearInterval(waitForTimer);
-            // Timer sudah mulai, mulai cek performa
-            // Cek pertama kali langsung
-            checkPerformance();
-            // Lalu cek berkala lebih rapat supaya tidak terlambat merekam waktu
-            chatbotPerformanceInterval = setInterval(checkPerformance, 1000);
-        }
-    }, 1000);
 }
 
 // Send welcome message
@@ -887,7 +682,7 @@ function handleChatbotKeypress(event) {
 }
 
 // Log chatbot open
-async function logChatbotOpen(typeOverride = null) {
+async function logChatbotOpen() {
     try {
         const response = await fetch('/chatbot/open', {
             method: 'POST',
@@ -896,9 +691,7 @@ async function logChatbotOpen(typeOverride = null) {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept'      : 'application/json',
             },
-            body: JSON.stringify({
-                type: typeOverride || (chatbotLowPerformance ? 'adaptive' : 'biasa'),
-            }),
+            body: JSON.stringify({}),
         });
         const data = await response.json();
         if (data.success) {
@@ -945,6 +738,9 @@ async function sendChatbotMessage() {
     showTypingIndicator();
 
     try {
+        const idSoal = document.getElementById('id-soal')?.value || chatbotContextDefaults.idSoal;
+        const idLevel = document.getElementById('id-level')?.value || chatbotContextDefaults.idLevel;
+
         const response = await fetch('/chatbot/send', {
             method: 'POST',
             headers: {
@@ -954,8 +750,8 @@ async function sendChatbotMessage() {
             },
             body: JSON.stringify({
                 message  : message,
-                id_soal  : '{{ $id_soal ?? "" }}' || null,
-                id_level : '{{ $id_level ?? "" }}' || null,
+                id_soal  : idSoal || null,
+                id_level : idLevel || null,
                 access_id: chatbotAccessId || null,
             }),
         });
@@ -980,8 +776,8 @@ async function sendChatbotMessage() {
     }
 }
 
-// Mulai monitoring performa saat halaman dimuat
+// Chatbot initialization
 document.addEventListener('DOMContentLoaded', function() {
-    startPerformanceMonitor();
+    // Chatbot ready - no automatic monitoring needed for biasa (regular) chatbot
 });
 </script>

@@ -2,6 +2,12 @@
 // var blockUI = new KTBlockUI(target);
 var APP_URL = window.APP_URL || "/";
 
+function releaseBlockUIIfAvailable() {
+    if (typeof blockUI !== 'undefined' && blockUI && typeof blockUI.release === 'function') {
+        blockUI.release();
+    }
+}
+
 function clearMismatchHighlights() {
     document.querySelectorAll('.answer-box.wrong').forEach((box) => {
         box.classList.remove('wrong');
@@ -131,7 +137,7 @@ function submitForm(confidence) {
         },
         error: function (xhr) {
             if (pausedForSubmit) UjianTimer.resume();
-            blockUI.release();
+            releaseBlockUIIfAvailable();
             Swal.fire({
                 text:
                     xhr.responseJSON?.message ||
@@ -270,26 +276,10 @@ const UjianTimer = (function () {
     }
 
     function init() {
-        // Saat masuk dari navigasi baru, reset timer agar tidak mewarisi sesi lama.
-        if (_getNavigationType() === 'navigate') {
-            _clearStoredState();
-        }
-
-        // Load data lama jika ada
-        const savedAcc = localStorage.getItem(_STORAGE_ACC);
-        if (savedAcc !== null) {
-            _accumulatedSec = parseInt(savedAcc, 10) || 0;
-        }
-
-        // Render nilai awal
+        // Setiap sesi halaman baru dimulai dari nol.
+        _clearStoredState();
+        _accumulatedSec = 0;
         _render(_accumulatedSec);
-
-        // Jika sebelumnya sedang jalan (misal: reload mendadak), otomatis lanjut
-        if (localStorage.getItem(_STORAGE_STATE) === 'running') {
-            start();
-        }
-
-        window.addEventListener('beforeunload', _onBeforeUnload);
     }
 
     function start() {
