@@ -232,10 +232,20 @@
                     <input type="text" class="form-control" value="${safe}" readonly>
                 </div>
                 `);
-                // Tampilkan clue jika tersedia (baik teks clue ataupun flag)
-                if (entry.data.clue && entry.data.clue !== '0') {
-                    const clueText = String(entry.data.clue).trim();
-                    if (clueText !== '') {
+                // Tampilkan clue pada admin (support flag 0/1 dan teks clue)
+                const rawClue = entry.data.clue;
+                const clueText = rawClue === null || typeof rawClue === 'undefined' ? '' : String(rawClue).trim();
+                const clueEnabled = rawClue === 1 || rawClue === '1' || rawClue === true || (clueText !== '' && clueText !== '0');
+
+                if (clueEnabled) {
+                    const isFlagOnly = clueText === '1' || clueText.toLowerCase() === 'true';
+                    if (isFlagOnly) {
+                        kunciWrap.append(`
+                            <div class="mb-3">
+                                <small class="text-primary fw-semibold">Clue: Aktif</small>
+                            </div>
+                        `);
+                    } else {
                         const safeClue = clueText
                             .replace(/&/g,'&amp;')
                             .replace(/</g,'&lt;')
@@ -244,7 +254,7 @@
                             .replace(/'/g,'&#39;');
                         kunciWrap.append(`
                             <div class="mb-3">
-                                <small class="text-muted">Clue: ${safeClue}</small>
+                                <small class="text-primary fw-semibold">Clue: ${safeClue}</small>
                             </div>
                         `);
                     }
