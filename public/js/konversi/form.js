@@ -42,13 +42,6 @@ initFormValidation = () => {
                             message: 'Bobot harus angka'
                         }
                     }
-                },
-                output: {
-                    validators: {
-                        notEmpty: {
-                            message: 'Output Harus terisi'
-                        }
-                    }
                 }
             },
             plugins: {
@@ -82,16 +75,6 @@ initFormValidation = () => {
 };
 
 saveKonversi = () => {
-    if($('#output').val().trim() === '') {
-        Swal.fire({
-            icon: 'warning',
-            text: 'Output Harus dijalankan',
-            confirmButtonText: 'OK',
-            customClass: { confirmButton: 'btn btn-primary' }
-        });
-        return;
-    }
-
     // Ambil semua input jawaban (kolom kanan)
     const inputs = $('#col-input').find('input[name="jawaban[]"]');
     let filled = 0;
@@ -102,7 +85,18 @@ saveKonversi = () => {
     if (inputs.length > 0 && filled === 0) {
         Swal.fire({
             icon: 'warning',
-            text: 'Mohon isi minimal satu jawaban.',
+            text: 'Mohon isi minimal satu baris Konversi Kode.',
+            confirmButtonText: 'OK',
+            customClass: { confirmButton: 'btn btn-primary' }
+        });
+        return;
+    }
+
+    const outputValue = $('#output').val().trim();
+    if (outputValue === '' && filled === 0) {
+        Swal.fire({
+            icon: 'warning',
+            text: 'Isi Konversi Kode terlebih dahulu atau jalankan konversi agar output terbentuk.',
             confirmButtonText: 'OK',
             customClass: { confirmButton: 'btn btn-primary' }
         });
