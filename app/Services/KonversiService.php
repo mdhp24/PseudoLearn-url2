@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Core\BaseResponse;
-// use Illuminate\Support\Facades\DB; // not used
 use App\Repositories\KonversiRepository;
 use App\Models\Konversi as KonversiModel;
 
@@ -56,7 +55,8 @@ class KonversiService
 
         // Jika kompilasi/eksekusi berhasil, simpan record konversi agar tampil pada halaman admin/siswa
         try {
-            if (!empty($javaOutput) || (is_array($runData) && ($runData['status'] ?? false) )) {
+            $runSuccess = is_array($runData) && (($runData['status'] ?? false) === true);
+            if ($runSuccess || $javaOutput !== '') {
                 $soalId = $request->input('soal_id');
                 $levelId = $request->input('level_id');
                 $bobot = (int)$request->input('bobot', 0);
@@ -90,6 +90,7 @@ class KonversiService
                     'status' => true,
                     'message' => 'Konversi dijalankan dan disimpan.',
                     'konversi' => $konv,
+                    'output' => $javaOutput,
                     'java_output' => $javaOutput
                 ]);
             }

@@ -224,13 +224,14 @@ runKonversi = () => {
         data: payload,
         success: function (res) {
             blockUI.release();
-            // Asumsikan backend return { output: '...' }
-            const out = res.output || 'Tidak ada output.';
-            $('#output').val(out);
+            // Dukungan beberapa bentuk response: {output}, {java_output}, {data:{output}}
+            const out = (res && (res.output || res.java_output || (res.data && res.data.output))) || '';
+            const shownOutput = out.trim() !== '' ? out : 'Program berhasil dijalankan tanpa output.';
+            $('#output').val(shownOutput);
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil Dijalankan',
-                html: `<pre style="white-space:pre-wrap;">${out}</pre>`,
+                html: `<pre style="white-space:pre-wrap;">${shownOutput}</pre>`,
                 confirmButtonText: 'OK',
                 customClass: { confirmButton: 'btn btn-primary' }
             });

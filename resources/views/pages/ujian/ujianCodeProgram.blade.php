@@ -108,6 +108,15 @@
             text-align: center;
         }
 
+        .clue-box {
+            background: #eef3ff;
+            color: #25408f;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
         .code-box-input {
             background-color: #0a3a71;
             color: white;
@@ -206,13 +215,6 @@
                                                         $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
                                                         $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
                                                         $dataLangkah = 1;
-
-                                                        // Filter algoritma yang punya data konversi = 1 (field bisa 'data_konversi' atau 'konversi')
-                                                        $algoritmaTerpilih = $algoritmaList->filter(function($row){
-                                                            if (isset($row['data_konversi'])) return (int)$row['data_konversi'] === 1;
-                                                            if (isset($row['konversi'])) return (int)$row['konversi'] === 1;
-                                                            return false;
-                                                        });
                                                     @endphp
 
                                                     {{-- Langkah: Tipe Data --}}
@@ -226,12 +228,15 @@
                                                         @endif
                                                     @endforeach
 
-                                                    {{-- Langkah: Algoritma dengan konversi = 1 --}}
-                                                    @foreach($algoritmaTerpilih as $item)
+                                                    {{-- Langkah: Seluruh algoritma agar sinkron dengan input konversi manual --}}
+                                                    @foreach($algoritmaList as $item)
                                                         <div class="step-title">Langkah {{ $dataLangkah }}</div>
                                                         <div class="code-box">
                                                             {{ $item['langkah'] }}
                                                         </div>
+                                                        @if(!empty($item['clue']) && $item['clue'] !== '0')
+                                                            <div class="clue-box">Clue: {{ $item['clue'] }}</div>
+                                                        @endif
                                                         @php $dataLangkah++; @endphp
                                                     @endforeach
                                                 </div>
@@ -242,8 +247,8 @@
                                             <div class="input-panel">
                                                 <div class="input-header">Input Kode Java</div>
                                                 <div class="input-body">
-                                                <div class="code-box-input">Public class HitungBatasUmur{</div>
-                                                <div class="code-box-input">Public static void main(String[] args) {</div>
+                                                <div class="code-box-input">public class Main {</div>
+                                                <div class="code-box-input">public static void main(String[] args) {</div>
                                                 @php
                                                     $jawabanList = collect(json_decode(is_string($konversi['jawaban']) ? $konversi['jawaban'] : json_encode($konversi['jawaban']), true));
                                                     $totalLangkah = $jawabanList->count();
@@ -251,7 +256,7 @@
 
                                                 @for($i = 1; $i <= $totalLangkah; $i++)
                                                     <div class="mb-2"><strong>Langkah {{ $i }}</strong></div>
-                                                    <input type="text" class="form-control mb-3" placeholder="Masukan kode java untuk langkah ini">
+                                                    <input type="text" class="form-control mb-3" placeholder="Ketik kode Java untuk Langkah {{ $i }}">
                                                 @endfor
 
                                                 <div class="code-box-input">}</div>
