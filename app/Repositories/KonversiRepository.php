@@ -139,49 +139,61 @@ class KonversiRepository extends BaseRepository
             $mainCode = "";
             foreach ($codes as $code) {
                 if (isset($code['value']) && trim($code['value']) !== '') {
-                    $mainCode .= "        " . $code['value'] . "\n";
+                    $mainCode .= $code['value'] . "\n";
                 }
             }
-    
-            $lines = explode("\n", $mainCode);
+
+            // Bersihkan kode: hilangkan deklarasi kelas, method main, paket/import, dan kurung kurawal tunggal
+            $lines = preg_split('/\r?\n/', $mainCode);
+            $filtered = [];
+            foreach ($lines as $line) {
+                $trim = trim($line);
+                if ($trim === '') continue;
+                // hapus package/import
+                if (preg_match('/^(package|import)\b/', $trim)) continue;
+                // hapus deklarasi class / interface / enum
+                if (preg_match('/\b(class|interface|enum)\b/', $trim)) continue;
+                // hapus deklarasi main method
+                if (preg_match('/public\s+static\s+void\s+main\s*\(/', $trim)) continue;
+                // hapus baris yang hanya berisi { atau }
+                if ($trim === '{' || $trim === '}') continue;
+
+                // jika ada tanda pembuka kurung di akhir baris (misal: "public void foo(){"),
+                // abaikan baris tersebut karena bukan statement yang diharapkan
+                if (preg_match('/\)\s*\{$/', $trim)) continue;
+
+                $filtered[] = $trim;
+            }
+
+            // Setelah membersihkan, lakukan penyesuaian tipe sederhana (casting) jika diperlukan
             $fixed = [];
             $varTypes = [];
-            
-            // Step 1: ambil deklarasi variabel
-            foreach ($lines as $line) {
-                $trim = trim($line);
-            
-                // cocokkan deklarasi, misal: int uang_bayar;  float pajak_jual;
-                if (preg_match('/^(int|float|double)\s+([a-zA-Z_][a-zA-Z0-9_]*)/', $trim, $m)) {
-                    $varTypes[$m[2]] = $m[1]; // simpan "uang_bayar" => "int"
+            // Step 1: ambil deklarasi variabel seperti "int x;"
+            foreach ($filtered as $line) {
+                if (preg_match('/^(int|float|double)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;?$/', $line, $m)) {
+                    $varTypes[$m[2]] = $m[1];
                 }
             }
-            
             // Step 2: cek assignment dan tambahkan cast jika perlu
-            foreach ($lines as $line) {
-                $trim = trim($line);
-            
-                if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+);$/', $trim, $m)) {
+            foreach ($filtered as $line) {
+                if (preg_match('/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+);$/', $line, $m)) {
                     $var = $m[1];
                     $expr = $m[2];
-            
                     if (isset($varTypes[$var])) {
                         $targetType = $varTypes[$var];
-            
                         if ($targetType === 'int') {
-                            $line = "        $var = (int)($expr);";
+                            $line = "$var = (int)($expr);";
                         } elseif ($targetType === 'float') {
-                            $line = "        $var = (float)($expr);";
+                            $line = "$var = (float)($expr);";
                         } elseif ($targetType === 'double') {
-                            $line = "        $var = (double)($expr);";
+                            $line = "$var = (double)($expr);";
                         }
                     }
                 }
-            
                 $fixed[] = $line;
             }
-            
-            $mainCode = implode("\n", $fixed);
+
+            $mainCode = implode("\n                    ", $fixed);
 
             // Buat kode java lengkap
             $javaCode = <<<EOD

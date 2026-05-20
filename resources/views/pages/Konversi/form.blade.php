@@ -346,7 +346,7 @@
 
             $('#id_konversi').val(existing.id);
             // Set level select (tanpa trigger clear manual)
-            $('#level_id').val(existing.id_level).trigger('change.select2');
+            $('#level_id').val(existing.id_level).trigger('change.select2').trigger('change');
         
             // Muat daftar soal sesuai level, pilih soal yang cocok
             $.ajax({
@@ -362,38 +362,12 @@
                         $('#soal_id').append(`<option value="${s.id}" ${s.id === existing.id_soal ? 'selected':''}>${s.judul}</option>`);
                     });
         
-                    // Ambil detail soal untuk render kunci
-                    $.ajax({
-                        url: APP_URL + 'soal/' + existing.id_soal,
-                        type: 'GET',
-                        success: function(detail) {
-                            if (soalEditor) soalEditor.setData(detail.soal || '');
-                            renderKonversi(detail); // ini membuat baris dasar kosong
-        
-                            // Isi bobot & output lama
-                            $('#bobot').val(existing.bobot ?? 0);
-                            $('#output').val(existing.output ?? '');
-        
-                            // Flatten jawaban lama (array of object { "1": "code..." })
-                            const oldAnswers = Array.isArray(existing.jawaban)
-                                ? existing.jawaban.map(o => {
-                                    if(!o) return '';
-                                    const key = Object.keys(o)[0];
-                                    return o[key] ?? '';
-                                })
-                                : [];
-        
-                            // Prefill ke baris dasar terlebih dahulu
-                            const baseInputs = $('#col-input').find('input[name="jawaban[]"]');
-                            oldAnswers.forEach((val, idx) => {
-                                if (idx < baseInputs.length) {
-                                    $(baseInputs[idx]).val(val);
-                                } else {
-                                    addExtraKonversiRowWithValue(val);
-                                }
-                            });
-                        }
-                    });
+                    // Setelah mengisi opsi, pilih soal yang sesuai dan trigger change
+                    $('#soal_id').val(existing.id_soal).trigger('change');
+
+                    // Isi bobot & output lama (akan diisi lagi setelah renderKonversi)
+                    $('#bobot').val(existing.bobot ?? 0);
+                    $('#output').val(existing.output ?? '');
                 }
             });
         }

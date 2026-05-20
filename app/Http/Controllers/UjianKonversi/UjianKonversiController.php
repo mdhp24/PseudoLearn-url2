@@ -69,7 +69,7 @@ class UjianKonversiController extends Controller
             ];
         })->values()->toArray();
 
-        return view('pages.ujianKonversi.index', [
+        return view('pages.ujiankonversi.index', [
             'title' => 'Ujian Konversi',
             'list_kelas' => $list_kelas,
             'list_level' => $list_level
@@ -104,7 +104,7 @@ class UjianKonversiController extends Controller
 
         $soalKonversi = $this->konversiModel->where('id_soal', $soalId)->first();
 
-        return view('pages.ujianKonversi.detail', [
+        return view('pages.ujiankonversi.detail', [
             'mahasiswa' => $mahasiswa,
             'level' => $level,
             'soal' => $soal,
@@ -148,7 +148,7 @@ class UjianKonversiController extends Controller
         // Ambil data debug konversi terkait
         $debugKonversi = $this->debugKonversiModel->where('id_ujian_konversi', $konversi->id)->first();
 
-        return view('pages.ujianKonversi.detailKonversi', [
+        return view('pages.ujiankonversi.detailKonversi', [
             'konversi'      => $konversi,
             'soal'          => $soal,
             'debugKonversi' => $debugKonversi,
