@@ -198,14 +198,10 @@ class KonversiRepository extends BaseRepository
 
             $mainCode = implode("\n                    ", $fixed);
 
-            // Buat kode java lengkap
-            $javaCode = <<<EOD
-            public class Main_$safeSoalId {
-                public static void main(String[] args) {
-                    $mainCode
-                }
-            }
-            EOD;
+            // Jika user mengirimkan kode Java lengkap (mengandung class atau main),
+            // jangan bungkus ulang — simpan persis seperti yang dikirim dan gunakan
+            // nama kelas yang ada. Ini menghindari nested-class syntax errors.
+            $containsClass = preg_match('/\bclass\b/i', $mainCode) || preg_match('/public\s+static\s+void\s+main\s*\(/i', $mainCode);
 
             // Tentukan path file sementara
             $dirPath = storage_path("app/java/$soalId");
@@ -213,8 +209,30 @@ class KonversiRepository extends BaseRepository
                 mkdir($dirPath, 0777, true);
             }
 
-            $filePath = $dirPath . "/Main_$safeSoalId.java";
-            file_put_contents($filePath, $javaCode);
+            if ($containsClass) {
+                // Coba ekstrak nama kelas pertama yang dideklarasikan
+                $className = 'Main_' . $safeSoalId;
+                if (preg_match('/class\s+([A-Za-z_][A-Za-z0-9_]*)/', $mainCode, $m)) {
+                    $className = $m[1];
+                }
+
+                $filePath = $dirPath . "/{$className}.java";
+                // Simpan kode apa adanya
+                file_put_contents($filePath, $mainCode);
+            } else {
+                // Buat kode java lengkap (wrap di dalam class Main_...)
+                $javaCode = <<<EOD
+                public class Main_$safeSoalId {
+                    public static void main(String[] args) {
+                        $mainCode
+                    }
+                }
+                EOD;
+
+                $filePath = $dirPath . "/Main_$safeSoalId.java";
+                file_put_contents($filePath, $javaCode);
+                $className = "Main_$safeSoalId";
+            }
 
             // Compile Java
             $compile = new Process(['javac', $filePath], $dirPath);
@@ -223,8 +241,8 @@ class KonversiRepository extends BaseRepository
                 throw new ProcessFailedException($compile);
             }
 
-            // Jalankan Java
-            $process = new Process(['java', '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
+            // Jalankan Java (gunakan className yang ditentukan sebelumnya)
+            $process = new Process(['java', '-cp', $dirPath, $className], $dirPath);
             $process->run();
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
@@ -233,7 +251,7 @@ class KonversiRepository extends BaseRepository
             $output = $process->getOutput();
 
             // Hapus file class jika berhasil
-            @unlink($dirPath . "/Main_$safeSoalId.class");
+            @unlink($dirPath . "/{$className}.class");
 
             $output = [
                 'status' => true,
