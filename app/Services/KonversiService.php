@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Core\BaseResponse;
-use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\DB; // not used
 use App\Repositories\KonversiRepository;
+use App\Models\Konversi as KonversiModel;
 
 class KonversiService
 {
@@ -39,8 +40,66 @@ class KonversiService
 
     public function runKonversi($request)
     {
-        $data = $this->konversiRepository->runJavaCode($request);
-        return $data;
+        // Jalankan kompilasi/eksekusi Java terlebih dahulu
+        $runResponse = $this->konversiRepository->runJavaCode($request);
+
+        // Ambil data dari JsonResponse/Response object
+        $runData = $runResponse instanceof \Illuminate\Http\JsonResponse ? $runResponse->getData(true) : (is_array($runResponse) ? $runResponse : []);
+
+        // Normalisasi output
+        $javaOutput = '';
+        if (is_array($runData)) {
+            $javaOutput = $runData['data']['output'] ?? ($runData['output'] ?? '');
+        } elseif (is_object($runData)) {
+            $javaOutput = $runData->data->output ?? ($runData->output ?? '');
+        }
+
+        // Jika kompilasi/eksekusi berhasil, simpan record konversi agar tampil pada halaman admin/siswa
+        try {
+            if (!empty($javaOutput) || (is_array($runData) && ($runData['status'] ?? false) )) {
+                $soalId = $request->input('soal_id');
+                $levelId = $request->input('level_id');
+                $bobot = (int)$request->input('bobot', 0);
+
+                // Normalisasi codes => jawaban structured
+                $codes = $request->input('codes', []);
+                $jawabanStructured = [];
+                $inc = 1;
+                foreach ($codes as $c) {
+                    $val = is_array($c) ? ($c['value'] ?? '') : $c;
+                    if (trim((string)$val) === '') { $inc++; continue; }
+                    $jawabanStructured[] = [ $inc => $val ];
+                    $inc++;
+                }
+
+                $payload = [
+                    'id_level' => $levelId,
+                    'id_soal' => $soalId,
+                    'jawaban' => $jawabanStructured,
+                    'output' => $javaOutput,
+                    'bobot' => $bobot,
+                ];
+
+                // Upsert berdasarkan id_soal agar tidak berganda
+                $konvModel = new KonversiModel();
+                $konv = $konvModel->updateOrCreate([
+                    'id_soal' => $soalId
+                ], $payload);
+
+                return BaseResponse::json([
+                    'status' => true,
+                    'message' => 'Konversi dijalankan dan disimpan.',
+                    'konversi' => $konv,
+                    'java_output' => $javaOutput
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Jika penyimpanan gagal, kembalikan error tetapi sertakan keluaran java jika ada
+            return BaseResponse::errorMessage(['message' => 'Gagal menyimpan hasil konversi', 'error' => $e->getMessage()]);
+        }
+
+        // Jika tidak ada output dan tidak berhasil, kembalikan response asli
+        return $runResponse;
     }
 
     public function update($request)
