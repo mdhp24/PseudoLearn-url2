@@ -88,7 +88,19 @@ class LogUjianKodeController extends Controller
             ->first();
 
         $infoLevelName = $level?->name ?? ($latestUjian->level_name ?? null);
-        $infoSoalName  = $soal?->judul ?? ($latestUjian->judul_soal ?? null);
+
+        // Resolve soal title with fallbacks:
+        // 1) explicit $soal model (if selected)
+        // 2) judul_soal from latest ujian (view v_ujian_kode)
+        // 3) lookup via bank_soal_konversi -> soal
+        $infoSoalName = $soal?->judul ?? ($latestUjian->judul_soal ?? null);
+
+        if (empty($infoSoalName) && !empty($latestUjian->id_bank_soal_konversi)) {
+            $infoSoalName = \Illuminate\Support\Facades\DB::table('bank_soal_konversi as bsk')
+                ->join('soal as s', 'bsk.id_soal', '=', 's.id')
+                ->where('bsk.id', $latestUjian->id_bank_soal_konversi)
+                ->value('s.judul');
+        }
 
         $list_level = $this->levelModel->orderBy('order', 'asc')->get(['id', 'name'])
             ->map(fn($item) => ['id' => $item->id, 'name' => $item->name])
