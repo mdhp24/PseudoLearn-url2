@@ -187,10 +187,6 @@
             try { if (data.kunci_tipe_data) tipeData = JSON.parse(data.kunci_tipe_data) || []; } catch(e){}
             try { if (data.kunci_algoritma) algoritma = JSON.parse(data.kunci_algoritma) || []; } catch(e){}
 
-            // Filter hanya yang konversi = 1
-            tipeData = tipeData.filter(it => Number(it.konversi) === 1);
-            algoritma = algoritma.filter(it => Number(it.konversi) === 1);
-
             // Gabung list
             const combined = [];
             tipeData.forEach(item => combined.push({ kind:'tipe_data', data:item }));
