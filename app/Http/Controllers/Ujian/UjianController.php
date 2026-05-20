@@ -28,7 +28,7 @@ class UjianController extends Controller
         $idUser = Auth::id();
         $nyawa = Nyawa::where('id_user', $idUser)->first();
 
-        return view('pages.Ujian.index', [
+        return view('pages.ujian.index', [
             'title' => 'Ujian Pseudocode',
             'soal' => $soal,
             'id_level' => $soal->id_level,

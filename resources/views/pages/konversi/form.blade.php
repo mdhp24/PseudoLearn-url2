@@ -232,6 +232,23 @@
                     <input type="text" class="form-control" value="${safe}" readonly>
                 </div>
                 `);
+                // Tampilkan clue jika tersedia (baik teks clue ataupun flag)
+                if (entry.data.clue && entry.data.clue !== '0') {
+                    const clueText = String(entry.data.clue).trim();
+                    if (clueText !== '') {
+                        const safeClue = clueText
+                            .replace(/&/g,'&amp;')
+                            .replace(/</g,'&lt;')
+                            .replace(/>/g,'&gt;')
+                            .replace(/"/g,'&quot;')
+                            .replace(/'/g,'&#39;');
+                        kunciWrap.append(`
+                            <div class="mb-3">
+                                <small class="text-muted">Clue: ${safeClue}</small>
+                            </div>
+                        `);
+                    }
+                }
                 inputWrap.append(`
                 <div class="mb-5 konversi-row" data-base="1">
                     <div class="d-flex justify-content-between">
