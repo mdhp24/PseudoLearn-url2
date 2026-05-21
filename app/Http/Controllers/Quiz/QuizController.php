@@ -276,7 +276,15 @@ public function questionList(Request $request)
 
         // Soal konversi — judul selalu tampil (tidak di-null saat locked)
         if ($konversi) {
-            $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? 'Soal Konversi';
+            // Prefer explicit konversi title, otherwise derive from parent soal title
+            $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? null;
+            if (empty($konversiJudul) && !empty($soal->judul)) {
+                // make it clear this is the conversion of the pseudocode soal
+                $konversiJudul = 'Konversi: ' . $soal->judul;
+            }
+            if (empty($konversiJudul)) {
+                $konversiJudul = 'Soal Konversi';
+            }
             $result[] = [
                 'type'       => 'konversi',
                 'id'         => $konversi->id,
