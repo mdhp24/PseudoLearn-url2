@@ -44,6 +44,10 @@ class Nyawa extends BaseModel
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
             }
+            // Ensure new records have the correct max lives
+            if (empty($model->max_nyawa)) {
+                $model->max_nyawa = 100;
+            }
         });
     }
 
@@ -54,6 +58,19 @@ class Nyawa extends BaseModel
     public function checkAndRegenerate(): self
     {
         $now = Carbon::now();
+
+        // Normalize legacy data that still uses the old 25-life configuration.
+        // This keeps the UI and gameplay on the new 100-life standard without a migration.
+        if ((int) $this->max_nyawa === 25) {
+            $this->max_nyawa = 100;
+
+            if ((int) $this->nyawa <= 25) {
+                $this->nyawa = 100;
+                $this->next_regen_at = null;
+            }
+
+            $this->save();
+        }
 
         // If already at max, ensure timer is cleared
         if ($this->nyawa >= $this->max_nyawa) {
@@ -67,7 +84,8 @@ class Nyawa extends BaseModel
         // Below max - handle regeneration
         if ($this->next_regen_at === null) {
             // Start regeneration timer (first time below max)
-            $this->next_regen_at = $now->copy()->addMinutes(10);
+            // regenerate every 1 minute, adding 10 lives per minute
+            $this->next_regen_at = $now->copy()->addMinute();
             $this->save();
             return $this;
         }
@@ -76,16 +94,18 @@ class Nyawa extends BaseModel
 
         // Check if regeneration time has passed
         if ($now->gte($nextRegen)) {
-            // Calculate total minutes since regen timer started
+            // Calculate total minutes since regen threshold
             $minutesSinceRegen = $nextRegen->diffInMinutes($now);
-            // Each 10 minutes = 1 life, plus 1 for crossing the initial threshold
-            $livesToAdd = (int) floor($minutesSinceRegen / 10) + 1;
+            // Number of full 1-minute cycles passed (including the initial one)
+            $cycles = (int) floor($minutesSinceRegen / 1) + 1;
+            // Each cycle gives 10 lives
+            $livesToAdd = $cycles * 10;
 
             $this->nyawa = min($this->nyawa + $livesToAdd, $this->max_nyawa);
 
             if ($this->nyawa < $this->max_nyawa) {
-                // Set next regen relative to now
-                $this->next_regen_at = $now->copy()->addMinutes(10);
+                // Next regen scheduled 1 minute from now
+                $this->next_regen_at = $now->copy()->addMinute();
             } else {
                 $this->next_regen_at = null;
             }

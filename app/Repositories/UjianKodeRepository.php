@@ -114,7 +114,7 @@ class UjianKodeRepository
         $nyawa->nyawa -= 1;
 
         if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
-            $nyawa->next_regen_at = now()->addMinutes(10);
+            $nyawa->next_regen_at = now()->addMinute();
         }
 
         $nyawa->save();

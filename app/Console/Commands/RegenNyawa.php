@@ -5,12 +5,11 @@ namespace App\Console\Commands;
 use Carbon\Carbon;
 use App\Models\Nyawa;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class RegenNyawa extends Command
 {
     protected $signature = 'nyawa:regen';
-    protected $description = 'Regenerasi nyawa user setiap 10 menit (selalu update next_regen_at meski penuh)';
+    protected $description = 'Regenerasi nyawa user setiap 1 menit (+10 nyawa) (selalu update next_regen_at meski penuh)';
 
     public function handle()
     {
@@ -25,18 +24,18 @@ class RegenNyawa extends Command
                 // hitung selisih menit antara now dan next_regen_at
                 $diffMinutes = $nyawa->next_regen_at->diffInMinutes($nowJakarta);
 
-                // berapa kali siklus 10 menit yg terlewati
-                $cycles = floor($diffMinutes / 10) + 1; // +1 untuk regen yg saat ini
+                // berapa kali siklus 1 menit yg terlewati
+                $cycles = floor($diffMinutes / 1) + 1; // +1 untuk regen saat ini
 
-                // jumlah nyawa yang akan ditambah
-                $addLives = min($cycles, $nyawa->max_nyawa - $nyawa->nyawa);
+                // setiap siklus 1 menit menambah 10 nyawa
+                $addLives = min($cycles * 10, $nyawa->max_nyawa - $nyawa->nyawa);
 
                 if ($addLives > 0) {
                     $nyawa->nyawa += $addLives;
 
                     // kalau masih belum penuh, set next regen lagi
                     if ($nyawa->nyawa < $nyawa->max_nyawa) {
-                        $nyawa->next_regen_at = Carbon::now()->addMinutes(10);
+                        $nyawa->next_regen_at = Carbon::now()->addMinute();
                     } else {
                         $nyawa->next_regen_at = null; // stop kalau penuh
                     }
