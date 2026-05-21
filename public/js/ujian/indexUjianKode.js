@@ -73,8 +73,22 @@ function submitKonversi() {
     // Reset highlight box sebelumnya
     boxes.forEach(function (box) {
         box.style.borderColor = "";
+        box.classList.remove("wrong-answer");
         box.classList.remove("shake");
     });
+
+    function applyWrongAnswerHighlights(errors) {
+        var allBoxes = document.querySelectorAll(".answer-box.box-java");
+        errors.forEach(function (err) {
+            if (allBoxes[err.index]) {
+                allBoxes[err.index].classList.add("wrong-answer");
+                allBoxes[err.index].classList.add("shake");
+                setTimeout(function () {
+                    allBoxes[err.index].classList.remove("shake");
+                }, 400);
+            }
+        });
+    }
 
     $.ajax({
         url: APP_URL + "ujian-kode/submit-konversi",
@@ -134,45 +148,51 @@ function submitKonversi() {
             const res = xhr.responseJSON;
 
             if (res?.message?.errors) {
-                var allBoxes = document.querySelectorAll(
-                    ".answer-box.box-java",
-                );
-                res.message.errors.forEach(function (err) {
-                    if (allBoxes[err.index]) {
-                        allBoxes[err.index].style.borderColor = "red";
-                        allBoxes[err.index].classList.add("shake");
-                        setTimeout(function () {
-                            allBoxes[err.index].classList.remove("shake");
-                        }, 400);
-                    }
-                });
+                applyWrongAnswerHighlights(res.message.errors);
             }
 
-            $.ajax({
-                url: APP_URL + "nyawa/status",
-                type: "GET",
-                dataType: "json",
-                headers: {
-                    Accept: "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-                success: function (data) {
-                    const livesEl = document.getElementById("lives-count");
-                    if (livesEl)
-                        livesEl.innerText =
-                            data && typeof data.lives !== "undefined"
-                                ? data.lives
-                                : 0;
+            const lives =
+                typeof res?.lives !== "undefined" ? res.lives : null;
+            const livesEl = document.getElementById("lives-count");
+            if (livesEl && lives !== null) {
+                livesEl.innerText = lives;
+            }
 
-                    openModalFeedbackIncorrect(
-                        res?.message?.message ?? "Terdapat jawaban salah",
-                        data.lives,
-                    );
-                },
-                error: function (xhr) {
-                    // console.error("Gagal mendapatkan status nyawa", xhr);
-                },
-            });
+            if (lives === null) {
+                $.ajax({
+                    url: APP_URL + "nyawa/status",
+                    type: "GET",
+                    dataType: "json",
+                    headers: {
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    success: function (data) {
+                        if (livesEl)
+                            livesEl.innerText =
+                                data && typeof data.lives !== "undefined"
+                                    ? data.lives
+                                    : 0;
+
+                        openModalFeedbackIncorrect(
+                            res?.message?.message ?? "Terdapat jawaban salah",
+                            data.lives,
+                        );
+                    },
+                    error: function () {
+                        openModalFeedbackIncorrect(
+                            res?.message?.message ?? "Terdapat jawaban salah",
+                            0,
+                        );
+                    },
+                });
+                return;
+            }
+
+            openModalFeedbackIncorrect(
+                res?.message?.message ?? "Terdapat jawaban salah",
+                lives,
+            );
         },
     });
 }
