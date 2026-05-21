@@ -27,7 +27,17 @@ class NyawaController extends Controller
         $idUser = Auth::id();
         $nyawa = $this->model->where('id_user', $idUser)->first();
 
-        // Check and regenerate lives (1 life per 10 minutes)
+        if (!$nyawa) {
+            return response()->json([
+                'lives' => 0,
+                'max_lives' => Nyawa::DEFAULT_MAX_NYAWA,
+                'next_regen_at' => null,
+            ], 404);
+        }
+
+        $nyawa->normalizeLegacyDefaults();
+
+        // Check and regenerate lives (10 nyawa per 1 minute)
         $nyawa->checkAndRegenerate();
 
         return response()->json([
@@ -41,6 +51,12 @@ class NyawaController extends Controller
     public function show()
     {
         $nyawa = $this->model->where('id_user', Auth::id())->first();
+
+        if ($nyawa) {
+            $nyawa->normalizeLegacyDefaults();
+            $nyawa->checkAndRegenerate();
+        }
+
         return view('lives.index', compact('nyawa'));
     }
 }

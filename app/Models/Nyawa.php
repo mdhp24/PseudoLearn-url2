@@ -54,11 +54,31 @@ class Nyawa extends BaseModel
     }
 
     /**
+     * Upgrade legacy rows that still use the old 25/25 values.
+     * This runs once per record and then leaves normal penalty/regeneration behavior intact.
+     */
+    public function normalizeLegacyDefaults(): self
+    {
+        if ((int) $this->max_nyawa === self::DEFAULT_MAX_NYAWA) {
+            return $this;
+        }
+
+        $this->nyawa = self::DEFAULT_MAX_NYAWA;
+        $this->max_nyawa = self::DEFAULT_MAX_NYAWA;
+        $this->next_regen_at = null;
+        $this->save();
+
+        return $this;
+    }
+
+    /**
      * Check and regenerate nyawa based on time.
      * 10 nyawa regenerate every 1 minute when below max.
      */
     public function checkAndRegenerate(): self
     {
+        $this->normalizeLegacyDefaults();
+
         $now = Carbon::now();
         $maxNyawa = $this->max_nyawa ?? self::DEFAULT_MAX_NYAWA;
 
@@ -106,6 +126,8 @@ class Nyawa extends BaseModel
 
     public function applyWrongAnswerPenalty(int $amount = 1): self
     {
+        $this->normalizeLegacyDefaults();
+
         $maxNyawa = $this->max_nyawa ?? self::DEFAULT_MAX_NYAWA;
 
         $this->nyawa = max(0, $this->nyawa - $amount);
