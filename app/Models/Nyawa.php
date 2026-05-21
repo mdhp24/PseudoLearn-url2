@@ -13,6 +13,10 @@ class Nyawa extends BaseModel
 {
     use HasFactory, HasUuids, SoftDeletes;
 
+    public const DEFAULT_MAX_NYAWA = 100;
+    public const REGEN_INTERVAL_MINUTES = 1;
+    public const REGEN_AMOUNT = 10;
+
     protected $table = 'nyawa';
     protected $primaryKey = 'id';
     public $incrementing = false;
@@ -45,18 +49,21 @@ class Nyawa extends BaseModel
                 $model->id = (string) Str::uuid();
             }
         });
+        
+        // NOTE: removed auto-update-on-retrieved to avoid overwriting intentional changes.
     }
 
     /**
      * Check and regenerate nyawa based on time.
-     * One nyawa regenerates every 10 minutes when below max.
+     * 10 nyawa regenerate every 1 minute when below max.
      */
     public function checkAndRegenerate(): self
     {
         $now = Carbon::now();
+        $maxNyawa = $this->max_nyawa ?? self::DEFAULT_MAX_NYAWA;
 
         // If already at max, ensure timer is cleared
-        if ($this->nyawa >= $this->max_nyawa) {
+        if ($this->nyawa >= $maxNyawa) {
             if ($this->next_regen_at !== null) {
                 $this->next_regen_at = null;
                 $this->save();
@@ -67,7 +74,7 @@ class Nyawa extends BaseModel
         // Below max - handle regeneration
         if ($this->next_regen_at === null) {
             // Start regeneration timer (first time below max)
-            $this->next_regen_at = $now->copy()->addMinutes(10);
+            $this->next_regen_at = $now->copy()->addMinutes(self::REGEN_INTERVAL_MINUTES);
             $this->save();
             return $this;
         }
@@ -75,23 +82,39 @@ class Nyawa extends BaseModel
         $nextRegen = Carbon::parse($this->next_regen_at);
 
         // Check if regeneration time has passed
-        if ($now->gte($nextRegen)) {
-            // Calculate total minutes since regen timer started
-            $minutesSinceRegen = $nextRegen->diffInMinutes($now);
-            // Each 10 minutes = 1 life, plus 1 for crossing the initial threshold
-            $livesToAdd = (int) floor($minutesSinceRegen / 10) + 1;
-
-            $this->nyawa = min($this->nyawa + $livesToAdd, $this->max_nyawa);
-
-            if ($this->nyawa < $this->max_nyawa) {
-                // Set next regen relative to now
-                $this->next_regen_at = $now->copy()->addMinutes(10);
-            } else {
-                $this->next_regen_at = null;
-            }
-
-            $this->save();
+        if ($now->lt($nextRegen)) {
+            return $this;
         }
+
+        // Add 10 nyawa per elapsed minute.
+        $secondsSinceRegen = $nextRegen->diffInSeconds($now);
+        $minutesSinceRegen = max(1, (int) floor($secondsSinceRegen / 60));
+        $livesToAdd = $minutesSinceRegen * self::REGEN_AMOUNT;
+
+        $this->nyawa = min($this->nyawa + $livesToAdd, $maxNyawa);
+
+        if ($this->nyawa < $maxNyawa) {
+            $this->next_regen_at = $now->copy()->addMinutes(self::REGEN_INTERVAL_MINUTES);
+        } else {
+            $this->next_regen_at = null;
+        }
+
+        $this->save();
+
+        return $this;
+    }
+
+    public function applyWrongAnswerPenalty(int $amount = 1): self
+    {
+        $maxNyawa = $this->max_nyawa ?? self::DEFAULT_MAX_NYAWA;
+
+        $this->nyawa = max(0, $this->nyawa - $amount);
+
+        if ($this->nyawa < $maxNyawa && $this->next_regen_at === null) {
+            $this->next_regen_at = Carbon::now()->addMinutes(self::REGEN_INTERVAL_MINUTES);
+        }
+
+        $this->save();
 
         return $this;
     }

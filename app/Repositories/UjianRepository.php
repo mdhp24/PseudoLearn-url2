@@ -361,13 +361,7 @@ class UjianRepository extends BaseRepository
                 $nyawa = Nyawa::where('id_user', Auth::id())->first();
 
                 if ($nyawa->nyawa > 0) {
-                    $nyawa->nyawa -= 1;
-
-                    if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
-                        $nyawa->next_regen_at = now()->addMinutes(10);
-                    }
-
-                    $nyawa->save();
+                    $nyawa->applyWrongAnswerPenalty();
                 }
 
                 return BaseResponse::json([

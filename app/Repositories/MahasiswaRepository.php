@@ -115,9 +115,9 @@ class MahasiswaRepository extends BaseRepository
             $dataNyawa = [
                 'id_mahasiswa' => $mahasiswa->id,
                 'id_user' => $dataUser['id'],
-                'nyawa' => 25,
-                'max_nyawa' => 25,
-                'next_regen_at' => now()->addMinutes(10),
+                'nyawa' => Nyawa::DEFAULT_MAX_NYAWA,
+                'max_nyawa' => Nyawa::DEFAULT_MAX_NYAWA,
+                'next_regen_at' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
