@@ -211,7 +211,6 @@ public function questionList(Request $request)
     $idUser      = Auth::id();
     $idMahasiswa = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
 
-    // Ambil SEMUA soal aktif tanpa batas
     $soalList = $this->soalModel
         ->where('id_level', $levelId)
         ->where('status', 1)
@@ -233,7 +232,6 @@ public function questionList(Request $request)
             ->where('status', 1)
             ->exists();
 
-        // Jika tidak ada konversi, anggap konversi sudah selesai
         $isKonversiDone = true;
         if ($konversi) {
             $isKonversiDone = DB::table('ujian_kode')
@@ -264,7 +262,6 @@ public function questionList(Request $request)
             ->where('id_soal', $soal->id)
             ->value('label');
 
-        // Soal pseudocode — judul selalu tampil
         $result[] = [
             'type'       => 'soal',
             'id'         => $soal->id,
@@ -274,23 +271,29 @@ public function questionList(Request $request)
             'badge'      => $badge,
         ];
 
-        // Soal konversi — judul selalu tampil (tidak di-null saat locked)
         if ($konversi) {
-            // Prefer explicit konversi title, otherwise derive from parent soal title
+            // Ambil judul konversi dari kolom eksplisit saja
             $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? null;
-            if (empty($konversiJudul) && !empty($soal->judul)) {
-                // make it clear this is the conversion of the pseudocode soal
-                $konversiJudul = $soal->judul;
+
+            // ✅ PERBAIKAN: Jika judul konversi sama dengan judul soal induk
+            // (atau kosong), gunakan judul soal induk tapi JANGAN tampilkan subtitle
+            $konversiSubtitle = null;
+            if (!empty($konversiJudul) && $konversiJudul !== $soal->judul) {
+                // Judul konversi berbeda → subtitle = judul soal induk sebagai konteks
+                $konversiSubtitle = $soal->judul;
+            } else {
+                // Tidak ada judul konversi unik → pakai judul soal induk, tanpa subtitle
+                $konversiJudul    = $soal->judul;
+                $konversiSubtitle = null; // ← ini yang menghilangkan duplikat
             }
-            // if (empty($konversiJudul)) {
-            //     $konversiJudul = 'Soal Konversi';
-            // }
+
             $result[] = [
-                'type'       => 'konversi',
-                'id'         => $konversi->id,
-                'judul'      => $konversiJudul,
+                'type'     => 'konversi',
+                'id'       => $konversi->id,
+                'judul'    => $konversiJudul,
+                'subtitle' => $konversiSubtitle, // null = tidak ditampilkan di view
                 'difficulty' => $soal->difficulty,
-                'status'     => $konversiStatus,
+                'status'   => $konversiStatus,
             ];
         }
 
@@ -299,7 +302,7 @@ public function questionList(Request $request)
         }
     }
 
-    // Prepare deduplicated konversi names (preserve order)
+    // Deduplicated konversi names
     $konversiNames = [];
     foreach ($result as $item) {
         if (!empty($item['type']) && $item['type'] === 'konversi') {
