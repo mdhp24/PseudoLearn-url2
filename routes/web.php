@@ -28,8 +28,6 @@ use App\Http\Controllers\UjianKonversi\UjianKonversiController;
 use App\Http\Controllers\LogUjianKode\LogUjianKodeController;
 // use App\Models\Setting;
 use App\Http\Controllers\Chatbot\ChatbotController;
-use App\Http\Controllers\ARS\ArsController;
-use App\Models\Setting;
 
 Route::get('/', function () {
     return Auth::check() ? redirect('/dashboard') : redirect('/login');
@@ -311,16 +309,6 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::get('/detail/{id}', [UjianKonversiController::class, 'detail'])->name('detail');
             Route::post('/table-detail', [UjianKonversiController::class, 'tableDetail'])->name('tableDetail');
             Route::get('/detail-konversi/{id}', [UjianKonversiController::class, 'detailKonversi'])->name('detailKonversi');
-        });
-
-        Route::prefix('ars')->name('ars.')->group(function () {
-            Route::get('/', [ArsController::class, 'index'])->name('index');
-            Route::post('table', [ArsController::class, 'table'])->name('table');
-            Route::post('tableArsLog', [ArsController::class, 'tableArsLog'])->name('tableArsLog');
-            Route::get('detail/{id}', [ArsController::class, 'detail'])->name('detail');
-            Route::post('detail/table', [ArsController::class, 'getDetailArs'])->name('detail.table');
-            Route::post('run', [ArsController::class, 'runArs'])->name('run');
-            Route::get('/export', [ArsController::class, 'export'])->name('ars.export');
         });
 
         // Guide

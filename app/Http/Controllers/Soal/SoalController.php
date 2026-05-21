@@ -8,8 +8,6 @@ use Illuminate\Http\Request;
 use App\Models\Level;
 use App\Services\SoalService;
 use App\Models\Soal;
-use App\Http\Controllers\ARS\ArsController;
-use Illuminate\Support\Facades\Auth;
 
 class SoalController extends Controller
 {
@@ -129,61 +127,6 @@ class SoalController extends Controller
         $opr = $this->soalService->updateStatusSoal($request);
         return $opr;
     }
-
-public function submit(Request $request)
-{
-    $user = Auth::user();
-    $id_mahasiswa = $user->id;
-    $answers = $request->answers;
-
-    $ars = app(ArsController::class);
-
-    // 🔹 Soal awal (jika $answers = null, hanya generate 10 soal easy)
-    if (is_null($answers)) {
-        $initialQuestions = $ars->submitAnswers($id_mahasiswa, null);
-        return view('soal_awal', compact('initialQuestions'));
-    }
-
-    // 🔹 Submit jawaban & dapat soal berikutnya
-    $nextQuestions = $ars->submitAnswers($id_mahasiswa, $answers);
-
-    // 🔹 Soal tambahan jika performa buruk
-    $soalTambahan = $ars->determineAdditional($id_mahasiswa);
-
-    return view('soal_tambahan', compact('nextQuestions', 'soalTambahan'));
-}
-
-public function testArs()
-{
-    $id_mahasiswa = 1;
-    $ars = app(ArsController::class);
-
-    //Ambil soal awal
-    $initialQuestions = $ars->submitAnswers($id_mahasiswa, null);
-
-    //jawaban random untuk simulasi
-    $answers = $initialQuestions->map(fn($q) => [
-        'id_soal' => $q['id_soal'],
-        'jenis_soal' => $q['jenis_soal'],
-        'difficulty_sekarang' => $q['difficulty_sekarang'],
-        'cluster' => collect(['struggling','gaming','normal','ideal'])->random()
-    ])->toArray();
-
-    //Submit jawaban
-    $nextQuestions = $ars->submitAnswers($id_mahasiswa, $answers);
-
-    //Summary & soal tambahan
-    $summary = $ars->getPerformanceSummary($id_mahasiswa);
-    $soalTambahan = $ars->determineAdditional($id_mahasiswa);
-
-    dd([
-        'initialQuestions' => $initialQuestions,
-        'answers' => $answers,
-        'nextQuestions' => $nextQuestions,
-        'summary' => $summary,
-        'soalTambahan' => $soalTambahan
-    ]);
-}
 }
 
 
