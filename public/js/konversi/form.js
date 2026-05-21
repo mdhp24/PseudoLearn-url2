@@ -82,21 +82,12 @@ saveKonversi = () => {
         if ($(this).val().trim() !== '') filled++;
     });
 
-    if (inputs.length > 0 && filled === 0) {
+    // Output adalah opsional — boleh kosong, bisa diisi kemudian via "Jalankan Konversi"
+    // Hanya perlu ada minimal satu baris Konversi Kode yang terisi
+    if (filled === 0) {
         Swal.fire({
             icon: 'warning',
-            text: 'Mohon isi minimal satu baris Konversi Kode.',
-            confirmButtonText: 'OK',
-            customClass: { confirmButton: 'btn btn-primary' }
-        });
-        return;
-    }
-
-    const outputValue = $('#output').val().trim();
-    if (outputValue === '' && filled === 0) {
-        Swal.fire({
-            icon: 'warning',
-            text: 'Isi Konversi Kode terlebih dahulu atau jalankan konversi agar output terbentuk.',
+            text: 'Isi minimal satu baris Konversi Kode sebelum menyimpan.',
             confirmButtonText: 'OK',
             customClass: { confirmButton: 'btn btn-primary' }
         });
