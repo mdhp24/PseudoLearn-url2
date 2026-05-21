@@ -191,7 +191,6 @@
             margin-right: 0;
             margin-right: -40px;
         }
-
     </style>
 </head>
 
@@ -220,275 +219,351 @@
     </script>
     <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
         <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
-                <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+            <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
 
-                    <div id="kt_docs_toast_stack_container" class="toast-container position-fixed top-0 end-0 p-3 z-index-3">
+                <div id="kt_docs_toast_stack_container"
+                    class="toast-container position-fixed top-0 end-0 p-3 z-index-3">
 
-                    </div>
+                </div>
 
-                    <div class="d-flex flex-column flex-column-fluid">
-                        <div id="kt_app_content" class="app-content flex-column-fluid py-0">
-                            <div id="kt_app_content_container" class="app-container container-fluid p-10">
-                                <div class="container-fluid px-4" id="question-list-container">
-                                    <div class="card bg-white p-4 ">
-                                        <div class="row align-items-center">
-                                            <div class="col-1 text-center px-0">
-                                                <a href="{{ route('quiz.index') }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Kembali ke Daftar Level">
-                                                    <i class="ki-duotone ki-double-left fs-3x text-primary hover-elevate-up">
-                                                        <span class="path1"></span>
-                                                        <span class="path2"></span>
-                                                    </i>
-                                                </a>
-                                            </div>
-                                            <div class="col-9 text-start ps-0">
-                                                <h1 class="fw-bold fs-3 mb-1 text-dark">Level {{ $dataLevel->order . ' : ' . $dataLevel->name }}</h1>
-                                                {{-- <h3 class="fw-semibold fs-7 text-dark">
+                <div class="d-flex flex-column flex-column-fluid">
+                    <div id="kt_app_content" class="app-content flex-column-fluid py-0">
+                        <div id="kt_app_content_container" class="app-container container-fluid p-10">
+                            <div class="container-fluid px-4" id="question-list-container">
+                                <div class="card bg-white p-4 ">
+                                    <div class="row align-items-center">
+                                        <div class="col-1 text-center px-0">
+                                            <a href="{{ route('quiz.index') }}" data-bs-toggle="tooltip"
+                                                data-bs-placement="bottom" title="Kembali ke Daftar Level">
+                                                <i
+                                                    class="ki-duotone ki-double-left fs-3x text-primary hover-elevate-up">
+                                                    <span class="path1"></span>
+                                                    <span class="path2"></span>
+                                                </i>
+                                            </a>
+                                        </div>
+                                        <div class="col-9 text-start ps-0">
+                                            <h1 class="fw-bold fs-3 mb-1 text-dark">Level
+                                                {{ $dataLevel->order . ' : ' . $dataLevel->name }}</h1>
+                                            {{-- <h3 class="fw-semibold fs-7 text-dark">
                                                     Kondisi memungkinkan program memilih langkah berdasarkan pernyataan
                                                     benar atau salah.
                                                     Yuk pelajari cara kerja if dan if-else melalui studi drag and drop
                                                     yang kasus seru!
                                                 </h3> --}}
-                                            </div>
-                                            <div class="col-2 d-flex justify-content-center px-0">
-                                                <button class="btn btn-primary hover-elevate-up d-flex align-items-center" style="box-shadow: -2px 2px 8px #0000004d;" onclick="openModalGuide()">
-                                                <img src="{{ asset('assets/media/img/iconbook.png') }}" class="sidebar-guide-icon me-2" style="height: 1.5em; width: auto;">
+                                        </div>
+                                        <div class="col-2 d-flex justify-content-center px-0">
+                                            <button class="btn btn-primary hover-elevate-up d-flex align-items-center"
+                                                style="box-shadow: -2px 2px 8px #0000004d;" onclick="openModalGuide()">
+                                                <img src="{{ asset('assets/media/img/iconbook.png') }}"
+                                                    class="sidebar-guide-icon me-2" style="height: 1.5em; width: auto;">
                                                 Lihat Panduan
                                             </button>
-                                            </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <input type="hidden" id="level_id" value="{{ $levelId ?? '' }}">
-                                    @csrf
-                                    <div class="row mt-8">
-                                        <div class="col-9">
-                                            <div class="container py-5">
+                                <input type="hidden" id="level_id" value="{{ $levelId ?? '' }}">
+                                @csrf
+                                <div class="row mt-8">
+                                    <div class="col-9">
+                                        <div class="container py-5">
+                                            @php
+                                                $steps = $dataSoal ?? [];
+                                            @endphp
+
+                                            @foreach ($steps as $i => $step)
                                                 @php
-                                                    $steps = $dataSoal ?? [];
+                                                    $index = $i + 1;
+                                                    $isEven = $index % 2 === 0;
+                                                    $status = $step['status'] ?? 'locked';
+                                                    $circleClass = $isEven ? 'circle' : 'circle-left';
+                                                    $timelineClass = $loop->last ? 'timeline inactive' : 'timeline';
+
+                                                    $judul =
+                                                        ($step['type'] ?? '') === 'konversi'
+                                                            ? 'Konversi Program'
+                                                            : 'Pseudocode';
+
+                                                    $deskripsi = $step['judul'] ?? '';
+                                                    $subtitle = $step['subtitle'] ?? null;
+
+                                                    $onClick = '';
+
+                                                    if ($status !== 'locked') {
+                                                        if (($step['type'] ?? '') === 'soal') {
+                                                            $onClick = "ujian('{$step['id']}')";
+                                                        } elseif (($step['type'] ?? '') === 'konversi') {
+                                                            $onClick = "ujianKode('{$step['id']}')";
+                                                        }
+                                                    }
                                                 @endphp
 
-                                                @foreach ($steps as $i => $step)
-                                                    @php
-                                                        $index = $i + 1;
-                                                        $isEven = $index % 2 === 0;
-                                                        $status = $step['status'] ?? 'locked';
-                                                        $circleClass = $isEven ? 'circle' : 'circle-left';
-                                                        $timelineClass = $loop->last ? 'timeline inactive' : 'timeline';
-                                                        $judul = ($step['type'] ?? '') === 'konversi' ? 'Konversi Program' : 'Pseudocode';
-                                                        $deskripsi = $step['judul'] ?? '';
-                                                        $onClick = '';
+                                                <div
+                                                    class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
 
-                                                        if ($status !== 'locked') {
-                                                            if (($step['type'] ?? '') === 'soal') {
-                                                                $onClick = "ujian('{$step['id']}')";
-                                                            } elseif (($step['type'] ?? '') === 'konversi') {
-                                                                $onClick = "ujianKode('{$step['id']}')";
-                                                            }
-                                                        }
-                                                    @endphp
+                                                    {{-- KANAN --}}
+                                                    @if ($isEven)
+                                                        <div
+                                                            class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
 
-                                                    <div class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
+                                                            <h5 class="text-black">{{ $judul }}</h5>
+
+                                                            <p class="mb-1">
+                                                                {{ $deskripsi }}
+                                                            </p>
+
+                                                            {{-- Subtitle hanya muncul jika berbeda --}}
+                                                            @if (($step['type'] ?? '') === 'konversi' && !empty($subtitle))
+                                                                <small class="text-muted">
+                                                                    {{ $subtitle }}
+                                                                </small>
+                                                            @endif
+
+                                                        </div>
+
+                                                        <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
+                                                            @if ($status !== 'locked') onclick="{{ $onClick }}" style="cursor: pointer;" @endif>
+
+                                                            <div class="{{ $circleClass }} {{ $status }}">
+                                                                @if ($status !== 'done')
+                                                                    {{ $index }}
+                                                                @endif
+                                                            </div>
+
+                                                        </div>
+
+                                                        {{-- KIRI --}}
+                                                    @else
+                                                        <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
+                                                            @if ($status !== 'locked') onclick="{{ $onClick }}" style="cursor: pointer;" @endif>
+
+                                                            <div class="{{ $circleClass }} {{ $status }}">
+                                                                @if ($status !== 'done')
+                                                                    {{ $index }}
+                                                                @endif
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-6 text-black mb-4 mt-6">
+
+                                                            <h5 class="text-black">{{ $judul }}</h5>
+
+                                                            <p class="mb-1">
+                                                                {{ $deskripsi }}
+                                                            </p>
+
+                                                            {{-- Subtitle hanya muncul jika berbeda --}}
+                                                            @if (($step['type'] ?? '') === 'konversi' && !empty($subtitle))
+                                                                <small class="text-muted">
+                                                                    {{ $subtitle }}
+                                                                </small>
+                                                            @endif
+
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                {{-- GARIS --}}
+                                                @if (!$loop->last)
+                                                    <div class="row {{ $timelineClass }}">
                                                         @if ($isEven)
-                                                                    <div class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
-                                                                        <h5 class="text-black">{{ $judul }}</h5>
-                                                                        <p class="mb-1">{{ $deskripsi }}</p>
-                                                                        @if(($step['type'] ?? '') === 'konversi')
-                                                                            <small class="text-muted">{{ $step['judul'] ?? $deskripsi }}</small>
-                                                                        @endif
-                                                                    </div>
+                                                            <div class="col-2">
+                                                                <div class="corner right-bottom"></div>
+                                                            </div>
 
-                                                            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
-                                                                @if($status !== 'locked')
-                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
-                                                                @endif>
-                                                                <div class="{{ $circleClass }} {{ $status }}">
-                                                                    @if($status !== 'done')
-                                                                        {{ $index }}
-                                                                    @endif
-                                                                </div>
+                                                            <div class="col-8">
+                                                                <hr style="opacity: 1;" />
+                                                            </div>
+
+                                                            <div class="col-2">
+                                                                <div class="corner top-left"></div>
                                                             </div>
                                                         @else
-                                                            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
-                                                                @if($status !== 'locked')
-                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
-                                                                @endif>
-                                                                <div class="{{ $circleClass }} {{ $status }}">
-                                                                    @if($status !== 'done')
-                                                                        {{ $index }}
-                                                                    @endif
-                                                                </div>
+                                                            <div class="col-2">
+                                                                <div class="corner top-right"></div>
                                                             </div>
 
-                                                            <div class="col-6 text-black mb-4 mt-6">
-                                                                <h5 class="text-black">{{ $judul }}</h5>
-                                                                <p class="mb-1">{{ $deskripsi }}</p>
-                                                                @if(($step['type'] ?? '') === 'konversi')
-                                                                    <small class="text-muted">{{ $step['judul'] ?? $deskripsi }}</small>
-                                                                @endif
+                                                            <div class="col-8">
+                                                                <hr style="opacity: 1;" />
+                                                            </div>
+
+                                                            <div class="col-2">
+                                                                <div class="corner left-bottom"></div>
                                                             </div>
                                                         @endif
                                                     </div>
+                                                @endif
+                                            @endforeach
 
-                                                    {{-- GARIS --}}
-                                                    @if (!$loop->last)
-                                                        <div class="row {{ $timelineClass }}">
-                                                            @if ($isEven)
-                                                                <div class="col-2">
-                                                                    <div class="corner right-bottom"></div>
-                                                                </div>
-                                                                <div class="col-8">
-                                                                    <hr style="opacity: 1;" />
-                                                                </div>
-                                                                <div class="col-2">
-                                                                    <div class="corner top-left"></div>
-                                                                </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-3 d-flex flex-column gap-4">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div
+                                                    class="h-100 rounded-3 p-3 border border-2 border-danger bg-light-danger">
+                                                    <div
+                                                        class="fw-bold fs-3 d-flex gap-3 align-items-center mb-4 text-danger">
+                                                        <img src="{{ asset('assets/media/img/heart.png') }}"
+                                                            alt="Heart" class="me-2" style="width: 20px;">
+                                                        Nyawa
+                                                    </div>
+                                                    <div class="d-flex flex-column justify-content-center align-items-center"
+                                                        style="min-height: 60px;">
+                                                        <div
+                                                            class="d-flex align-items-end justify-content-center gap-3">
+                                                            <div class="fw-bold text-danger"
+                                                                style="font-size: 2.5rem;"><span
+                                                                    id="lives-count">{{ $lives }}</span> /
+                                                                {{ $max_lives }} </div>
+                                                            @if ($lives < $max_lives && $next_regen_at)
+                                                                <span class="fw-normal text-danger"
+                                                                    style="font-size: 1.3rem;" id="regen-timer"
+                                                                    data-time="{{ $next_regen_at }}"></span>
                                                             @else
-                                                                <div class="col-2">
-                                                                    <div class="corner top-right"></div>
-                                                                </div>
-                                                                <div class="col-8">
-                                                                    <hr style="opacity: 1;" />
-                                                                </div>
-                                                                <div class="col-2">
-                                                                    <div class="corner left-bottom"></div>
-                                                                </div>
+                                                                <span class="fw-normal text-danger"
+                                                                    style="font-size: 1.3rem;" id="regen-timer">Nyawa
+                                                                    Penuh</span>
                                                             @endif
                                                         </div>
-                                                    @endif
-                                                @endforeach
-
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-3 d-flex flex-column gap-4">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="h-100 rounded-3 p-3 border border-2 border-danger bg-light-danger">
-                                                        <div class="fw-bold fs-3 d-flex gap-3 align-items-center mb-4 text-danger">
-                                                            <img src="{{ asset('assets/media/img/heart.png') }}"
-                                                                alt="Heart" class="me-2" style="width: 20px;">
-                                                            Nyawa
-                                                        </div>
-                                                        <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 60px;">
-                                                            <div class="d-flex align-items-end justify-content-center gap-3">
-                                                                <div class="fw-bold text-danger" style="font-size: 2.5rem;"><span id="lives-count">{{ $lives }}</span> / {{ $max_lives }} </div>
-                                                                @if($lives < $max_lives && $next_regen_at)
-                                                                    <span class="fw-normal text-danger" style="font-size: 1.3rem;" id="regen-timer" data-time="{{ $next_regen_at }}"></span>
-                                                                @else
-                                                                    <span class="fw-normal text-danger" style="font-size: 1.3rem;" id="regen-timer">Nyawa Penuh</span>
-                                                                @endif
-                                                            </div>
-                                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div
+                                                    class="h-100 rounded-3 p-3 border border-2 border-success bg-light-success">
+                                                    <div
+                                                        class="fw-bold fs-3 d-flex gap-3 align-items-center mb-4 text-success">
+                                                        <img src="{{ asset('assets/media/img/star.png') }}"
+                                                            alt="Total AlgoPoin" class="me-2" style="width: 20px;">
+                                                        AlgoPoin
+                                                    </div>
+                                                    <div class="fw-bold text-success d-flex justify-content-center align-items-center"
+                                                        style="font-size: 3rem; min-height: 30px;"
+                                                        id="total-algo-poin">
+                                                        {{ $algopoin ?? 0 }}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="h-100 rounded-3 p-3 border border-2 border-success bg-light-success">
-                                                        <div class="fw-bold fs-3 d-flex gap-3 align-items-center mb-4 text-success">
-                                                            <img src="{{ asset('assets/media/img/star.png') }}"
-                                                                alt="Total AlgoPoin" class="me-2"
-                                                                style="width: 20px;">
-                                                            AlgoPoin
-                                                        </div>
-                                                        <div class="fw-bold text-success d-flex justify-content-center align-items-center" style="font-size: 3rem; min-height: 30px;" id="total-algo-poin">
-                                                            {{ $algopoin ?? 0 }}
-                                                        </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div
+                                                    class="h-100 rounded-3 p-5 border border-2 border-primary bg-light-primary">
+                                                    <div
+                                                        class="fw-bold fs-3 d-flex gap-2 align-items-center mb-4 text-primary">
+                                                        <i class="ki-duotone ki-medal-star fs-2x text-primary">
+                                                            <span class="path1"></span>
+                                                            <span class="path2"></span>
+                                                            <span class="path3"></span>
+                                                            <span class="path4"></span>
+                                                        </i>
+                                                        Konversi Program
                                                     </div>
-                                                </div>
-                                            </div>
+                                                    <div class="fw-bold text-primary"
+                                                        style="font-size: 1.1rem; min-height: 30px;"
+                                                        id="total-algo-poin">
+                                                        @php
+                                                            $list = $nilaiKonversiList ?? [];
+                                                            $avg = count($list)
+                                                                ? round(array_sum($list) / count($list), 2)
+                                                                : 0;
+                                                            $jumlahSoalKonversi = $jumlahSoalKonversi ?? 0;
+                                                        @endphp
 
-                                             <div class="row">
-                                                <div class="col-12">
-                                                    <div class="h-100 rounded-3 p-5 border border-2 border-primary bg-light-primary">
-                                                        <div class="fw-bold fs-3 d-flex gap-2 align-items-center mb-4 text-primary">
-                                                            <i class="ki-duotone ki-medal-star fs-2x text-primary">
-                                                                <span class="path1"></span>
-                                                                <span class="path2"></span>
-                                                                <span class="path3"></span>
-                                                                <span class="path4"></span>
-                                                            </i>
-                                                            Konversi Program
-                                                        </div>
-                                                        <div class="fw-bold text-primary" style="font-size: 1.1rem; min-height: 30px;" id="total-algo-poin">
-                                                            @php
-                                                                $list = $nilaiKonversiList ?? [];
-                                                                $avg = count($list) ? round(array_sum($list) / count($list), 2) : 0;
-                                                                $jumlahSoalKonversi = $jumlahSoalKonversi ?? 0;
-                                                            @endphp
-
-                                                            @if(count($list))
-                                                                @if(count($list) == $jumlahSoalKonversi && $jumlahSoalKonversi > 0)
-                                                                    <div class="mb-4 d-flex align-items-center gap-2 px-2">
-                                                                        <i class="fa-solid fa-chart-line text-primary"></i>
-                                                                        <span class="fw-semibold">Rata-rata Nilai:</span>
-                                                                        <span class="fw-bold">{{ $avg }}</span>
-                                                                    </div>
-                                                                @endif
-                                                                <ul class="mb-0 ps-2" style="list-style-type: disc;">
-                                                                    @foreach ($list as $judul => $nilai)
-                                                                        <li class="mb-1 d-flex justify-content-between align-items-center fs-7">
-                                                                            <span class="fw-semibold">{{ $judul }}</span>
-                                                                            <span class="fw-bold">{{ $nilai }}</span>
-                                                                        </li>
+                                                        @if (count($list))
+                                                            @if (count($list) == $jumlahSoalKonversi && $jumlahSoalKonversi > 0)
+                                                                <div class="mb-4 d-flex align-items-center gap-2 px-2">
+                                                                    <i class="fa-solid fa-chart-line text-primary"></i>
+                                                                    <span class="fw-semibold">Rata-rata Nilai:</span>
+                                                                    <span class="fw-bold">{{ $avg }}</span>
+                                                                </div>
+                                                            @endif
+                                                            <ul class="mb-0 ps-2" style="list-style-type: disc;">
+                                                                @foreach ($list as $judul => $nilai)
+                                                                    <li
+                                                                        class="mb-1 d-flex justify-content-between align-items-center fs-7">
+                                                                        <span
+                                                                            class="fw-semibold">{{ $judul }}</span>
+                                                                        <span
+                                                                            class="fw-bold">{{ $nilai }}</span>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @else
+                                                            <span class="text-muted">Belum ada nilai konversi</span>
+                                                        @endif
+                                                        {{-- Tampilkan daftar nama soal konversi (unik) --}}
+                                                        @php
+                                                            $konversiSoalList = collect($konversiSoalNames ?? [])
+                                                                ->filter()
+                                                                ->values();
+                                                        @endphp
+                                                        @if ($konversiSoalList->count())
+                                                            <div class="mt-3">
+                                                                <div class="fw-semibold mb-2">Daftar Soal Konversi:
+                                                                </div>
+                                                                <ul class="ps-3 mb-0" style="list-style-type: disc;">
+                                                                    @foreach ($konversiSoalList as $nama)
+                                                                        <li class="mb-1 fs-7 text-dark">
+                                                                            {{ $nama }}</li>
                                                                     @endforeach
                                                                 </ul>
-                                                            @else
-                                                                <span class="text-muted">Belum ada nilai konversi</span>
-                                                            @endif
-                                                                    {{-- Tampilkan daftar nama soal konversi (unik) --}}
-                                                                    @php
-                                                                        $konversiSoalList = collect($konversiSoalNames ?? [])->filter()->values();
-                                                                    @endphp
-                                                                    @if($konversiSoalList->count())
-                                                                        <div class="mt-3">
-                                                                            <div class="fw-semibold mb-2">Daftar Soal Konversi:</div>
-                                                                            <ul class="ps-3 mb-0" style="list-style-type: disc;">
-                                                                                @foreach($konversiSoalList as $nama)
-                                                                                    <li class="mb-1 fs-7 text-dark">{{ $nama }}</li>
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        </div>
-                                                                    @endif
-                                                        </div>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="h-100 rounded-4 p-3 border border-3 border-info bg-light-info" style="background-color: #EFD0FB;">
-                                                        <div class="fw-bold fs-3 d-flex gap-2 align-items-center mb-4 text-info" style="color: #8019A9;">
-                                                            <img src="{{ asset('assets/media/img/badge.png') }}" alt="Badge Icon" class="me-2" style="width: 30px;">
-                                                            AlgoBadge
-                                                        </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="h-100 rounded-4 p-3 border border-3 border-info bg-light-info"
+                                                    style="background-color: #EFD0FB;">
+                                                    <div class="fw-bold fs-3 d-flex gap-2 align-items-center mb-4 text-info"
+                                                        style="color: #8019A9;">
+                                                        <img src="{{ asset('assets/media/img/badge.png') }}"
+                                                            alt="Badge Icon" class="me-2" style="width: 30px;">
+                                                        AlgoBadge
+                                                    </div>
 
-                                                        <div class="row g-4">
-                                                            @php
-                                                                $labeledSoal = collect($dataSoal ?? [])
-                                                                    ->filter(fn($s) => !empty($s['badge']))
-                                                                    ->values();
-                                                            @endphp
+                                                    <div class="row g-4">
+                                                        @php
+                                                            $labeledSoal = collect($dataSoal ?? [])
+                                                                ->filter(fn($s) => !empty($s['badge']))
+                                                                ->values();
+                                                        @endphp
 
-                                                            @if($labeledSoal->count())
-                                                                @foreach($labeledSoal as $idx => $soal)
-                                                                    @php
-                                                                        $label = $soal['badge'];
-                                                                        $map = [
-                                                                            'Ideal' => 'assets/media/badge/ideal.png',
-                                                                            'Struggling' => 'assets/media/badge/struggling.png',
-                                                                            'Normal' => 'assets/media/badge/normal.png',
-                                                                            'Gaming the System' => 'assets/media/badge/gaming.png',
-                                                                        ];
-                                                                        $img = asset($map[$label] ?? 'assets/media/badge/normal.png');
-                                                                    @endphp
-                                                                    <div class="col-6 text-center">
-                                                                        <img src="{{ $img }}" alt="Soal {{ $loop->iteration }}" class="img-fluid" style="max-height: 100px;">
-                                                                        <div class="fw-semibold mt-2 mb-2">
-                                                                            Soal {{ $loop->iteration }}
-                                                                        </div>
+                                                        @if ($labeledSoal->count())
+                                                            @foreach ($labeledSoal as $idx => $soal)
+                                                                @php
+                                                                    $label = $soal['badge'];
+                                                                    $map = [
+                                                                        'Ideal' => 'assets/media/badge/ideal.png',
+                                                                        'Struggling' =>
+                                                                            'assets/media/badge/struggling.png',
+                                                                        'Normal' => 'assets/media/badge/normal.png',
+                                                                        'Gaming the System' =>
+                                                                            'assets/media/badge/gaming.png',
+                                                                    ];
+                                                                    $img = asset(
+                                                                        $map[$label] ?? 'assets/media/badge/normal.png',
+                                                                    );
+                                                                @endphp
+                                                                <div class="col-6 text-center">
+                                                                    <img src="{{ $img }}"
+                                                                        alt="Soal {{ $loop->iteration }}"
+                                                                        class="img-fluid" style="max-height: 100px;">
+                                                                    <div class="fw-semibold mt-2 mb-2">
+                                                                        Soal {{ $loop->iteration }}
                                                                     </div>
-                                                                @endforeach
-                                                            @endif
-                                                        </div>
+                                                                </div>
+                                                            @endforeach
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -499,6 +574,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
     </div>
     @extends('pages.guide.index')
@@ -565,7 +641,10 @@
             });
             // Atau pantau perubahan attribute secara langsung
             const observer = new MutationObserver(toggleSidebarBookContainer);
-            observer.observe(document.getElementById('kt_app_body'), { attributes: true, attributeFilter: ['data-kt-app-sidebar-minimize'] });
+            observer.observe(document.getElementById('kt_app_body'), {
+                attributes: true,
+                attributeFilter: ['data-kt-app-sidebar-minimize']
+            });
         });
 
         // Tambahkan di dalam <script> tag pada bagian bawah file
@@ -709,32 +788,41 @@
     </script>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const pencapaianId = urlParams.get('pencapaian_id');
-        const badgeId = urlParams.get('badge_id');
-        const konversiId = urlParams.get('konversi_id');
-        const container = document.getElementById('kt_docs_toast_stack_container');
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pencapaianId = urlParams.get('pencapaian_id');
+            const badgeId = urlParams.get('badge_id');
+            const konversiId = urlParams.get('konversi_id');
+            const container = document.getElementById('kt_docs_toast_stack_container');
 
-        // Jika kedua id null, tidak perlu request ajax
-        if (!pencapaianId && !badgeId && !konversiId) return;
+            // Jika kedua id null, tidak perlu request ajax
+            if (!pencapaianId && !badgeId && !konversiId) return;
 
-        // Jika salah satu ada, tetap request ajax
-        $.ajax({
-            url: APP_URL + "pencapaian/getById",
-            type: "GET",
-            data: { pencapaian_id: pencapaianId, badge_id: badgeId, konversi_id: konversiId },
-            success: function (data) {
-                // Fungsi untuk membuat toast baru
-                function createToast({iconClass, title, desc, href}) {
-                    const toastDiv = document.createElement('div');
-                    toastDiv.className = "toast align-items-center border-0 mb-3";
-                    toastDiv.setAttribute("role", "alert");
-                    toastDiv.setAttribute("aria-live", "assertive");
-                    toastDiv.setAttribute("aria-atomic", "true");
-                    toastDiv.setAttribute("data-kt-docs-toast", "stack");
-                    toastDiv.style.cursor = "pointer";
-                    toastDiv.innerHTML = `
+            // Jika salah satu ada, tetap request ajax
+            $.ajax({
+                url: APP_URL + "pencapaian/getById",
+                type: "GET",
+                data: {
+                    pencapaian_id: pencapaianId,
+                    badge_id: badgeId,
+                    konversi_id: konversiId
+                },
+                success: function(data) {
+                    // Fungsi untuk membuat toast baru
+                    function createToast({
+                        iconClass,
+                        title,
+                        desc,
+                        href
+                    }) {
+                        const toastDiv = document.createElement('div');
+                        toastDiv.className = "toast align-items-center border-0 mb-3";
+                        toastDiv.setAttribute("role", "alert");
+                        toastDiv.setAttribute("aria-live", "assertive");
+                        toastDiv.setAttribute("aria-atomic", "true");
+                        toastDiv.setAttribute("data-kt-docs-toast", "stack");
+                        toastDiv.style.cursor = "pointer";
+                        toastDiv.innerHTML = `
                         <div class="toast-header">
                             <i class="${iconClass} fs-2 me-3"></i>
                             <strong class="me-auto py-1">${title}</strong>
@@ -744,53 +832,56 @@
                             <div class="mb-2">${desc}</div>
                         </div>
                     `;
-                    if (href) {
-                        toastDiv.addEventListener('click', function(e) {
-                            // Hindari klik tombol close
-                            if (!e.target.classList.contains('btn-close')) {
-                                window.location.href = href;
-                            }
+                        if (href) {
+                            toastDiv.addEventListener('click', function(e) {
+                                // Hindari klik tombol close
+                                if (!e.target.classList.contains('btn-close')) {
+                                    window.location.href = href;
+                                }
+                            });
+                        }
+                        container.appendChild(toastDiv);
+                        const toast = bootstrap.Toast.getOrCreateInstance(toastDiv, {
+                            delay: 7000
+                        });
+                        toast.show();
+                    }
+
+                    // Tampilkan toast pencapaian jika ada
+                    if (data.pencapaian) {
+                        createToast({
+                            iconClass: "ki-solid ki-star text-warning",
+                            title: data.badge.name,
+                            desc: data.badge.desc,
+                            href: APP_URL + "pencapaian?tab=soal",
                         });
                     }
-                    container.appendChild(toastDiv);
-                    const toast = bootstrap.Toast.getOrCreateInstance(toastDiv, { delay: 7000 });
-                    toast.show();
-                }
 
-                // Tampilkan toast pencapaian jika ada
-                if (data.pencapaian) {
-                    createToast({
-                        iconClass: "ki-solid ki-star text-warning",
-                        title: data.badge.name,
-                        desc: data.badge.desc,
-                        href: APP_URL + "pencapaian?tab=soal",
-                    });
-                }
+                    // Tampilkan toast badge jika ada
+                    if (data.badge) {
+                        createToast({
+                            iconClass: "ki-solid ki-verify text-primary",
+                            title: data.badge.name,
+                            desc: data.badge.desc,
+                            href: APP_URL + "pencapaian?tab=badge",
+                        });
+                    }
 
-                // Tampilkan toast badge jika ada
-                if (data.badge) {
-                    createToast({
-                        iconClass: "ki-solid ki-verify text-primary",
-                        title: data.badge.name,
-                        desc: data.badge.desc,
-                        href: APP_URL + "pencapaian?tab=badge",
-                    });
+                    // Tampilkan toast konversi jika ada
+                    if (data.konversi) {
+                        createToast({
+                            iconClass: "ki-solid ki-arrow-mix text-info",
+                            title: data.konversi.name,
+                            desc: data.konversi.desc,
+                            href: APP_URL + "pencapaian?tab=konversi",
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching achievement data:", error);
                 }
-
-                // Tampilkan toast konversi jika ada
-                if (data.konversi) {
-                    createToast({
-                        iconClass: "ki-solid ki-arrow-mix text-info",
-                        title: data.konversi.name,
-                        desc: data.konversi.desc,
-                        href: APP_URL + "pencapaian?tab=konversi",
-                    });
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error("Error fetching achievement data:", error);
-            }
+            });
         });
-    });
     </script>
+
 </html>
