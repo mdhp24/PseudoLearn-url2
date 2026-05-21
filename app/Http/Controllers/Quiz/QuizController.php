@@ -232,12 +232,7 @@ class QuizController extends Controller
             ->get()
             ->toArray();
 
-        $algopoin = $this->labelSkorModel
-            ->where('id_mahasiswa', $idMahasiswa)
-            ->whereNull('id_soal')
-            ->whereNull('label')
-            ->where('id_level', $levelId)
-            ->sum('skor');
+        
 
         // Index konversi by id_soal (single, not array)
         $konversiBySoal = [];
@@ -280,12 +275,13 @@ class QuizController extends Controller
                 ->where('status', 1)
                 ->exists();
 
-            $isKonversiDone = false;
+            // If there is no konversi entry, treat konversi as done for unlocking logic
+            $isKonversiDone = true;
             if ($konversi) {
                 $isKonversiDone = DB::table('ujian_kode')
                     ->where('id_mahasiswa', $idMahasiswa)
                     ->where('id_bank_soal_konversi', $konversi->id)
-                    ->exists(); 
+                    ->exists();
             }
 
             if (!$unlockNext) {
@@ -427,12 +423,12 @@ class QuizController extends Controller
                     ->where('status', 1)
                     ->exists();
 
-                $isKonversiDone = false;
+                $isKonversiDone = true;
                 if ($konversiArs) {
                     $isKonversiDone = DB::table('ujian_kode')
-                    ->where('id_mahasiswa', $idMahasiswa)
-                    ->where('id_bank_soal_konversi', $konversiArs->id)
-                    ->exists();
+                        ->where('id_mahasiswa', $idMahasiswa)
+                        ->where('id_bank_soal_konversi', $konversiArs->id)
+                        ->exists();
                 }
 
                 $result[] = [
@@ -496,6 +492,15 @@ class QuizController extends Controller
                         ]);
                     }
                 }
+            }
+        }
+
+        // Pastikan item yang melebihi batas tampilan tertutup (kecuali yang sudah 'done')
+        $maxEntries = $visibleLimit * 2; // setiap pair bisa menghasilkan 2 entri (soal + konversi)
+        foreach ($result as $idx => $item) {
+            if ($idx >= $maxEntries && (($item['status'] ?? '') !== 'done')) {
+                $result[$idx]['status'] = 'locked';
+                $result[$idx]['judul'] = null;
             }
         }
 
@@ -606,7 +611,7 @@ class QuizController extends Controller
             ->where('status', 1)
             ->exists();
 
-        $isKonversiDone = false;
+        $isKonversiDone = true;
         if ($konversiTambahan) {
             $isKonversiDone = DB::table('ujian_kode')
                 ->where('id_mahasiswa', $idMahasiswa)
