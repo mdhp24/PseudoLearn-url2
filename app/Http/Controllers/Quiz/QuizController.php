@@ -264,20 +264,22 @@ public function questionList(Request $request)
             ->where('id_soal', $soal->id)
             ->value('label');
 
+        // Soal pseudocode — judul selalu tampil
         $result[] = [
             'type'       => 'soal',
             'id'         => $soal->id,
-            'judul'      => $soal->judul, // ← selalu tampil, tidak di-null saat locked
+            'judul'      => $soal->judul,
             'difficulty' => $soal->difficulty,
             'status'     => $pseudoStatus,
             'badge'      => $badge,
         ];
 
+        // Soal konversi — judul selalu tampil (tidak di-null saat locked)
         if ($konversi) {
             $result[] = [
                 'type'       => 'konversi',
                 'id'         => $konversi->id,
-                'judul'      => $konversi->judul_soal ?? $konversi->judul ?? null, // ← selalu tampil
+                'judul'      => $konversi->judul_soal ?? $konversi->judul ?? null,
                 'difficulty' => $soal->difficulty,
                 'status'     => $konversiStatus,
             ];
