@@ -167,13 +167,7 @@ function submitKonversi() {
             }
 
             var feedbackMessage = "Terdapat jawaban salah";
-            if (res?.message?.errors && res.message.errors.length) {
-                feedbackMessage = res.message.errors
-                    .map(function (item) {
-                        return item.message || "Jawaban salah";
-                    })
-                    .join("\n");
-            } else if (res?.message?.message) {
+            if (res?.message?.message) {
                 feedbackMessage = res.message.message;
             } else if (res?.message) {
                 feedbackMessage = res.message;

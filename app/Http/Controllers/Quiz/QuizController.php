@@ -87,7 +87,7 @@ class QuizController extends Controller
                 ->count('id_soal');
 
             $completedKonversi = DB::table('ujian_kode')
-                ->where('id_mahasiswa', $mahasiswa->id)
+                ->where('id_mahasiswa', $userId)
                 ->where('id_level', $levelId)
                 ->distinct('id_bank_soal_konversi')
                 ->count('id_bank_soal_konversi');
@@ -115,10 +115,10 @@ class QuizController extends Controller
 
             $activeKonversi = DB::table('bank_soal_konversi')
                 ->where('id_level', $levelId)
-                ->whereNotIn('id', function ($q) use ($mahasiswa, $levelId) {
+                ->whereNotIn('id', function ($q) use ($userId, $levelId) {
                     $q->select('id_bank_soal_konversi')
                         ->from('ujian_kode')
-                        ->where('id_mahasiswa', $mahasiswa->id)
+                    ->where('id_mahasiswa', $userId)
                         ->where('id_level', $levelId);
                 })
                 ->orderBy('created_at', 'asc')
@@ -235,11 +235,12 @@ public function questionList(Request $request)
         $isKonversiDone = true;
         if ($konversi) {
             $isKonversiDone = DB::table('ujian_kode')
-                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_mahasiswa', $idUser)
                 ->where('id_bank_soal_konversi', $konversi->id)
                 ->exists();
         }
 
+        // Status pseudo: tergantung unlockNext dari soal sebelumnya
         if (!$unlockNext) {
             $pseudoStatus = 'locked';
         } elseif ($isPseudoDone) {
@@ -248,7 +249,8 @@ public function questionList(Request $request)
             $pseudoStatus = 'active';
         }
 
-        if (!$unlockNext || !$isPseudoDone) {
+        // ✅ PERBAIKAN: konversi hanya tergantung isPseudoDone, BUKAN unlockNext
+        if (!$isPseudoDone) {
             $konversiStatus = 'locked';
         } elseif ($isKonversiDone) {
             $konversiStatus = 'done';
@@ -272,34 +274,31 @@ public function questionList(Request $request)
         ];
 
         if ($konversi) {
-            // Ambil judul konversi dari kolom eksplisit saja
             $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? null;
 
-            // ✅ PERBAIKAN: Jika judul konversi sama dengan judul soal induk
-            // (atau kosong), gunakan judul soal induk tapi JANGAN tampilkan subtitle
             $konversiSubtitle = null;
             if (!empty($konversiJudul) && $konversiJudul !== $soal->judul) {
-                // Judul konversi berbeda → subtitle = judul soal induk sebagai konteks
                 $konversiSubtitle = $soal->judul;
             } else {
-                // Tidak ada judul konversi unik → pakai judul soal induk, tanpa subtitle
                 $konversiJudul    = $soal->judul;
-                $konversiSubtitle = null; // ← ini yang menghilangkan duplikat
+                $konversiSubtitle = null;
             }
 
             $result[] = [
-                'type'     => 'konversi',
-                'id'       => $konversi->id,
-                'judul'    => $konversiJudul,
-                'subtitle' => $konversiSubtitle, // null = tidak ditampilkan di view
+                'type'       => 'konversi',
+                'id'         => $konversi->id,
+                'judul'      => $konversiJudul,
+                'subtitle'   => $konversiSubtitle,
                 'difficulty' => $soal->difficulty,
-                'status'   => $konversiStatus,
+                'status'     => $konversiStatus,
             ];
         }
 
+        // ✅ Unlock soal berikutnya hanya jika pseudo DAN konversi sudah selesai
         if (!$isPseudoDone || !$isKonversiDone) {
             $unlockNext = false;
         }
+        // Jika keduanya done, $unlockNext tetap true → soal berikutnya terbuka
     }
 
     // Deduplicated konversi names
@@ -318,8 +317,7 @@ public function questionList(Request $request)
         ->where('id_level', $levelId)
         ->sum('skor');
 
-    $dataLevel = $this->levelModel->find($levelId);
-
+    $dataLevel          = $this->levelModel->find($levelId);
     $jumlahSoalKonversi = DB::table('bank_soal_konversi')
         ->where('id_level', $levelId)
         ->count();

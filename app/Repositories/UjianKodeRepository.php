@@ -42,7 +42,7 @@ class UjianKodeRepository
             ], 404);
         }
 
-        $kunciJawaban = BankSoalKonversi::parseJawabanLines($soalKonversi->jawaban);
+        $kunciJawaban = $this->parseJawabanList($soalKonversi->jawaban);
 
         if ($kunciJawaban === []) {
             return response()->json([
@@ -64,7 +64,7 @@ class UjianKodeRepository
         $errors = [];
         foreach ($kunciJawaban as $index => $kunci) {
             $jawaban = $jawabanMahasiswa[$index] ?? '';
-            if ($jawaban === '' || !BankSoalKonversi::linesMatch($kunci, $jawaban)) {
+            if (!$this->linesMatch($kunci, $jawaban)) {
                 $errors[] = ['index' => $index];
             }
         }
@@ -85,7 +85,7 @@ class UjianKodeRepository
 
         // Simpan hasil ujian
         $this->model->create([
-            'id_mahasiswa'          => $idMahasiswa,
+            'id_mahasiswa'          => $idUser,
             'id_bank_soal_konversi' => $idBankSoalKonversi,
             'id_level'              => $soalKonversi->id_level,
             'jawaban'               => implode("\n", $jawabanMahasiswa),
@@ -161,5 +161,10 @@ class UjianKodeRepository
         $line = trim($line);
         $line = preg_replace('/\s+/', ' ', $line);
         return $line ?? '';
+    }
+
+    protected function linesMatch(string $expected, string $actual): bool
+    {
+        return $this->normalizeJawabanLine($expected) === $this->normalizeJawabanLine($actual);
     }
 }
