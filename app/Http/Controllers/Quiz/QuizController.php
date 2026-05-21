@@ -16,7 +16,7 @@ use App\Services\LevelService;
 use App\Services\KonversiService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -205,132 +205,118 @@ class QuizController extends Controller
         ]);
     }
 
-    public function questionList(Request $request)
-    {
-        $levelId      = $request->query('level');
-        $idUser       = Auth::id();
-        $idMahasiswa  = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
+public function questionList(Request $request)
+{
+    $levelId     = $request->query('level');
+    $idUser      = Auth::id();
+    $idMahasiswa = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
 
-        $soalList = $this->soalModel
+    // Ambil SEMUA soal aktif tanpa batas
+    $soalList = $this->soalModel
+        ->where('id_level', $levelId)
+        ->where('status', 1)
+        ->orderBy('order', 'asc')
+        ->get();
+
+    $result     = [];
+    $unlockNext = true;
+
+    foreach ($soalList as $soal) {
+        $konversi = DB::table('bank_soal_konversi')
+            ->where('id_soal', $soal->id)
             ->where('id_level', $levelId)
-            ->where('status', 1)
-            ->orderBy('order', 'asc')
-            ->get();
+            ->first();
 
-        $result       = [];
-        $visibleLimit = $this->visibleLimit;
-        $pairCount    = 0;
-        $unlockNext   = true;
-
-        foreach ($soalList as $soal) {
-            if ($pairCount >= $visibleLimit) break;
-
-            $konversi = DB::table('bank_soal_konversi')
-                ->where('id_soal', $soal->id)
-                ->where('id_level', $levelId)
-                ->first();
-
-            $isPseudoDone = $this->ujianModel
-                ->where('id_mahasiswa', $idMahasiswa)
-                ->where('id_soal', $soal->id)
-                ->where('status', 1)
-                ->exists();
-
-            // Jika tidak ada konversi, anggap konversi sudah selesai
-            $isKonversiDone = true;
-            if ($konversi) {
-                $isKonversiDone = DB::table('ujian_kode')
-                    ->where('id_mahasiswa', $idMahasiswa)
-                    ->where('id_bank_soal_konversi', $konversi->id)
-                    ->exists();
-            }
-
-            if (!$unlockNext) {
-                $pseudoStatus = 'locked';
-            } elseif ($isPseudoDone) {
-                $pseudoStatus = 'done';
-            } else {
-                $pseudoStatus = 'active';
-            }
-
-            if (!$isPseudoDone) {
-                $konversiStatus = 'locked';
-            } elseif ($isKonversiDone) {
-                $konversiStatus = 'done';
-            } else {
-                $konversiStatus = 'active';
-            }
-
-            $badge = $this->labelSkorModel
-                ->where('id_mahasiswa', $idMahasiswa)
-                ->where('id_level', $levelId)
-                ->where('id_soal', $soal->id)
-                ->value('label');
-
-            $result[] = [
-                'type'       => 'soal',
-                'id'         => $soal->id,
-                'judul'      => ($pseudoStatus === 'locked') ? null : $soal->judul,
-                'difficulty' => $soal->difficulty,
-                'status'     => $pseudoStatus,
-                'badge'      => $badge,
-            ];
-
-            if ($konversi) {
-                $result[] = [
-                    'type'       => 'konversi',
-                    'id'         => $konversi->id,
-                    'judul'      => ($konversiStatus === 'locked') ? null : ($konversi->judul_soal ?? $konversi->judul ?? null),
-                    'difficulty' => $soal->difficulty,
-                    'status'     => $konversiStatus,
-                ];
-            }
-
-            if (!$isPseudoDone || !$isKonversiDone) {
-                $unlockNext = false;
-            }
-
-            $pairCount++;
-        }
-
-        // Kunci item yang melebihi batas tampilan dan belum selesai
-        $maxEntries = $visibleLimit * 2;
-        foreach ($result as $idx => $item) {
-            if ($idx >= $maxEntries && (($item['status'] ?? '') !== 'done')) {
-                $result[$idx]['status'] = 'locked';
-                $result[$idx]['judul']  = null;
-            }
-        }
-
-        $algopoin = $this->labelSkorModel
+        $isPseudoDone = $this->ujianModel
             ->where('id_mahasiswa', $idMahasiswa)
-            ->whereNull('id_soal')
-            ->whereNull('label')
+            ->where('id_soal', $soal->id)
+            ->where('status', 1)
+            ->exists();
+
+        // Jika tidak ada konversi, anggap konversi sudah selesai
+        $isKonversiDone = true;
+        if ($konversi) {
+            $isKonversiDone = DB::table('ujian_kode')
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_bank_soal_konversi', $konversi->id)
+                ->exists();
+        }
+
+        if (!$unlockNext) {
+            $pseudoStatus = 'locked';
+        } elseif ($isPseudoDone) {
+            $pseudoStatus = 'done';
+        } else {
+            $pseudoStatus = 'active';
+        }
+
+        if (!$isPseudoDone) {
+            $konversiStatus = 'locked';
+        } elseif ($isKonversiDone) {
+            $konversiStatus = 'done';
+        } else {
+            $konversiStatus = 'active';
+        }
+
+        $badge = $this->labelSkorModel
+            ->where('id_mahasiswa', $idMahasiswa)
             ->where('id_level', $levelId)
-            ->sum('skor');
+            ->where('id_soal', $soal->id)
+            ->value('label');
 
-        $dataLevel = $this->levelModel->find($levelId);
+        $result[] = [
+            'type'       => 'soal',
+            'id'         => $soal->id,
+            'judul'      => $soal->judul, // ← selalu tampil, tidak di-null saat locked
+            'difficulty' => $soal->difficulty,
+            'status'     => $pseudoStatus,
+            'badge'      => $badge,
+        ];
 
-        $jumlahSoalKonversi = DB::table('bank_soal_konversi')
-            ->where('id_level', $levelId)
-            ->count();
+        if ($konversi) {
+            $result[] = [
+                'type'       => 'konversi',
+                'id'         => $konversi->id,
+                'judul'      => $konversi->judul_soal ?? $konversi->judul ?? null, // ← selalu tampil
+                'difficulty' => $soal->difficulty,
+                'status'     => $konversiStatus,
+            ];
+        }
 
-        $nyawa = Nyawa::where('id_user', $idUser)->first();
-        $nyawa->checkAndRegenerate();
-
-        return view('pages.quiz.question-list', [
-            'title'              => 'List Soal',
-            'dataSoal'           => $result,
-            'algopoin'           => $algopoin,
-            'levelId'            => $levelId,
-            'nilaiKonversiList'  => [],
-            'dataLevel'          => $dataLevel,
-            'jumlahSoalKonversi' => $jumlahSoalKonversi,
-            'lives'              => $nyawa->nyawa,
-            'max_lives'          => $nyawa->max_nyawa,
-            'next_regen_at'      => $nyawa->next_regen_at,
-        ]);
+        if (!$isPseudoDone || !$isKonversiDone) {
+            $unlockNext = false;
+        }
     }
+
+    $algopoin = $this->labelSkorModel
+        ->where('id_mahasiswa', $idMahasiswa)
+        ->whereNull('id_soal')
+        ->whereNull('label')
+        ->where('id_level', $levelId)
+        ->sum('skor');
+
+    $dataLevel = $this->levelModel->find($levelId);
+
+    $jumlahSoalKonversi = DB::table('bank_soal_konversi')
+        ->where('id_level', $levelId)
+        ->count();
+
+    $nyawa = Nyawa::where('id_user', $idUser)->first();
+    $nyawa->checkAndRegenerate();
+
+    return view('pages.quiz.question-list', [
+        'title'              => 'List Soal',
+        'dataSoal'           => $result,
+        'algopoin'           => $algopoin,
+        'levelId'            => $levelId,
+        'nilaiKonversiList'  => [],
+        'dataLevel'          => $dataLevel,
+        'jumlahSoalKonversi' => $jumlahSoalKonversi,
+        'lives'              => $nyawa->nyawa,
+        'max_lives'          => $nyawa->max_nyawa,
+        'next_regen_at'      => $nyawa->next_regen_at,
+    ]);
+}
 
     public function calculateAvgSkor(Request $request)
     {
