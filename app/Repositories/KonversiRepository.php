@@ -372,18 +372,26 @@ class KonversiRepository extends BaseRepository
 
             $errors = [];
 
-            // Cek setiap baris: bandingkan array kata per baris, abaikan spasi
+            // Cek setiap baris: bandingkan jawaban per baris, lakukan normalisasi
+            $normalize = function ($s) {
+                if ($s === null) return '';
+                // decode HTML entities, cast to string, remove all whitespace (spaces/newlines/tabs)
+                $str = html_entity_decode((string) $s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $str = preg_replace('/\s+/u', '', $str);
+                return $str;
+            };
+
             foreach ($kunciJawaban as $idx => $baris) {
                 $nomorBaris = array_key_first($baris);
-                $isiKunci   = $baris[$nomorBaris];
+                $isiKunci   = $baris[$nomorBaris] ?? '';
                 $jawabanUser = $kodeLangkah[$idx] ?? null;
 
-                // Normalisasi: hapus semua spasi
-                $kunciNoSpace = str_replace(' ', '', $isiKunci);
-                $userNoSpace  = str_replace(' ', '', $jawabanUser);
+                // Normalisasi untuk membandingkan: hapus semua whitespace dan decode entitas
+                $kunciNorm = $normalize($isiKunci);
+                $userNorm  = $normalize($jawabanUser);
 
-                // Cek persis sama (case sensitive, termasuk tanda baca)
-                if ($userNoSpace !== $kunciNoSpace) {
+                // Jika masih tidak sama, tandai error
+                if ($userNorm !== $kunciNorm) {
                     $errors[] = [
                         'message' => "Jawaban salah pada baris ke {$nomorBaris}",
                         'index'   => $idx
