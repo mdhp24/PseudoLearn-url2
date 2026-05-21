@@ -120,12 +120,6 @@
             border-style: solid;
         }
 
-        .answer-box.wrong-answer {
-            border: 2px solid #dc3545 !important;
-            background-color: #ffe9e9;
-            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12);
-        }
-
         /* Java structure wrapper boxes */
         .code-box-input {
             background-color: #0a3a71;
@@ -186,10 +180,12 @@
 
         .answer-box.shake {
             animation: shake 0.4s;
+            border-color: red !important;
         }
 
-        .answer-box.shake.wrong-answer {
+        .answer-box.wrong-answer {
             border-color: #dc3545 !important;
+            background-color: #ffe8e8 !important;
         }
 
         .heart-beat {

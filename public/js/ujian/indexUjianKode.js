@@ -1,4 +1,5 @@
 var APP_URL = window.APP_URL || "/";
+var isSubmittingKonversi = false;
 
 function reloadUjian() {
     Swal.fire({
@@ -55,6 +56,11 @@ function openModalFeedback() {
 }
 
 function submitKonversi() {
+    if (isSubmittingKonversi) {
+        return;
+    }
+
+    isSubmittingKonversi = true;
     var modalKonfirmasi = bootstrap.Modal.getInstance(
         document.getElementById("modal-konfirmasi-jawaban-konversi"),
     );
@@ -73,22 +79,9 @@ function submitKonversi() {
     // Reset highlight box sebelumnya
     boxes.forEach(function (box) {
         box.style.borderColor = "";
-        box.classList.remove("wrong-answer");
         box.classList.remove("shake");
+        box.classList.remove("wrong-answer");
     });
-
-    function applyWrongAnswerHighlights(errors) {
-        var allBoxes = document.querySelectorAll(".answer-box.box-java");
-        errors.forEach(function (err) {
-            if (allBoxes[err.index]) {
-                allBoxes[err.index].classList.add("wrong-answer");
-                allBoxes[err.index].classList.add("shake");
-                setTimeout(function () {
-                    allBoxes[err.index].classList.remove("shake");
-                }, 400);
-            }
-        });
-    }
 
     $.ajax({
         url: APP_URL + "ujian-kode/submit-konversi",
@@ -100,6 +93,7 @@ function submitKonversi() {
             waktu: waktu,
         },
         success: function (response) {
+            isSubmittingKonversi = false;
             modalKonfirmasi.hide();
 
             // Ambil baris kode yang diisi mahasiswa
@@ -145,54 +139,61 @@ function submitKonversi() {
             };
         },
         error: function (xhr) {
+            isSubmittingKonversi = false;
             const res = xhr.responseJSON;
 
             if (res?.message?.errors) {
-                applyWrongAnswerHighlights(res.message.errors);
-            }
-
-            const lives =
-                typeof res?.lives !== "undefined" ? res.lives : null;
-            const livesEl = document.getElementById("lives-count");
-            if (livesEl && lives !== null) {
-                livesEl.innerText = lives;
-            }
-
-            if (lives === null) {
-                $.ajax({
-                    url: APP_URL + "nyawa/status",
-                    type: "GET",
-                    dataType: "json",
-                    headers: {
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    success: function (data) {
-                        if (livesEl)
-                            livesEl.innerText =
-                                data && typeof data.lives !== "undefined"
-                                    ? data.lives
-                                    : 0;
-
-                        openModalFeedbackIncorrect(
-                            res?.message?.message ?? "Terdapat jawaban salah",
-                            data.lives,
-                        );
-                    },
-                    error: function () {
-                        openModalFeedbackIncorrect(
-                            res?.message?.message ?? "Terdapat jawaban salah",
-                            0,
-                        );
-                    },
+                var allBoxes = document.querySelectorAll(
+                    ".answer-box.box-java",
+                );
+                res.message.errors.forEach(function (err) {
+                    if (allBoxes[err.index]) {
+                        allBoxes[err.index].style.borderColor = "#dc3545";
+                        allBoxes[err.index].classList.add("wrong-answer");
+                        allBoxes[err.index].classList.add("shake");
+                        setTimeout(function () {
+                            allBoxes[err.index].classList.remove("shake");
+                        }, 400);
+                    }
                 });
-                return;
             }
 
-            openModalFeedbackIncorrect(
-                res?.message?.message ?? "Terdapat jawaban salah",
-                lives,
-            );
+            $.ajax({
+                url: APP_URL + "nyawa/status",
+                type: "GET",
+                dataType: "json",
+                headers: {
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                success: function (data) {
+                    const livesEl = document.getElementById("lives-count");
+                    if (livesEl)
+                        livesEl.innerText =
+                            data && typeof data.lives !== "undefined"
+                                ? data.lives
+                                : 0;
+
+                    var feedbackMessage = "Terdapat jawaban salah";
+                    if (res?.message?.errors && res.message.errors.length) {
+                        feedbackMessage = res.message.errors
+                            .map(function (item) {
+                                return item.message;
+                            })
+                            .join("\n");
+                    } else if (res?.message?.message) {
+                        feedbackMessage = res.message.message;
+                    }
+
+                    openModalFeedbackIncorrect(
+                        feedbackMessage,
+                        data.lives,
+                    );
+                },
+                error: function (xhr) {
+                    // console.error("Gagal mendapatkan status nyawa", xhr);
+                },
+            });
         },
     });
 }
@@ -206,11 +207,19 @@ function openModalFeedbackIncorrect(feedbackText, lives = null) {
         document.getElementById("modal-konfirmasi-jawaban-konversi"),
     );
     var id_level = document.getElementById("id-level").value;
+    var feedbackEl = document.getElementById("feedback-ujian-konversi");
+
+    if (feedbackEl) {
+        feedbackEl.style.whiteSpace = "pre-line";
+        feedbackEl.textContent = feedbackText || "Terdapat jawaban salah";
+    }
 
     // Ganti pesan dan tombol jika nyawa habis
     if (parseInt(lives) <= 0) {
-        document.getElementById("feedback-ujian-konversi").innerHTML =
+        if (feedbackEl) {
+            feedbackEl.innerHTML =
             '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
+        }
 
         // Ganti tombol modal
         var modalFooter = document.querySelector(
