@@ -184,8 +184,9 @@
         }
 
         .answer-box.wrong-answer {
-            border-color: #dc3545 !important;
+            border: 2px solid #dc3545 !important;
             background-color: #ffe8e8 !important;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
         }
 
         .heart-beat {
