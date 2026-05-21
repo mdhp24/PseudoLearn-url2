@@ -18,7 +18,7 @@ class BankSoalKonversi extends BaseModel
         'id',
         'id_level',
         'id_soal',
-        'order',
+        'difficulty',
         'jawaban',
         'output',
     ];

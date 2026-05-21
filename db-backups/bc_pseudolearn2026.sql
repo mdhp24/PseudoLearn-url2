@@ -2,10 +2,10 @@
 -- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: Feb 12, 2026 at 06:48 AM
--- Server version: 8.0.30
--- PHP Version: 8.3.10
+-- Host: localhost
+-- Generation Time: Nov 24, 2025 at 09:33 AM
+-- Server version: 8.0.34
+-- PHP Version: 8.2.17
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -17,8 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `new_pseudolearn`
+--Database: `new_pseudolearn`
 --
 
 -- --------------------------------------------------------
@@ -44,6 +43,48 @@ CREATE TABLE `cache_locks` (
   `owner` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `expiration` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chatbot_logs`
+--
+
+CREATE TABLE `chatbot_logs` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id_mahasiswa` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id_level` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `id_soal` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `type` enum('biasa','adaptive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'biasa',
+  `pesan` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `respons` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `chatbot_logs`
+--
+
+INSERT INTO `chatbot_logs` (`id`, `id_mahasiswa`, `id_level`, `id_soal`, `type`, `pesan`, `respons`, `created_at`, `updated_at`, `deleted_at`) VALUES
+('019cc8f5-17be-735a-b8f6-6d5582571478', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hallo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 08:40:31', '2026-03-07 08:40:31', NULL),
+('019cc8f5-3ab1-72b0-80a3-f8a05f01180d', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hai', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 08:40:40', '2026-03-07 08:40:40', NULL),
+('019cc8f5-5c7c-7016-8c68-68256d43ab30', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'halo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 08:40:49', '2026-03-07 08:40:49', NULL),
+('019cc8f5-905f-7020-993b-0802d10ced4c', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hallo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 08:41:02', '2026-03-07 08:41:02', NULL),
+('019cc90d-4a79-7139-8030-e26120ba7756', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'haii', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 09:06:57', '2026-03-07 09:06:57', NULL),
+('019cc911-e78b-7176-a7f9-c88628c22a2e', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'haii', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 09:11:59', '2026-03-07 09:11:59', NULL),
+('019cc912-398c-7283-9215-033be555bcbb', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'test', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 09:12:20', '2026-03-07 09:12:20', NULL),
+('019cc917-0d4c-71f1-b200-9595c9d68f41', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'test', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 09:17:37', '2026-03-07 09:17:37', NULL),
+('019cc917-8a2e-724e-b2ef-adb8d47e18ee', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hai', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-07 09:18:09', '2026-03-07 09:18:09', NULL),
+('019ccd1a-0c36-723d-b7c1-6fee17aaee91', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hallo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-08 03:59:22', '2026-03-08 03:59:22', NULL),
+('019cce7f-a3f2-7281-8996-a0670ff98abc', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'ok', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-08 10:29:57', '2026-03-08 10:29:57', NULL),
+('019cce7f-f496-7024-8abb-a586dff3ecfc', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'i', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-08 10:30:18', '2026-03-08 10:30:18', NULL),
+('019cce85-6d03-72c9-bcd4-b1dc305481d5', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'jawaban', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-08 10:36:16', '2026-03-08 10:36:16', NULL),
+('019cd810-e81b-72e1-b4cc-552f1564f47a', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hallo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-10 07:05:12', '2026-03-10 07:05:12', NULL),
+('019cd811-8c75-7393-8357-b38d68e0f130', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hallo', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-10 07:05:54', '2026-03-10 07:05:54', NULL),
+('019cd820-eb71-7260-91c1-626267817ae3', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'hai', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-10 07:22:42', '2026-03-10 07:22:42', NULL),
+('019cd822-2057-72a6-93cc-963a5f37b4e1', '019bd119-feea-72db-ae7f-6eab643a243d', '01995dec-678e-70cf-854a-b25e2c2d0d28', '01995df6-35ed-7363-9d42-578622c3e4f2', 'biasa', 'haii', 'Maaf, saya sedang tidak dapat merespons saat ini. Silakan coba lagi.', '2026-03-10 07:24:01', '2026-03-10 07:24:01', NULL);
 
 -- --------------------------------------------------------
 
@@ -3231,7 +3272,8 @@ CREATE TABLE `migrations` (
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (1, '0001_01_01_000000_create_users_table', 1),
 (2, '0001_01_01_000001_create_cache_table', 1),
-(3, '0001_01_01_000002_create_jobs_table', 1);
+(3, '0001_01_01_000002_create_jobs_table', 1),
+(4, '2026_03_02_000001_create_chatbot_logs_table', 2);
 
 -- --------------------------------------------------------
 
@@ -3275,7 +3317,6 @@ CREATE TABLE `nyawa` (
 INSERT INTO `nyawa` (`id`, `id_user`, `id_mahasiswa`, `nyawa`, `max_nyawa`, `next_regen_at`, `created_at`, `updated_at`, `deleted_at`) VALUES
 ('01998481-df27-73b9-9506-ff6f40f7e72b', '8271c8db-2578-4b4a-9716-e0d8d03a542c', '01998481-df25-70a6-8d69-3fee01558a4c', 25, 25, '2025-09-26 05:42:07', '2025-09-26 05:32:07', '2025-09-26 05:32:07', NULL),
 ('019990b2-f640-72da-a18a-209abc1596d3', '31bda37a-d332-41fc-bfe8-7fde797511cb', '019990b2-f63e-72c7-92b7-12f87a539122', 25, 25, '2025-09-28 14:31:11', '2025-09-28 14:21:11', '2025-09-28 14:21:11', NULL),
-('019bd119-feec-70cf-9e31-018f739d8e1b', '8e4222f8-4aa3-48f9-962e-072f38533514', '019bd119-feea-72db-ae7f-6eab643a243d', 25, 25, NULL, '2026-01-18 05:35:00', '2026-02-11 08:16:53', NULL),
 ('40b50732-9923-11f0-b4bd-0050562b63bd', '00406845-e5e9-4fd8-99fd-47f83dcc8b04', '1994b0d3-81b6-4e34-bbdd-245504d95e6c', 25, 25, NULL, '2025-09-24 08:48:33', '2025-09-24 08:48:33', NULL),
 ('40b50785-9923-11f0-b4bd-0050562b63bd', '006fbaec-bb88-4dc2-aa9b-1a9a665c1890', '18760fd9-69c2-42cd-8f21-45014788d18b', 25, 25, NULL, '2025-09-24 08:48:33', '2025-09-24 08:48:33', NULL),
 ('40b5079d-9923-11f0-b4bd-0050562b63bd', '022ea1fd-94f7-4678-b2d0-00133f37501e', '406036aa-6d0a-4e6e-ab7c-b34ff78180b0', 25, 25, NULL, '2025-09-24 08:48:33', '2025-09-24 08:48:33', NULL),
@@ -10164,9 +10205,34 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('SxQHb67Q2krZ9Ig7TE8IZ3BbZ8ojArDnswDfxcs0', 'b1bc1c75-6956-4b33-b585-3dc5edad9333', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiQVQzOUprWVFpdXBiaTRNaVJHbElkUlB6cExuOXBra1F5U0lPNHJkeiI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MzQ6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9sb2ctYWN0aXZpdHkiO3M6NToicm91dGUiO3M6MTg6ImxvZy1hY3Rpdml0eS5pbmRleCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtzOjM2OiJiMWJjMWM3NS02OTU2LTRiMzMtYjU4NS0zZGM1ZWRhZDkzMzMiO30=', 1769481587),
-('Z5yLVwID3YitJUaAg5hzFQp77dD5ceiNHyG8feFN', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiQnRnYnNqY1VqbG9uajVncVBhS0RJS0dsRXkxbUdwUDdTWlRKZG5pTyI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9sb2dpbiI7czo1OiJyb3V0ZSI7czo1OiJsb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1770878499),
-('zplCbRSY3fuukDyRAA4FnhFsLSXZY7qaDBHUxkKN', '8e4222f8-4aa3-48f9-962e-072f38533514', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoicWs2azhkazFhR1g4MzdFbGlvWmVlT0NPMUczb3B0bXBpTTdyZlFONyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MzE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9kYXNoYm9hcmQiO3M6NToicm91dGUiO3M6OToiZGFzaGJvYXJkIjt9czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO3M6MzY6IjhlNDIyMmY4LTRhYTMtNDhmOS05NjJlLTA3MmYzODUzMzUxNCI7fQ==', 1770823236);
+('0jlP6EESMG2BTn15cpqV6ltBA84QvcCj9gVOc3qk', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoieXh2RWl2RFNFSHVOQXZ5YjdzU0dSVk00Y2JGbjI5YU9IV0ZaOWFYaSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763926319),
+('2tjFlQSHcS1CFpNmYf5r3NyKesG37GHNjkcgS9W0', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiVHo1U3plZlI4UWtONmVRYjNZRmFXb3VCU0NxNjFCRFZnajZFaTBKaiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763935998),
+('7CUUidLJDEwNEXrJVIZ1qx0bTOrgkf9F1cndoCnH', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoicUxXZHdWT3gxZEdTN3RYMDVOYVNmWjZvVnlNakQ3TDRSZDZ4TFJCViI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763923762),
+('AJvzW3yDMoyrgofs811t9hLrCao5ByMHYWVvWrvA', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoibWczMmJjSXVJQ3Y5SFZiTFVUMmxzZWRMM2QwSE1PTHY4Uk1Lc3h6aSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763917057),
+('b2NvgnzZDNcmUsv7cCDSY0GDwkKSI0GGMlOpOIaC', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0; 360Spider', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiUklhdG5PazJqdzJ2UzQxTFEwYktGYTRpNWhuN1BmUGlVeGpYTDhpVSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763895115),
+('BKfjD7iIHTui3xIApAgnO6OwjfdpXoGQvhhkdnk0', NULL, '127.0.0.1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/534.50.2 (KHTML, like Gecko) Version/5.0.6 Safari/533.22.3', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoieFFpWFprSWRpeVNKeXFIZ3V3cFZ4bEtyajdkSk9ScmQ4MnNocVhWSyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763916616),
+('c4lYUPVhp67aYHObohftwnuoWa72ka0ST1s6dssg', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiMGYyTWFDMWdHVmVibjRBT1FJbWFVZjl6cFl6TUF4YmQzV0h3UGZJSiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763893506),
+('dQsLY6LkYaQV7soyIAL0YlVRvePBGWsxfkNYSv7E', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiMWI4Q3VMMTdlcUZEbHo0WXIzZnRtNkdocEtzamRQaEI5Q1I1R2hvSiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763912443),
+('EmY9qt0N7oI0zhKt0STBQoNVR4c8rE9z03HnMlIA', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiQ1g1bDRtc3dGdFFhRFNaRzRjZkJhcVJWb21iOUFtVXBqclI2OVVITSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763943824),
+('EsvOUYFozsqx1refvvxOeH4rprHEvQlqJ63Pyjqb', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiYWFxT1piRkN4QkVySTk2dlh3YVBoRmNKUllJN291UWRmWTZwS1hpSiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763943826),
+('fjTNoCZc6qOWyxgxha1kOHEEh8gtCm1jg57ikDPz', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoibGJsbzZYaHNmV3M1RGJFcUR0bkhBWmh6Z1JVRWRoZ01NRG1VTndvaSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763917052),
+('GsgcVJXJ0DepdyNuCLR9sYmI9uMZpRZOV2DsZD3G', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiYkk1MGNrTXNBUEZnV1JRVFhSZVY5SDhmZkdmUkhUaWZVbFVaREJYNyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763899498),
+('ic0QXNFsor6F7SbfF0u42WGKzxWSnciqTLOOiNle', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiTzhEdmNNZ0NLYkFDYWUwaGR1aUl1Qjk0Y1A1c21qNzNud0tYUUptbyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763893504),
+('jk2cbgmIqHOZO3npsy9N32efBCGN8XD6UAhLWNVN', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0; 360Spider', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoibUJzczFKV2s4RzR2WEJQMlRTTHZpaXdReFRDTVA5TThVSjQ4MUhvaCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763895116),
+('KN12yxUlGjiHacqqQwT1mQOQVmMGgBJ4APoK6gPa', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiSk9QeHFOb3huZFl5TXdjZDhJRmFkUFJwdmlTSjlpZmJhM0Q1djBuUyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763947317),
+('LB1i95HsH71qzNtFVaanJ58TJy7YatoFfvuZjRRc', NULL, '127.0.0.1', 'Mozilla/5.0 (compatible; CMS-Checker/1.0; +https://example.com)', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiZm45NFJqMHVZdHB2R3FINXBMcTlzNmlaR1E2eXdpTVFhMVNYYUhoeiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763918871),
+('MSIfPeD6B4yyUBVxRAgNFGEClWgcZCR5AjtOh26p', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3542.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiN1h3VkloRHpYZ0dNU3YwcG00aUR0eHFncDU5UkF2MWtYa3lJelREciI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763900903),
+('nydjRDCKnK3D08vgpE5SfBZAlCjH1Orp6yk8qJ74', NULL, '127.0.0.1', '', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiWE14UU1jZXcxOHJ2eEliZnVSSG9CQUZZeUZzc0JuWXpSWWMyME5QViI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763911034),
+('P79c075PGFTtOWizGHGXtfrGvHgufemvewCspqyT', NULL, '127.0.0.1', 'Mozilla/5.0 (X11; U; Linux i686; en-gb) AppleWebKit/534.35 (KHTML, like Gecko) Chrome/11.0.696.65 Safari/534.35 Puffin/2.0.5603M', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoidXcwanlBaHZSdkZLamZrNEczRkZOWHBKYVJSUUFITUZpNmdwY1NZTSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763941851),
+('p8vZ54YOWh85bk0uJqJIO6Qo4KDMK9x2fPU5bAUv', NULL, '127.0.0.1', 'Mozilla/5.0 (compatible; CMS-Checker/1.0; +https://example.com)', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiVktmRENXWHB5M29mblE4M3N2RGNDSjhheTZ4NnJOUlJIdk5JQ1lQRiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763918868),
+('qr9Jajt8n7ytgKkOjXnSSgDO4v7ik0b48qj3L7Ts', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiQXpjQ1pWaks5emloMEl3QkVqWEpjOENtZ3N4M2RIenZ4ckIwUXhPTiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763912451),
+('SgWToKNu9ZF9lLmuXt0tj3ItsnstoeDsu17RNmyk', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiT1VRcDZKMFlsdDNTcENVWk9YRWYzZ3RMMXV1ZERkZGxkdU1panRzTyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763935234),
+('t3ReogofYWx0FYo4RXgsCI3VdTJtdeCqku9tMOM3', NULL, '127.0.0.1', '', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiNWpkWHFrNUN5bnNvNHc3R3lXakJ0enZtY2xjeEhwRElteW9JazBDaiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763911032),
+('tIjxwfUI8u8nzFM2YLUQJWvuIAHOzn2RYJRv6vTV', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiMnpmZGdSZVVaaWtuQnVLbTZTMXBNMVpiSlpWVEhPVWxjT3dTMXpVRCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjY6Imh0dHA6Ly93d3cucHNldWRvbGVhcm4uY29tIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1763935228),
+('TTmsqfLxFyoLiuSz3UlsmlEu9eFCT03AzZJ020XZ', NULL, '127.0.0.1', 'Mozilla/5.0 (Linux; Android 7.0; F3211 Build/36.1.A.0.182) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.116 Mobile Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiMVR3RGRGck1RdVMxdlJBQ3JUeUUwVjZzSEZVSjQ2MDMyWEpsZ1NzeiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjI6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763916618),
+('Wt5LCXbJxbkQ36GUyk1gRWp3StUR5jH4jUBO9OP7', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoicXVzbElEWWhLNUF2SWpxZXlOY2duM01mOEZLMHVlN2pSbk1vdExQdSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763930425),
+('Z9dGWHX5fyPg20rQFsXTpEbuIiX6ojkamOk3kZBl', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiVUtXVHd2WGR3N1lPYTdkN3JJSFp6M3Q2Q2J6MzRYMXJZM0RRT3M1ViI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763899499),
+('ZFc8Al5K0QxxraWztV0t8EA7hyEr6W0eWbrCSoHg', NULL, '127.0.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiN09oUW8yUnhoOHB2TW9EajRVd0ZEc3Fkd3laTWJEMXNUUTlkckRENyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9wc2V1ZG9sZWFybi5jb20vbG9naW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1763923764);
 
 -- --------------------------------------------------------
 
@@ -10188,7 +10254,7 @@ CREATE TABLE `settings` (
 --
 
 INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `deleted_at`) VALUES
-('ffb8c542-a376-11f0-8150-b46921aaa072', 'maintenance_mahasiswa', '0', '2025-10-07 12:13:13', '2026-01-18 08:45:12', NULL);
+('ffb8c542-a376-11f0-8150-b46921aaa072', 'maintenance_mahasiswa', '0', '2025-10-07 12:13:13', '2025-10-08 07:52:18', NULL);
 
 -- --------------------------------------------------------
 
@@ -10892,6 +10958,15 @@ ALTER TABLE `cache_locks`
   ADD PRIMARY KEY (`key`) USING BTREE;
 
 --
+-- Indexes for table `chatbot_logs`
+--
+ALTER TABLE `chatbot_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `chatbot_logs_id_mahasiswa_foreign` (`id_mahasiswa`),
+  ADD KEY `chatbot_logs_id_level_foreign` (`id_level`),
+  ADD KEY `chatbot_logs_id_soal_foreign` (`id_soal`);
+
+--
 -- Indexes for table `debug_konversi`
 --
 ALTER TABLE `debug_konversi`
@@ -11093,11 +11168,19 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `chatbot_logs`
+--
+ALTER TABLE `chatbot_logs`
+  ADD CONSTRAINT `chatbot_logs_id_level_foreign` FOREIGN KEY (`id_level`) REFERENCES `level` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `chatbot_logs_id_mahasiswa_foreign` FOREIGN KEY (`id_mahasiswa`) REFERENCES `mahasiswa` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `chatbot_logs_id_soal_foreign` FOREIGN KEY (`id_soal`) REFERENCES `soal` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `debug_konversi`

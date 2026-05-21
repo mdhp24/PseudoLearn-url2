@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="description"
         content="Pseudolearn adalah aplikasi pembelajaran dasar pemrograman berbasis pseudocode yang dirancang untuk membantu siswa memahami konsep dasar pemrograman dengan cara yang interaktif." />
-    <meta name="keywords"
+    <meta name="keywords"F
         content="Pseudolearn, pembelajaran pemrograman, dasar pemrograman, pseudocode, aplikasi edukasi, belajar pemrograman, interaktif, siswa, pendidikan, teknologi pendidikan" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta property="og:locale" content="en_US" />
@@ -271,13 +271,20 @@
                                                     @php
                                                         $index = $i + 1;
                                                         $isEven = $index % 2 === 0;
-                                                        $status = $step['status']; // done, active, locked
+                                                        $status = $step['status'] ?? 'locked';
                                                         $circleClass = $isEven ? 'circle' : 'circle-left';
-                                                        $timelineClass = ($loop->last || (isset($steps[$i+1]) && $steps[$i+1]['status'] === 'locked')) ? 'timeline inactive' : 'timeline';
-                                                        $judul = $step['type'] === 'konversi' ? 'Konversi Program' : 'Pseudocode';
-                                                        $deskripsi = $step['type'] === 'konversi'
-                                                            ? (isset($step['soal']['judul']) ? $step['soal']['judul'] : (isset($step['judul']) ? $step['judul'] : ''))
-                                                            : (isset($step['judul']) ? $step['judul'] : '');
+                                                        $timelineClass = $loop->last ? 'timeline inactive' : 'timeline';
+                                                        $judul = ($step['type'] ?? '') === 'konversi' ? 'Konversi Program' : 'Pseudocode';
+                                                        $deskripsi = $step['judul'] ?? '';
+                                                        $onClick = '';
+
+                                                        if ($status !== 'locked') {
+                                                            if (($step['type'] ?? '') === 'soal') {
+                                                                $onClick = "ujian('{$step['id']}')";
+                                                            } elseif (($step['type'] ?? '') === 'konversi') {
+                                                                $onClick = "ujianKode('{$step['id']}')";
+                                                            }
+                                                        }
                                                     @endphp
 
                                                     <div class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
@@ -286,15 +293,13 @@
                                                                 <h5 class="text-black">{{ $judul }}</h5>
                                                                 <p>{{ $deskripsi }}</p>
                                                             </div>
+
                                                             <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
                                                                 @if($status !== 'locked')
-                                                                    @if($step['type'] === 'konversi')
-                                                                        onclick="ujianKode('{{ $step['id'] }}')" style="cursor: pointer;"
-                                                                    @endif
+                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
                                                                 @endif>
                                                                 <div class="{{ $circleClass }} {{ $status }}">
-                                                                    @if($status === 'done')
-                                                                    @else
+                                                                    @if($status !== 'done')
                                                                         {{ $index }}
                                                                     @endif
                                                                 </div>
@@ -302,17 +307,15 @@
                                                         @else
                                                             <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
                                                                 @if($status !== 'locked')
-                                                                    @if($step['type'] === 'soal')
-                                                                        onclick="ujian('{{ $step['id'] }}')" style="cursor: pointer;"
-                                                                    @endif
+                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
                                                                 @endif>
                                                                 <div class="{{ $circleClass }} {{ $status }}">
-                                                                    @if($status === 'done')
-                                                                    @else
+                                                                    @if($status !== 'done')
                                                                         {{ $index }}
                                                                     @endif
                                                                 </div>
                                                             </div>
+
                                                             <div class="col-6 text-black mb-4 mt-6">
                                                                 <h5 class="text-black">{{ $judul }}</h5>
                                                                 <p>{{ $deskripsi }}</p>
@@ -320,6 +323,7 @@
                                                         @endif
                                                     </div>
 
+                                                    {{-- GARIS --}}
                                                     @if (!$loop->last)
                                                         <div class="row {{ $timelineClass }}">
                                                             @if ($isEven)
