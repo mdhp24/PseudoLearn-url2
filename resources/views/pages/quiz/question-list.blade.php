@@ -289,10 +289,13 @@
 
                                                     <div class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
                                                         @if ($isEven)
-                                                            <div class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
-                                                                <h5 class="text-black">{{ $judul }}</h5>
-                                                                <p>{{ $deskripsi }}</p>
-                                                            </div>
+                                                                    <div class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
+                                                                        <h5 class="text-black">{{ $judul }}</h5>
+                                                                        <p class="mb-1">{{ $deskripsi }}</p>
+                                                                        @if(($step['type'] ?? '') === 'konversi')
+                                                                            <small class="text-muted">{{ $step['judul'] ?? $deskripsi }}</small>
+                                                                        @endif
+                                                                    </div>
 
                                                             <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
                                                                 @if($status !== 'locked')
@@ -318,7 +321,10 @@
 
                                                             <div class="col-6 text-black mb-4 mt-6">
                                                                 <h5 class="text-black">{{ $judul }}</h5>
-                                                                <p>{{ $deskripsi }}</p>
+                                                                <p class="mb-1">{{ $deskripsi }}</p>
+                                                                @if(($step['type'] ?? '') === 'konversi')
+                                                                    <small class="text-muted">{{ $step['judul'] ?? $deskripsi }}</small>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>

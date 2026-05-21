@@ -33,7 +33,7 @@ class QuizController extends Controller
     protected $labelSkorModel;
     protected $ujianKodeModel;
     protected $levelModel;
-    protected $visibleLimit = 5;
+    protected $visibleLimit = 15;
 
     public function __construct()
     {
@@ -276,10 +276,11 @@ public function questionList(Request $request)
 
         // Soal konversi — judul selalu tampil (tidak di-null saat locked)
         if ($konversi) {
+            $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? 'Soal Konversi';
             $result[] = [
                 'type'       => 'konversi',
                 'id'         => $konversi->id,
-                'judul'      => $konversi->judul_soal ?? $konversi->judul ?? null,
+                'judul'      => $konversiJudul,
                 'difficulty' => $soal->difficulty,
                 'status'     => $konversiStatus,
             ];
