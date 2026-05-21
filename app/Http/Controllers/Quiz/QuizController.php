@@ -248,7 +248,7 @@ public function questionList(Request $request)
             $pseudoStatus = 'active';
         }
 
-        if (!$isPseudoDone) {
+        if (!$unlockNext || !$isPseudoDone) {
             $konversiStatus = 'locked';
         } elseif ($isKonversiDone) {
             $konversiStatus = 'done';
