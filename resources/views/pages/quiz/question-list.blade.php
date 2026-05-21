@@ -429,6 +429,20 @@
                                                             @else
                                                                 <span class="text-muted">Belum ada nilai konversi</span>
                                                             @endif
+                                                                    {{-- Tampilkan daftar nama soal konversi (selalu terlihat) --}}
+                                                                    @php
+                                                                        $konversiSoalList = collect($dataSoal ?? [])->filter(fn($s) => (($s['type'] ?? '') === 'konversi'))->pluck('judul')->values();
+                                                                    @endphp
+                                                                    @if($konversiSoalList->count())
+                                                                        <div class="mt-3">
+                                                                            <div class="fw-semibold mb-2">Daftar Soal Konversi:</div>
+                                                                            <ul class="ps-3 mb-0" style="list-style-type: disc;">
+                                                                                @foreach($konversiSoalList as $nama)
+                                                                                    <li class="mb-1 fs-7 text-dark">{{ $nama }}</li>
+                                                                                @endforeach
+                                                                            </ul>
+                                                                        </div>
+                                                                    @endif
                                                         </div>
                                                     </div>
                                                 </div>

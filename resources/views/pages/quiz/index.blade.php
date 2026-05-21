@@ -23,6 +23,29 @@
         overflow: hidden;
         background: #fff;
     }
+    .level-card {
+        background: linear-gradient(180deg, #E6F8F1 0%, #DFF7EF 100%);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(6,95,70,0.06);
+        overflow: hidden;
+    }
+    .level-card .img-thumbnail {
+        background: #ffffff;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .algopoin-badge {
+        background: rgba(255,255,255,0.9);
+        padding: 6px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .level-card.locked {
+        background: #f3f4f6 !important;
+    }
 </style>
 @endpush
 
@@ -106,9 +129,9 @@
                         <div class="col-md-4 col-6 mb-8">
                             @if(!$isLocked)
                                 <a href="{{ route('quiz.question-list', ['level' => $level['id']]) }}"
-                                    class="card hover-elevate-up border border-1 border-gray-100 parent-hover bg-light-success h-100">
+                                    class="card level-card hover-elevate-up border border-1 border-gray-100 parent-hover h-100">
                             @else
-                                <div class="card border bg-gray-200 h-100 position-relative">
+                                <div class="card level-card locked border bg-gray-200 h-100 position-relative">
                             @endif
                                 <div class="card-body p-6 mb-0">
                                     <div class="img-thumbnail mx-auto rounded-3 overflow-hidden d-flex justify-content-center align-items-center" style="width: 100%; height: 100%;">
