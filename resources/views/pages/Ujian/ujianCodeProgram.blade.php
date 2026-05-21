@@ -296,8 +296,7 @@
     @extends('pages.guide.index')
     @extends('pages.Ujian.modal')
     
-    {{-- Chatbot Component --}}
-    @include('components.chatbot')
+    {{-- Chatbot component removed --}}
     
     <script>
         var hostUrl = "assets/";

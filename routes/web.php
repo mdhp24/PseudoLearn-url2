@@ -21,13 +21,12 @@ use App\Http\Controllers\Confidence\ConfidenceController;
 use App\Http\Controllers\UjianKode\UjianKodeController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\LogActivity\LogActivityController;
-use App\Http\Controllers\LogDataChatbot\LogDataChatbot as LogDataChatbotController;
-// use App\Http\Controllers\LogDataChatbot\LogChatbotAdaptive as LogChatbotAdaptiveController;
+// LogDataChatbot removed
 use App\Http\Controllers\Overlapping\OverlappingController;
 use App\Http\Controllers\UjianKonversi\UjianKonversiController;
 use App\Http\Controllers\LogUjianKode\LogUjianKodeController;
 // use App\Models\Setting;
-use App\Http\Controllers\Chatbot\ChatbotController;
+// Chatbot controllers removed
 // use App\Http\Controllers\ARS\ArsController;
 // use App\Models\Setting;
 
@@ -99,14 +98,7 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::get('status', [NyawaController::class, 'status'])->name('nyawa.status');
         });
 
-        // chatbot
-        Route::prefix('chatbot')->name('chatbot.')->group(function() {
-            Route::post('/send', [ChatbotController::class, 'send'])->name('send');
-            Route::post('/open', [ChatbotController::class, 'open'])->name('open');
-            Route::post('/close', [ChatbotController::class, 'close'])->name('close');
-            Route::post('/check-performance', [ChatbotController::class, 'checkPerformance'])->name('check-performance');
-            Route::post('/adaptive-guide', [ChatbotController::class, 'adaptiveGuide'])->name('adaptive-guide');
-        });
+        // Chatbot feature removed
     });
 
     // Role admin (dosen)
@@ -268,14 +260,7 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::post('/export', [LogActivityController::class, 'export'])->name('export');
         });
 
-        // log-data-chatbot
-        Route::prefix('log-data-chatbot')->name('log-data-chatbot.')->group(function() {
-            Route::get('/', [LogDataChatbotController::class, 'index'])->name('index');
-            Route::post('/table', [LogDataChatbotController::class, 'table'])->name('table');
-            Route::get('/detail/{id}', [LogDataChatbotController::class, 'detail'])->name('detail');
-            Route::get('/getSoalByLevel', [LogDataChatbotController::class, 'getSoalByLevel'])->name('getSoalByLevel');
-            Route::post('/export', [LogDataChatbotController::class, 'export'])->name('export');
-        });
+        // Log data chatbot routes removed
 
         // Route::prefix('log-chatbot-adaptive')->name('log-chatbot-adaptive.')->group(function() {
         //     Route::get('/', [LogChatbotAdaptiveController::class, 'index'])->name('index');

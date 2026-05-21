@@ -1,7 +1,6 @@
 @php
     $isAdmin = Auth::check() && Auth::user()->is_admin;
-    $isLogDataChatbotPage = request()->is('log-data-chatbot*');
-    // $isLogChatbotAdaptivePage = request()->is('log-chatbot-adaptive*');
+    // Chatbot menu removed
 @endphp
 
 @push('styles')
@@ -26,11 +25,6 @@
             transform: translateY(-6px);
         }
 
-        /* Smooth submenu transition */
-        #submenu-chatbot {
-            transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
 
         /* Smooth indent untuk sub menu item */
         .menu-sub .menu-item .menu-link {
@@ -56,15 +50,6 @@
         .menu-link.menu-link-no-hover:hover .menu-title,
         .menu-link.menu-link-no-hover:hover .menu-icon {
             color: inherit !important;
-        }
-
-        /* Smooth arrow rotate */
-        [data-bs-target="#submenu-chatbot"] .menu-arrow {
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        [data-bs-target="#submenu-chatbot"][aria-expanded="true"] .menu-arrow {
-            transform: rotate(90deg);
         }
     </style>
 @endpush
@@ -170,20 +155,6 @@
                             <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data
                                 Log Aktivitas</span>
                         </a>
-                    </div>
-                    <div class="menu-item menu-accordion {{ $isLogDataChatbotPage ? 'show' : '' }}">
-                        <span class="menu-link{{ $isLogDataChatbotPage ? ' active' : '' }}"
-                            onclick="window.location='{{ url('log-data-chatbot') }}'">
-
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-message-text-2 fs-2"></i>
-                            </span>
-
-                            <span class="menu-title {{ $isLogDataChatbotPage ? 'fw-bold' : 'fw-semibold' }}">
-                                Log Data Chatbot
-                            </span>
-
-                        </span>
                     </div>
                     <div class="menu-item">
                         <a class="menu-link{{ request()->is('confidence*') ? ' active' : '' }}"
@@ -379,62 +350,7 @@
                     });
                 }
 
-                const $toggle = $('[data-bs-target="#submenu-chatbot"]');
-                const $collapse = $('#submenu-chatbot');
-
-                $toggle.on('click', function(e) {
-                    e.stopPropagation();
-
-                    if ($collapse.hasClass('collapsing')) {
-                        return;
-                    }
-
-                    if ($collapse.hasClass('show')) {
-                        $collapse.css('height', $collapse[0].scrollHeight + 'px');
-                        requestAnimationFrame(function() {
-                            $collapse.css({
-                                height: '0px',
-                                overflow: 'hidden',
-                                transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-                            });
-                        });
-
-                        $collapse.one('transitionend', function() {
-                            $collapse.removeClass('show').css({
-                                height: '',
-                                overflow: '',
-                                transition: ''
-                            });
-                        });
-                    } else {
-                        const targetHeight = $collapse.clone().css({
-                            position: 'absolute',
-                            visibility: 'hidden',
-                            display: 'block',
-                            height: 'auto'
-                        }).appendTo('body').outerHeight();
-
-                        $collapse.clone().remove();
-
-                        $collapse.addClass('show').css({
-                            height: '0px',
-                            overflow: 'hidden',
-                            transition: 'height 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-                        });
-
-                        requestAnimationFrame(function() {
-                            $collapse.css('height', targetHeight + 'px');
-                        });
-
-                        $collapse.one('transitionend', function() {
-                            $collapse.css({
-                                height: '',
-                                overflow: '',
-                                transition: ''
-                            });
-                        });
-                    }
-                });
+                // Chatbot submenu removed
 
                 $('.menu-sub .menu-link').on('mouseenter', function() {
                     $(this).css('transition', 'background-color 0.2s ease, padding-left 0.2s ease');
