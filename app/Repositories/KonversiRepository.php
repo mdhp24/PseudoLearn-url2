@@ -18,6 +18,7 @@ use Symfony\Component\Process\Process;
 use App\Jobs\GeneratePencapaianKonversi;
 use Prettus\Repository\Eloquent\BaseRepository;
 use Symfony\Component\Process\Exception\ProcessFailedException;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Class KelasRepository.
@@ -392,6 +393,17 @@ class KonversiRepository extends BaseRepository
 
                 // Jika masih tidak sama, tandai error
                 if ($userNorm !== $kunciNorm) {
+                    // Log detail mismatch untuk debugging
+                    Log::debug('Konversi mismatch', [
+                        'soal_konversi_id' => $soalKonversi->id ?? null,
+                        'index' => $idx,
+                        'nomor_baris' => $nomorBaris,
+                        'kunci_raw' => $isiKunci,
+                        'jawaban_raw' => $jawabanUser,
+                        'kunci_norm' => $kunciNorm,
+                        'jawaban_norm' => $userNorm,
+                    ]);
+
                     $errors[] = [
                         'message' => "Jawaban salah pada baris ke {$nomorBaris}",
                         'index'   => $idx
