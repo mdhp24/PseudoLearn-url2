@@ -130,6 +130,13 @@
             background-color: #ffe6e6;
         }
 
+        .code-box.incorrect-step {
+            background-color: #ffe6e6;
+            border: 2px solid #d43f3a;
+            color: #8a1f1f;
+            font-weight: 700;
+        }
+
         /* Tambahkan di bagian <style> */
         .heart-beat {
             animation: heartBeat 1s infinite;
@@ -210,7 +217,7 @@
 
                                             <div class="panel-box">
                                                 <div class="panel-header">Pseudocode</div>
-                                                <div class="panel-body">
+                                                <div class="panel-body" id="pseudocode-body">
                                                     @php
                                                         $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
                                                         $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));

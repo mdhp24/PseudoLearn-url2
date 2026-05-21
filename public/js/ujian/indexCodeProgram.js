@@ -58,10 +58,12 @@ function submitKonversi() {
         kodeLangkah.push(input.value);
     });
 
-    // hapus semua is-invalid
+    // hapus semua is-invalid pada input dan highlight lama pada pseudocode
     inputs.forEach(function(input) {
         input.classList.remove("is-invalid");
     });
+    var pseudocodeBoxes = document.querySelectorAll('#pseudocode-body .code-box');
+    pseudocodeBoxes.forEach(function(b){ b.classList.remove('incorrect-step'); });
 
     $.ajax({
         url: APP_URL + 'code-program/submit-konversi',
@@ -74,6 +76,10 @@ function submitKonversi() {
         },
         success: function(response) {
             modalKonfirmasi.hide();
+
+            // Clear any visual error markers
+            inputs.forEach(function(input) { input.classList.remove("is-invalid"); });
+            pseudocodeBoxes.forEach(function(b){ b.classList.remove('incorrect-step'); });
 
             // Jika benar, tampilkan modal correct dan hasil run Java
             var modalCorrect = new bootstrap.Modal(document.getElementById('modal-feedback-correct-konversi'));
@@ -93,9 +99,18 @@ function submitKonversi() {
 
             if (res?.message?.errors) {
                 let inputs = document.querySelectorAll('.input-panel input[type="text"]');
-                res.message.errors.forEach(err => {
-                    inputs[err.index].classList.add("is-invalid");
+                let pseudocodeBoxes = document.querySelectorAll('#pseudocode-body .code-box');
+                res.message.errors.forEach((err, i) => {
+                    if (inputs[err.index]) inputs[err.index].classList.add("is-invalid");
+                    if (pseudocodeBoxes[err.index]) pseudocodeBoxes[err.index].classList.add('incorrect-step');
                 });
+
+                // fokus ke input pertama yang salah
+                const firstErr = res.message.errors[0];
+                if (firstErr && inputs[firstErr.index]) {
+                    inputs[firstErr.index].focus();
+                    inputs[firstErr.index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
 
             $.ajax({
