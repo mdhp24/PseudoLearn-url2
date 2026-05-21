@@ -280,11 +280,11 @@ public function questionList(Request $request)
             $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? null;
             if (empty($konversiJudul) && !empty($soal->judul)) {
                 // make it clear this is the conversion of the pseudocode soal
-                $konversiJudul = 'Konversi: ' . $soal->judul;
+                $konversiJudul = $soal->judul;
             }
-            if (empty($konversiJudul)) {
-                $konversiJudul = 'Soal Konversi';
-            }
+            // if (empty($konversiJudul)) {
+            //     $konversiJudul = 'Soal Konversi';
+            // }
             $result[] = [
                 'type'       => 'konversi',
                 'id'         => $konversi->id,
@@ -298,6 +298,15 @@ public function questionList(Request $request)
             $unlockNext = false;
         }
     }
+
+    // Prepare deduplicated konversi names (preserve order)
+    $konversiNames = [];
+    foreach ($result as $item) {
+        if (!empty($item['type']) && $item['type'] === 'konversi') {
+            $konversiNames[] = $item['judul'];
+        }
+    }
+    $konversiNames = array_values(array_unique($konversiNames));
 
     $algopoin = $this->labelSkorModel
         ->where('id_mahasiswa', $idMahasiswa)
@@ -323,6 +332,7 @@ public function questionList(Request $request)
         'nilaiKonversiList'  => [],
         'dataLevel'          => $dataLevel,
         'jumlahSoalKonversi' => $jumlahSoalKonversi,
+        'konversiSoalNames'  => $konversiNames,
         'lives'              => $nyawa->nyawa,
         'max_lives'          => $nyawa->max_nyawa,
         'next_regen_at'      => $nyawa->next_regen_at,

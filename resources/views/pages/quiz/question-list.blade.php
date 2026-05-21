@@ -435,9 +435,9 @@
                                                             @else
                                                                 <span class="text-muted">Belum ada nilai konversi</span>
                                                             @endif
-                                                                    {{-- Tampilkan daftar nama soal konversi (selalu terlihat) --}}
+                                                                    {{-- Tampilkan daftar nama soal konversi (unik) --}}
                                                                     @php
-                                                                        $konversiSoalList = collect($dataSoal ?? [])->filter(fn($s) => (($s['type'] ?? '') === 'konversi'))->pluck('judul')->values();
+                                                                        $konversiSoalList = collect($konversiSoalNames ?? [])->filter()->values();
                                                                     @endphp
                                                                     @if($konversiSoalList->count())
                                                                         <div class="mt-3">
