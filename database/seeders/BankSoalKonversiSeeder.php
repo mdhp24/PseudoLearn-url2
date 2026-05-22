@@ -11,446 +11,387 @@ class BankSoalKonversiSeeder extends Seeder
     {
         $data = [
             // ============================================================
-            // BAGIAN 1: QUEUE (Array-Based Manual)
+            // BAGIAN 1: QUEUE (EASY)
             // ============================================================
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Loket Karcis Bioskop' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Operasi Enqueue dan Print pada Antrian' LIMIT 1)"),
                 'jawaban'    => "public class Main {\n" .
-                                "    static String[] q = new String[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(String d) { q[r++] = d; s++; }\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) {\n" .
+                                "        if (size == 0) { front = rear = 0; } else { rear++; }\n" .
+                                "        data[rear] = dt; size++;\n" .
+                                "    }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
                                 "    public static void main(String[] args) {\n" .
-                                "        enqueue(\"Rina\");\n" .
-                                "        enqueue(\"Doni\");\n" .
-                                "        enqueue(\"Yudi\");\n" .
-                                "        System.out.println(q[f]);\n" .
-                                "        System.out.println(s);\n" .
+                                "        enqueue(15);\n" .
+                                "        enqueue(30);\n" .
+                                "        print();\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "Rina\n3",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'output'     => "15 30 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Pasien Klinik' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Operasi Dequeue dan Print pada Antrian' LIMIT 1)"),
                 'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) {\n" .
+                                "        if (size == 0) { front = rear = 0; } else { rear++; }\n" .
+                                "        data[rear] = dt; size++;\n" .
+                                "    }\n" .
+                                "    static int dequeue() {\n" .
+                                "        int dt = data[front]; front++; size--; return dt;\n" .
+                                "    }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
                                 "    public static void main(String[] args) {\n" .
+                                "        enqueue(10); enqueue(20); enqueue(30);\n" .
+                                "        dequeue();\n" .
+                                "        print();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "20 30 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Barang Gudang (Enqueue & Print)' LIMIT 1)"),
+                'jawaban'    => "public class Main {\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        enqueue(100); enqueue(200); enqueue(300);\n" .
+                                "        print();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "100 200 300 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Pengurangan Antrian Loket (Dequeue & Print)' LIMIT 1)"),
+                'jawaban'    => "public class Main {\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static int dequeue() { int dt = data[front]; front++; size--; return dt; }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        enqueue(1); enqueue(2); enqueue(3); enqueue(4);\n" .
+                                "        dequeue(); dequeue();\n" .
+                                "        print();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "3 4 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Pencatatan Cepat Antrian (Enqueue & Print)' LIMIT 1)"),
+                'jawaban'    => "public class Main {\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        enqueue(88); print();\n" .
+                                "        enqueue(99); print();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "88 \n88 99 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
+            ],
+
+            // ============================================================
+            // BAGIAN 2: QUEUE (MEDIUM)
+            // ============================================================
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Cek Kapasitas dan Peek Antrian Layanan' LIMIT 1)"),
+                'jawaban'    => "import java.util.Scanner;\n" .
+                                "public class Main {\n" .
+                                "    static int[] data; static int front = -1, rear = -1, size = 0, max;\n" .
+                                "    static boolean isFull() { return size == max; }\n" .
+                                "    static boolean isEmpty() { return size == 0; }\n" .
+                                "    static void enqueue(int dt) {\n" .
+                                "        if (isEmpty()) { front = rear = 0; } else { rear++; }\n" .
+                                "        data[rear] = dt; size++;\n" .
+                                "    }\n" .
+                                "    static void peek() {\n" .
+                                "        if (!isEmpty()) System.out.println(\"Elemen terdepan: \" + data[front]);\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        Scanner sc = new Scanner(System.in);\n" .
+                                "        max = sc.nextInt();\n" .
+                                "        data = new int[max];\n" .
+                                "        System.out.println(\"Penuh: \" + isFull());\n" .
                                 "        enqueue(101);\n" .
-                                "        enqueue(102);\n" .
-                                "        enqueue(103);\n" .
-                                "        System.out.println(\"FRONT : \" + q[f]);\n" .
-                                "        System.out.println(\"REAR  : \" + q[r - 1]);\n" .
-                                "        System.out.println(\"SIZE  : \" + s);\n" .
+                                "        peek();\n" .
+                                "        sc.close();\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "FRONT : 101\nREAR  : 103\nSIZE  : 3",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'output'     => "Penuh: false\nElemen terdepan: 101",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Pengambilan Obat' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Mengosongkan Sisa Antrian' LIMIT 1)"),
+                'jawaban'    => "public class Main {\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static boolean isEmpty() { return size == 0; }\n" .
+                                "    static void enqueue(int dt) { if (isEmpty()) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static int dequeue() { int dt = data[front]; front++; size--; return dt; }\n" .
+                                "    static void clear() { front = rear = -1; size = 0; }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        enqueue(55); enqueue(66);\n" .
+                                "        dequeue();\n" .
+                                "        clear();\n" .
+                                "        System.out.println(\"Kosong: \" + isEmpty());\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "Kosong: true",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Simulasi Operasi Layanan Queue' LIMIT 1)"),
                 'jawaban'    => "import java.util.Scanner;\n" .
                                 "public class Main {\n" .
-                                "    static String[] q = new String[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(String d) { q[r++] = d; s++; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static int dequeue() { int dt = data[front]; front++; size--; return dt; }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
                                 "    }\n" .
                                 "    public static void main(String[] args) {\n" .
                                 "        Scanner sc = new Scanner(System.in);\n" .
-                                "        for (int i = 0; i < 3; i++) {\n" .
-                                "            enqueue(sc.nextLine());\n" .
-                                "            System.out.println(\"Antrian: \" + isi() + \" Ukuran: \" + s);\n" .
+                                "        for(int i=0; i<3; i++) enqueue(sc.nextInt());\n" .
+                                "        print();\n" .
+                                "        dequeue();\n" .
+                                "        print();\n" .
+                                "        sc.close();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "5 15 25 \n15 25 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Batas Kapasitas Antrian' LIMIT 1)"),
+                'jawaban'    => "import java.util.Scanner;\n" .
+                                "public class Main {\n" .
+                                "    static int[] data; static int front = -1, rear = -1, size = 0, max;\n" .
+                                "    static boolean isFull() { return size == max; }\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static void peek() { if (size != 0) System.out.println(\"Terdepan: \" + data[front]); }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        Scanner sc = new Scanner(System.in);\n" .
+                                "        max = sc.nextInt();\n" .
+                                "        data = new int[max];\n" .
+                                "        enqueue(10); enqueue(20); enqueue(30);\n" .
+                                "        System.out.println(\"Penuh: \" + isFull());\n" .
+                                "        peek();\n" .
+                                "        sc.close();\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "Penuh: true\nTerdepan: 10",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
+            ],
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Reset Ulang Antrian Pelanggan' LIMIT 1)"),
+                'jawaban'    => "public class Main {\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static boolean isEmpty() { return size == 0; }\n" .
+                                "    static void enqueue(int dt) { if (size == 0) { front = rear = 0; } else { rear++; } data[rear] = dt; size++; }\n" .
+                                "    static void clear() { front = rear = -1; size = 0; }\n" .
+                                "    static void print() {\n" .
+                                "        for (int i = front; i <= rear; i++) System.out.print(data[i] + \" \");\n" .
+                                "        System.out.println();\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        enqueue(5); enqueue(6); enqueue(7);\n" .
+                                "        print();\n" .
+                                "        clear();\n" .
+                                "        System.out.println(\"Kosong: \" + isEmpty());\n" .
+                                "    }\n" .
+                                "}",
+                'output'     => "5 6 7 \nKosong: true",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
+            ],
+
+            // ============================================================
+            // BAGIAN 3: QUEUE (HARD)
+            // ============================================================
+            [
+                'id'         => DB::raw('UUID()'),
+                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Batas Kapasitas Antrean Wahana Bermain' LIMIT 1)"),
+                'jawaban'    => "import java.util.Scanner;\n" .
+                                "public class Main {\n" .
+                                "    static int[] data; static int front = -1, rear = -1, size = 0, max;\n" .
+                                "    static boolean isFull() { return size == max; }\n" .
+                                "    static void enqueue(int dt) {\n" .
+                                "        if (isFull()) return;\n" .
+                                "        if (size == 0) { front = rear = 0; } else { rear++; }\n" .
+                                "        data[rear] = dt; size++;\n" .
+                                "    }\n" .
+                                "    public static void main(String[] args) {\n" .
+                                "        Scanner sc = new Scanner(System.in);\n" .
+                                "        max = sc.nextInt();\n" .
+                                "        data = new int[max];\n" .
+                                "        int[] anak = {11, 22, 33, 44, 55};\n" .
+                                "        for (int a : anak) {\n" .
+                                "            if (isFull()) { System.out.println(\"Penuh\"); break; }\n" .
+                                "            enqueue(a);\n" .
                                 "        }\n" .
+                                "        System.out.println(\"Size: \" + size);\n" .
                                 "        sc.close();\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "Antrian: [Siti] Ukuran: 1\nAntrian: [Siti, Bagas] Ukuran: 2\nAntrian: [Siti, Bagas, Citra] Ukuran: 3",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'output'     => "Penuh\nSize: 3",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Loket Bank Belum Buka' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Simulasi Reset Antrean Otomatis di Klinik' LIMIT 1)"),
                 'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
-                                "    static boolean isEmpty() { return s == 0; }\n" .
+                                "    static int[] data = new int[10];\n" .
+                                "    static int front = -1, rear = -1, size = 0, max = 10;\n" .
+                                "    static void enqueue(int dt) {\n" .
+                                "        if (size == 0) { front = rear = 0; } else { rear++; }\n" .
+                                "        data[rear] = dt; size++;\n" .
+                                "    }\n" .
+                                "    static int dequeue() {\n" .
+                                "        int dt = data[front]; front++; size--;\n" .
+                                "        if (front > rear) { front = -1; rear = -1; }\n" .
+                                "        return dt;\n" .
+                                "    }\n" .
                                 "    public static void main(String[] args) {\n" .
-                                "        System.out.println(isEmpty());\n" .
-                                "        enqueue(201);\n" .
-                                "        enqueue(202);\n" .
-                                "        System.out.println(isEmpty());\n" .
-                                "        System.out.println(s);\n" .
-                                "        System.out.println(q[f]);\n" .
+                                "        enqueue(101); enqueue(102); enqueue(103);\n" .
+                                "        dequeue(); dequeue(); dequeue();\n" .
+                                "        System.out.println(\"Front: \" + front);\n" .
+                                "        System.out.println(\"Rear: \" + rear);\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "true\nfalse\n2\n201",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'output'     => "Front: -1\nRear: -1",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Wahana Taman Bermain' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Pengarsipan Digital Antrean ke Stack' LIMIT 1)"),
                 'jawaban'    => "import java.util.Scanner;\n" .
                                 "public class Main {\n" .
-                                "    static int[] q = new int[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
+                                "    static int[] q = new int[10]; static int qf = -1, qr = -1, qs = 0;\n" .
+                                "    static int[] st = new int[10]; static int top = -1;\n" .
+                                "    static void enqueue(int dt) { if(qs==0){qf=qr=0;}else{qr++;} q[qr]=dt; qs++; }\n" .
+                                "    static int dequeue() { int dt=q[qf]; qf++; qs--; return dt; }\n" .
+                                "    static void push(int dt) { st[++top] = dt; }\n" .
                                 "    public static void main(String[] args) {\n" .
                                 "        Scanner sc = new Scanner(System.in);\n" .
-                                "        for (int i = 0; i < 3; i++) enqueue(sc.nextInt());\n" .
-                                "        System.out.println(\"FRONT  : \" + q[f]);\n" .
-                                "        System.out.println(\"REAR   : \" + q[r - 1]);\n" .
-                                "        System.out.println(\"SIZE   : \" + s);\n" .
-                                "        System.out.println(\"ISEMPTY: \" + (s == 0));\n" .
+                                "        for(int i=0; i<3; i++) enqueue(sc.nextInt());\n" .
+                                "        while(qs > 0) push(dequeue());\n" .
+                                "        System.out.println(\"Top arsip: \" + st[top]);\n" .
                                 "        sc.close();\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "FRONT  : 7\nREAR   : 9\nSIZE   : 3\nISEMPTY: false",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'output'     => "Top arsip: 3",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Memanggil Pasien Pertama di Puskesmas' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Pembalikan Urutan Mobil Keluar Gang' LIMIT 1)"),
                 'jawaban'    => "public class Main {\n" .
-                                "    static String[] q = new String[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(String d) { q[r++] = d; s++; }\n" .
-                                "    static String dequeue() { s--; return q[f++]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        enqueue(\"Hendra\"); enqueue(\"Lestari\"); enqueue(\"Miko\");\n" .
-                                "        String dipanggil = dequeue();\n" .
-                                "        System.out.println(\"Dipanggil  : \" + dipanggil);\n" .
-                                "        System.out.println(\"Sisa       : \" + isi());\n" .
-                                "        System.out.println(\"FRONT baru : \" + q[f]);\n" .
-                                "        System.out.println(\"SIZE baru  : \" + s);\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Dipanggil  : Hendra\nSisa       : [Lestari, Miko]\nFRONT baru : Lestari\nSIZE baru  : 2",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Melayani Seluruh Antrian Kasir Supermarket' LIMIT 1)"),
-                'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
-                                "    static int dequeue() { s--; return q[f++]; }\n" .
-                                "    static boolean isEmpty() { return s == 0; }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        for (int i = 1; i <= 5; i++) enqueue(i);\n" .
-                                "        while (!isEmpty()) {\n" .
-                                "            int pembeli = dequeue();\n" .
-                                "            System.out.println(\"Dilayani: \" + pembeli + \" Sisa: \" + s);\n" .
-                                "        }\n" .
-                                "        System.out.println(\"Antrian telah kosong\");\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Dilayani: 1 Sisa: 4\nDilayani: 2 Sisa: 3\nDilayani: 3 Sisa: 2\nDilayani: 4 Sisa: 1\nDilayani: 5 Sisa: 0\nAntrian telah kosong",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Antrian Pendaftaran Lomba Bergantian' LIMIT 1)"),
-                'jawaban'    => "import java.util.Scanner;\n" .
-                                "public class Main {\n" .
-                                "    static String[] q = new String[10];\n" .
-                                "    static int f = 0, r = 0, s = 0;\n" .
-                                "    static void enqueue(String d) { q[r++] = d; s++; }\n" .
-                                "    static String dequeue() { s--; return q[f++]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        Scanner sc = new Scanner(System.in);\n" .
-                                "        enqueue(sc.nextLine()); enqueue(sc.nextLine());\n" .
-                                "        String a = dequeue();\n" .
-                                "        enqueue(sc.nextLine());\n" .
-                                "        String b = dequeue();\n" .
-                                "        enqueue(sc.nextLine());\n" .
-                                "        System.out.println(\"a         : \" + a);\n" .
-                                "        System.out.println(\"b         : \" + b);\n" .
-                                "        System.out.println(\"Isi akhir : \" + isi());\n" .
-                                "        System.out.println(\"SIZE      : \" + s);\n" .
-                                "        sc.close();\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "a         : A\nb         : B\nIsi akhir : [C, D]\nSIZE      : 2",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Membalik Urutan Antrian Peserta Ujian' LIMIT 1)"),
-                'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int f = 0, r = 0, s = 0;\n" .
-                                "    static int[] st = new int[20]; static int top = -1;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
-                                "    static int dequeue() { s--; return q[f++]; }\n" .
-                                "    static void push(int d) { st[++top] = d; }\n" .
+                                "    static int[] q = new int[10]; static int qf = -1, qr = -1, qs = 0;\n" .
+                                "    static int[] st = new int[10]; static int top = -1;\n" .
+                                "    static void enqueue(int dt) { if(qs==0){qf=qr=0;}else{qr++;} q[qr]=dt; qs++; }\n" .
+                                "    static int dequeue() { int dt=q[qf]; qf++; qs--; return dt; }\n" .
+                                "    static void push(int dt) { st[++top] = dt; }\n" .
                                 "    static int pop() { return st[top--]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
+                                "    static void print() {\n" .
+                                "        for(int i=qf; i<=qr; i++) System.out.print(q[i]+\" \");\n" .
+                                "        System.out.println();\n" .
                                 "    }\n" .
                                 "    public static void main(String[] args) {\n" .
-                                "        for (int i = 1; i <= 5; i++) enqueue(i);\n" .
-                                "        System.out.println(\"Sebelum: \" + isi());\n" .
-                                "        while (s > 0) push(dequeue());\n" .
-                                "        while (top >= 0) enqueue(pop());\n" .
-                                "        System.out.println(\"Sesudah: \" + isi());\n" .
+                                "        enqueue(1); enqueue(2); enqueue(3);\n" .
+                                "        while(qs > 0) push(dequeue());\n" .
+                                "        qf = qr = -1; qs = 0;\n" .
+                                "        while(top >= 0) enqueue(pop());\n" .
+                                "        print();\n" .
                                 "    }\n" .
                                 "}",
-                'output'     => "Sebelum: [1, 2, 3, 4, 5]\nSesudah: [5, 4, 3, 2, 1]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'output'     => "3 2 1 ",
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
                 'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Cek Palindrom Plat Nomor Kendaraan' LIMIT 1)"),
+                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Validasi Antrean Palindrom' LIMIT 1)"),
                 'jawaban'    => "import java.util.Scanner;\n" .
                                 "public class Main {\n" .
-                                "    static char[] q = new char[20]; static int f = 0, r = 0, s = 0;\n" .
-                                "    static char[] st = new char[20]; static int top = -1;\n" .
-                                "    static void enqueue(char d) { q[r++] = d; s++; }\n" .
-                                "    static char dequeue() { s--; return q[f++]; }\n" .
-                                "    static void push(char d) { st[++top] = d; }\n" .
-                                "    static char pop() { return st[top--]; }\n" .
+                                "    static int[] q = new int[10]; static int qf = -1, qr = -1, qs = 0;\n" .
+                                "    static int[] st = new int[10]; static int top = -1;\n" .
+                                "    static void enqueue(int dt) { if(qs==0){qf=qr=0;}else{qr++;} q[qr]=dt; qs++; }\n" .
+                                "    static int dequeue() { int dt=q[qf]; qf++; qs--; return dt; }\n" .
+                                "    static void push(int dt) { st[++top] = dt; }\n" .
+                                "    static int pop() { return st[top--]; }\n" .
                                 "    public static void main(String[] args) {\n" .
                                 "        Scanner sc = new Scanner(System.in);\n" .
-                                "        String kata = sc.nextLine();\n" .
-                                "        for (char c : kata.toCharArray()) { enqueue(c); push(c); }\n" .
-                                "        boolean isPalindrom = true;\n" .
-                                "        while (s > 0) if (dequeue() != pop()) isPalindrom = false;\n" .
-                                "        System.out.println(\"Palindrom: \" + isPalindrom);\n" .
+                                "        for(int i=0; i<3; i++) {\n" .
+                                "            int dt = sc.nextInt();\n" .
+                                "            enqueue(dt); push(dt);\n" .
+                                "        }\n" .
+                                "        boolean isPalin = true;\n" .
+                                "        while(qs > 0) {\n" .
+                                "            if(dequeue() != pop()) isPalin = false;\n" .
+                                "        }\n" .
+                                "        System.out.println(\"Palindrom: \" + isPalin);\n" .
                                 "        sc.close();\n" .
                                 "    }\n" .
                                 "}",
                 'output'     => "Palindrom: true",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Pencarian Nomor Antrian di Rumah Sakit' LIMIT 1)"),
-                'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int qf = 0, qr = 0, qs = 0;\n" .
-                                "    static int[] tmp = new int[20]; static int tf = 0, tr = 0, ts = 0;\n" .
-                                "    static void enqQ(int d) { q[qr++] = d; qs++; }\n" .
-                                "    static int deqQ() { qs--; return q[qf++]; }\n" .
-                                "    static void enqT(int d) { tmp[tr++] = d; ts++; }\n" .
-                                "    static int deqT() { ts--; return tmp[tf++]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = qf; i < qr; i++) { t += q[i]; if (i < qr - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        for (int d : new int[]{11, 22, 33, 44, 55}) enqQ(d);\n" .
-                                "        int cari = 33; boolean ditemukan = false;\n" .
-                                "        while (qs > 0) { int e = deqQ(); if (e == cari) ditemukan = true; enqT(e); }\n" .
-                                "        while (ts > 0) enqQ(deqT());\n" .
-                                "        System.out.println(\"Ditemukan: \" + ditemukan);\n" .
-                                "        System.out.println(\"Antrian  : \" + isi());\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Ditemukan: true\nAntrian  : [11, 22, 33, 44, 55]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Mencari Stok Minimum di Gudang' LIMIT 1)"),
-                'jawaban'    => "import java.util.Scanner;\n" .
-                                "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int qf = 0, qr = 0, qs = 0;\n" .
-                                "    static int[] tmp = new int[20]; static int tf = 0, tr = 0, ts = 0;\n" .
-                                "    static void enqQ(int d) { q[qr++] = d; qs++; }\n" .
-                                "    static int deqQ() { qs--; return q[qf++]; }\n" .
-                                "    static void enqT(int d) { tmp[tr++] = d; ts++; }\n" .
-                                "    static int deqT() { ts--; return tmp[tf++]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = qf; i < qr; i++) { t += q[i]; if (i < qr - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        Scanner sc = new Scanner(System.in);\n" .
-                                "        for (int i = 0; i < 5; i++) enqQ(sc.nextInt());\n" .
-                                "        int minimum = q[qf];\n" .
-                                "        while (qs > 0) { int e = deqQ(); if (e < minimum) minimum = e; enqT(e); }\n" .
-                                "        while (ts > 0) enqQ(deqT());\n" .
-                                "        System.out.println(\"Minimum: \" + minimum);\n" .
-                                "        System.out.println(\"Antrian: \" + isi());\n" .
-                                "        sc.close();\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Minimum: 10\nAntrian: [50, 20, 80, 10, 60]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Menghitung Frekuensi Kehadiran Siswa' LIMIT 1)"),
-                'jawaban'    => "import java.util.Scanner;\n" .
-                                "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int qf = 0, qr = 0, qs = 0;\n" .
-                                "    static int[] tmp = new int[20]; static int tf = 0, tr = 0, ts = 0;\n" .
-                                "    static void enqQ(int d) { q[qr++] = d; qs++; }\n" .
-                                "    static int deqQ() { qs--; return q[qf++]; }\n" .
-                                "    static void enqT(int d) { tmp[tr++] = d; ts++; }\n" .
-                                "    static int deqT() { ts--; return tmp[tf++]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = qf; i < qr; i++) { t += q[i]; if (i < qr - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        Scanner sc = new Scanner(System.in);\n" .
-                                "        int cari = sc.nextInt();\n" .
-                                "        for (int d : new int[]{2, 5, 2, 3, 2, 5, 4}) enqQ(d);\n" .
-                                "        int frekuensi = 0;\n" .
-                                "        while (qs > 0) { int e = deqQ(); if (e == cari) frekuensi++; enqT(e); }\n" .
-                                "        while (ts > 0) enqQ(deqT());\n" .
-                                "        System.out.println(\"Frekuensi \" + cari + \" : \" + frekuensi);\n" .
-                                "        System.out.println(\"Antrian     : \" + isi());\n" .
-                                "        sc.close();\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Frekuensi 2 : 3\nAntrian     : [2, 5, 2, 3, 2, 5, 4]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Cari Nomor Paket lalu Balik Antrian Pengiriman' LIMIT 1)"),
-                'jawaban'    => "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int f = 0, r = 0, s = 0;\n" .
-                                "    static int[] st = new int[20]; static int top = -1;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
-                                "    static int dequeue() { s--; return q[f++]; }\n" .
-                                "    static void push(int d) { st[++top] = d; }\n" .
-                                "    static int pop() { return st[top--]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        for (int d : new int[]{301, 302, 303, 304, 305}) enqueue(d);\n" .
-                                "        int cari = 303; boolean ditemukan = false;\n" .
-                                "        while (s > 0) { int e = dequeue(); if (e == cari) ditemukan = true; push(e); }\n" .
-                                "        while (top >= 0) enqueue(pop());\n" .
-                                "        System.out.println(\"Ditemukan: \" + ditemukan);\n" .
-                                "        System.out.println(\"Antrian  : \" + isi());\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Ditemukan: true\nAntrian  : [305, 304, 303, 302, 301]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
-            ],
-            [
-                'id'         => DB::raw('UUID()'),
-                'id_level'   => '019863c4-59f9-7319-9104-08267fc3c551',
-                'id_soal'    => DB::raw("(SELECT id FROM soal WHERE judul = 'Mencari Skor Tertinggi di Antrian Turnamen' LIMIT 1)"),
-                'jawaban'    => "import java.util.Scanner;\n" .
-                                "public class Main {\n" .
-                                "    static int[] q = new int[20]; static int f = 0, r = 0, s = 0;\n" .
-                                "    static int[] st = new int[20]; static int top = -1;\n" .
-                                "    static void enqueue(int d) { q[r++] = d; s++; }\n" .
-                                "    static int dequeue() { s--; return q[f++]; }\n" .
-                                "    static void push(int d) { st[++top] = d; }\n" .
-                                "    static int pop() { return st[top--]; }\n" .
-                                "    static String isi() {\n" .
-                                "        String t = \"[\";\n" .
-                                "        for (int i = f; i < r; i++) { t += q[i]; if (i < r - 1) t += \", \"; }\n" .
-                                "        return t + \"]\";\n" .
-                                "    }\n" .
-                                "    public static void main(String[] args) {\n" .
-                                "        Scanner sc = new Scanner(System.in);\n" .
-                                "        for (int i = 0; i < 5; i++) enqueue(sc.nextInt());\n" .
-                                "        int maksimum = q[f], posisi = 1, index = 1;\n" .
-                                "        while (s > 0) { int e = dequeue(); if (e > maksimum) { maksimum = e; posisi = index; } push(e); index++; }\n" .
-                                "        while (top >= 0) enqueue(pop());\n" .
-                                "        System.out.println(\"Maksimum : \" + maksimum);\n" .
-                                "        System.out.println(\"Posisi   : \" + posisi);\n" .
-                                "        System.out.println(\"Antrian  : \" + isi());\n" .
-                                "        sc.close();\n" .
-                                "    }\n" .
-                                "}",
-                'output'     => "Maksimum : 95\nPosisi   : 4\nAntrian  : [80, 95, 60, 90, 75]",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
-            ],
+
             // ============================================================
-            // BAGIAN 2: LINKED LIST
+            // BAGIAN 4: LINKED LIST (15 Soal Asli)
             // ============================================================
             [
                 'id'         => DB::raw('UUID()'),
@@ -468,10 +409,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Depan: 10\nBelakang: 30",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -494,10 +432,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Jumlah: 3",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -520,10 +455,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "A B C ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -543,10 +475,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Maju: Lagu1, Lagu2\nMundur: Lagu2, Lagu1",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -567,10 +496,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Sate\nSoto\nBakso",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'easy',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'easy',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -594,10 +520,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Buku 102 Ditemukan: true",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -619,10 +542,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "2 3 ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -646,10 +566,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "10 20 ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -672,10 +589,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Budi Caca Doni ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -698,10 +612,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Total: 30000",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'medium',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'medium',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -724,10 +635,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Maksimum: 95",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -753,10 +661,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "3 2 1 ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -781,10 +686,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "10 20 30 ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -811,10 +713,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "5 15 ",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
             [
                 'id'         => DB::raw('UUID()'),
@@ -838,10 +737,7 @@ class BankSoalKonversiSeeder extends Seeder
                                 "    }\n" .
                                 "}",
                 'output'     => "Palindrom: true",
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-                'difficulty' => 'hard',
+                'created_at' => now(), 'updated_at' => now(), 'deleted_at' => null, 'difficulty' => 'hard',
             ],
         ];
 
