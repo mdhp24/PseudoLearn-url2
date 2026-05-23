@@ -292,8 +292,11 @@
                                 <input type="hidden" id="id-level" value="{{ $soal->id_level }}">
 
                                 @php
-                                    $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
-                                    $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
+                                    $tipeDataRaw = $soal['kunci_tipe_data'] ?? [];
+                                    $algoritmaRaw = $soal['kunci_algoritma'] ?? [];
+
+                                    $tipeDataList = collect(is_array($tipeDataRaw) ? $tipeDataRaw : (json_decode((string) $tipeDataRaw, true) ?: []));
+                                    $algoritmaList = collect(is_array($algoritmaRaw) ? $algoritmaRaw : (json_decode((string) $algoritmaRaw, true) ?: []));
                                     $dataLangkah = 1;
 
                                     $algoritmaTerpilih = $algoritmaList->filter(function ($row) {
@@ -309,17 +312,24 @@
                                     // Format jawaban - handle both JSON array and plain text
                                     $rawJawaban = $konversi['jawaban'] ?? '';
 
-                                    // Try to decode as JSON first
-                                    $decoded = json_decode($rawJawaban, true);
-                                    
-                                    if (is_array($decoded)) {
-                                        // If JSON array, use it directly
-                                        $jawabanList = collect($decoded)->filter(fn($item) => trim($item) !== '')->shuffle();
+                                    // Try to decode as JSON first, but keep array input intact.
+                                    if (is_array($rawJawaban)) {
+                                        $jawabanList = collect($rawJawaban)
+                                            ->filter(fn($item) => trim((string) $item) !== '')
+                                            ->shuffle();
                                     } else {
-                                        // If plain text, split by newlines
-                                        $jawabanList = collect(
-                                            array_filter(array_map('trim', explode("\n", (string) $rawJawaban))),
-                                        )->shuffle();
+                                        $decoded = json_decode((string) $rawJawaban, true);
+
+                                        if (is_array($decoded)) {
+                                            $jawabanList = collect($decoded)
+                                                ->filter(fn($item) => trim((string) $item) !== '')
+                                                ->shuffle();
+                                        } else {
+                                            // If plain text, split by newlines
+                                            $jawabanList = collect(
+                                                array_filter(array_map('trim', explode("\n", (string) $rawJawaban))),
+                                            )->shuffle();
+                                        }
                                     }
 
                                     $totalLangkah = $jawabanList->count();

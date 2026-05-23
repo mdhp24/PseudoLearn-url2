@@ -405,6 +405,9 @@ class ChatbotController extends Controller
         $detail['popup_closed_at'] = $closedAt->toDateTimeString();
         $detail['durasi_detik'] = max(0, $durasiDetik);
 
+        // Hitung waktu pengerjaan saat popup ditutup (dari waktu_mulai ke closedAt)
+        // Tapi JANGAN timpa detail.waktu_detik karena itu adalah nilai real-time dari frontend timer
+        // yang lebih akurat untuk "Waktu Pengerjaan"
         $startAt = $adaptiveLog->waktu_mulai;
         if (!$startAt && !empty($detail['attempt_start_at'])) {
             try {
@@ -416,10 +419,8 @@ class ChatbotController extends Controller
         if ($startAt) {
             $workSeconds = max(0, (int) $startAt->diffInSeconds($closedAt));
             $detail['waktu_detik_saat_close'] = $workSeconds;
-
-            if (empty($detail['waktu_detik']) || $workSeconds > (int) $detail['waktu_detik']) {
-                $detail['waktu_detik'] = $workSeconds;
-            }
+            // NOTE: Tidak timpa detail.waktu_detik karena itu adalah nilai asli dari frontend timer
+            // yang merupakan waktu pengerjaan real-time saat adaptive guide dipicu.
         }
 
         $adaptiveLog->update([

@@ -158,13 +158,60 @@ class KonversiRepository extends BaseRepository
             $filePath = $dirPath . "/Main_$safeSoalId.java";
             file_put_contents($filePath, $javaCode);
 
-            $compile = new Process(['javac', $filePath], $dirPath);
+            // Resolve javac/java paths: check JAVA_HOME, common install dirs, then PATH via where
+            $resolveBin = function (string $binary) use ($dirPath): string {
+                $javaHome = env('JAVA_HOME', '');
+                if ($javaHome !== '') {
+                    $candidate = rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $binary;
+                    if (@is_file($candidate . '.exe') || @is_file($candidate)) {
+                        return $candidate;
+                    }
+                }
+
+                // Search common Java installation directories
+                $commonRoots = [
+                    'C:\\Program Files\\Java',
+                    'C:\\Program Files\\Eclipse Adoptium',
+                    'C:\\Program Files\\Microsoft',
+                    'C:\\Program Files\\AdoptOpenJDK',
+                    'C:\\Program Files\\Zulu',
+                    'C:\\Program Files (x86)\\Java',
+                ];
+                foreach ($commonRoots as $root) {
+                    $pattern = $root . '\\*\\bin\\' . $binary . '.exe';
+                    foreach (glob($pattern) ?: [] as $candidate) {
+                        if (@is_file($candidate)) {
+                            return $candidate;
+                        }
+                    }
+                }
+
+                // Try via cmd /c where (works if Java is in system PATH)
+                $where = new Process(['cmd', '/c', 'where', $binary], $dirPath);
+                $where->setTimeout(10);
+                $where->run();
+                if ($where->isSuccessful()) {
+                    $lines = preg_split('/\r?\n/', trim($where->getOutput()));
+                    foreach ($lines as $line) {
+                        $path = trim($line);
+                        if ($path !== '' && @is_file($path)) {
+                            return $path;
+                        }
+                    }
+                }
+                return $binary;
+            };
+
+            $javacBin = $resolveBin('javac');
+            $javaBin  = $resolveBin('java');
+
+            $compile = new Process([$javacBin, $filePath], $dirPath);
             $compile->run();
             if (!$compile->isSuccessful()) {
                 throw new ProcessFailedException($compile);
             }
 
-            $process = new Process(['java', '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
+            $process = new Process([$javaBin, '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
             $process->run();
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(

@@ -360,51 +360,35 @@ class LogChatbotAdaptiveService
         $totalMessages = $this->extractTotalMessages($detail, count($messages));
         $resolvedLabeling = $this->resolveAdaptiveLabeling($log);
 
-        $completionProgress = $this->resolveCompletionProgress($log, $detail);
-        $waktuCandidates = [];
-        if (isset($completionProgress['waktu_detik'])) {
-            $waktuCandidates[] = max(0, (int) $completionProgress['waktu_detik']);
+        // --- Waktu Pengerjaan (prioritas: Ujian.waktu > detail > completionProgress) ---
+        // Sumber paling akurat adalah Ujian.waktu (nilai timer frontend saat submit)
+        $waktuDetik = $this->resolveUjianWaktuDetik($log);
+
+        // Fallback: dari detail (nilai timer saat adaptive guide dipicu/ditutup)
+        if (is_null($waktuDetik)) {
+            $waktuDetik = $this->resolveStrictWaktuDetikFromDetail($detail);
         }
 
-        $canonicalWaktu = $this->resolveCanonicalWorkSeconds($log, $detail);
-        if (!is_null($canonicalWaktu)) {
-            $waktuCandidates[] = max(0, (int) $canonicalWaktu);
-        }
-
-        $strictWaktu = $this->resolveStrictWaktuDetikFromDetail($detail);
-        if (!is_null($strictWaktu)) {
-            $waktuCandidates[] = max(0, (int) $strictWaktu);
-        }
-
-        // Prefer the largest value so popup/trigger timestamps never
-        // undercut the actual submit/close timer.
-        try {
-            if (!empty($log->id_mahasiswa) && !empty($log->id_soal)) {
-                $triggeredAt = $this->resolveTriggeredAt($log, $detail);
-
-                $ujianQuery = $this->ujianModel->newQuery()
-                    ->where('id_mahasiswa', $log->id_mahasiswa)
-                    ->where('id_soal', $log->id_soal);
-
-                if ($triggeredAt) {
-                    $ujianQuery->where('created_at', '>=', $triggeredAt);
-                }
-
-                $ujian = $ujianQuery
-                    ->orderBy('created_at', 'desc')
-                    ->first();
-
-                if ($ujian && isset($ujian->waktu) && is_numeric($ujian->waktu)) {
-                    $waktuCandidates[] = max(0, (int) $ujian->waktu);
-                }
+        // Fallback: hitung dari waktu_mulai ke waktu_selesai
+        if (is_null($waktuDetik)) {
+            $completionProgress = $this->resolveCompletionProgress($log, $detail);
+            if (isset($completionProgress['waktu_detik'])) {
+                $waktuDetik = max(0, (int) $completionProgress['waktu_detik']);
             }
-        } catch (\Throwable $e) {
-            // ignore DB errors and keep existing candidates
         }
 
-        $waktuDetik = !empty($waktuCandidates) ? max($waktuCandidates) : null;
-        $durasiDetik = $this->resolveDurasiDetik($log, $detail, $waktuDetik);
-        $jumlahLangkah = (int) ($detail['jumlah_langkah'] ?? ($completionProgress['jumlah_langkah'] ?? ($log->jumlah_langkah ?? 0)));
+        // Fallback: dari canonical work seconds
+        if (is_null($waktuDetik)) {
+            $canonicalWaktu = $this->resolveCanonicalWorkSeconds($log, $detail);
+            if (!is_null($canonicalWaktu)) {
+                $waktuDetik = max(0, (int) $canonicalWaktu);
+            }
+        }
+
+        // --- Durasi Popup (akurat dari popup_opened_at ke popup_closed_at) ---
+        $durasiDetik = $this->resolveDurasiDetik($log, $detail, null);
+
+        $jumlahLangkah = (int) ($detail['jumlah_langkah'] ?? ($log->jumlah_langkah ?? 0));
 
         return [
             'id' => $log->id,
@@ -423,6 +407,44 @@ class LogChatbotAdaptiveService
             'total_messages' => $totalMessages,
             'messages' => $messages,
         ];
+    }
+
+    /**
+     * Ambil waktu pengerjaan dari tabel ujian (nilai timer frontend saat submit).
+     * Ini adalah sumber paling akurat karena langsung dari UjianTimer.getElapsed().
+     */
+    private function resolveUjianWaktuDetik(ChatbotAdaptiveLog $log): ?int
+    {
+        if (empty($log->id_mahasiswa) || empty($log->id_soal)) {
+            return null;
+        }
+
+        try {
+            $triggeredAt = $this->resolveTriggeredAt($log, $this->normalizeDetailPayload($log->detail));
+
+            $ujianQuery = $this->ujianModel->newQuery()
+                ->where('id_mahasiswa', $log->id_mahasiswa)
+                ->where('id_soal', $log->id_soal);
+
+            if ($triggeredAt) {
+                $ujianQuery->where('created_at', '>=', $triggeredAt);
+            }
+
+            $ujian = $ujianQuery
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($ujian && isset($ujian->waktu) && is_numeric($ujian->waktu)) {
+                $waktu = (int) $ujian->waktu;
+                if ($waktu > 0) {
+                    return $waktu;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        return null;
     }
 
     private function resolveAdaptiveLabeling(ChatbotAdaptiveLog $log): string
@@ -662,7 +684,10 @@ class LogChatbotAdaptiveService
 
     private function resolveStrictWaktuDetikFromDetail(array $detail): ?int
     {
-        foreach (['waktu_detik_submit', 'waktu_detik_saat_close', 'waktu_detik', 'total_waktu_detik', 'waktu'] as $key) {
+        // Prioritaskan data yang dikirim dari frontend timer (paling akurat)
+        // waktu_detik_saat_close = nilai timer saat popup ditutup (paling akhir/mutakhir)
+        // waktu_detik = nilai timer saat adaptive guide dipicu
+        foreach (['waktu_detik_saat_close', 'waktu_detik', 'waktu_detik_submit', 'total_waktu_detik', 'waktu_akses_detik', 'waktu'] as $key) {
             if (array_key_exists($key, $detail)) {
                 $seconds = $this->parseDurationValueToSeconds($detail[$key]);
                 if (!is_null($seconds)) {
@@ -811,6 +836,7 @@ class LogChatbotAdaptiveService
 
     private function resolveDurasiDetik(ChatbotAdaptiveLog $log, array $detail, ?int $fallbackWaktuDetik = null): ?int
     {
+        // Prioritas 1: durasi_detik dari detail (paling akurat, diisi saat popup ditutup)
         if (array_key_exists('durasi_detik', $detail)) {
             $seconds = $this->parseDurationValueToSeconds($detail['durasi_detik']);
             if (!is_null($seconds)) {
@@ -818,6 +844,7 @@ class LogChatbotAdaptiveService
             }
         }
 
+        // Prioritas 2: hitung dari popup_opened_at ke popup_closed_at
         if (!empty($detail['popup_opened_at']) && !empty($detail['popup_closed_at'])) {
             try {
                 $openedAt = Carbon::parse((string) $detail['popup_opened_at']);
@@ -829,10 +856,12 @@ class LogChatbotAdaptiveService
             }
         }
 
+        // Prioritas 3: durasi_menit dari kolom langsung
         if (!is_null($log->durasi_menit)) {
             return max(0, (int) $log->durasi_menit) * 60;
         }
 
+        // Prioritas 4: parse dari string durasi di detail
         foreach (['durasi_detik', 'durasi'] as $key) {
             if (array_key_exists($key, $detail)) {
                 $seconds = $this->parseDurationValueToSeconds($detail[$key]);
