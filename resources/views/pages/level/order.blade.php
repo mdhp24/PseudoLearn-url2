@@ -92,7 +92,7 @@
                 if (result.isConfirmed) {
                     if (window.blockUI) blockUI.block();
                     $.ajax({
-                        url: "{{ url('level/update-order') }}",
+                        url: "{{ secure_url('level/update-order') }}",
                         type: "POST",
                         data: {
                             order: orderData,
