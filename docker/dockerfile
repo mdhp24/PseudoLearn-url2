@@ -1,0 +1,12 @@
+FROM sail-8.5/app
+
+# Install OpenJDK 21 for Java compilation and execution
+RUN apt-get update \
+    && apt-get install -y openjdk-21-jdk-headless \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
