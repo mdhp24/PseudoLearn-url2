@@ -82,6 +82,17 @@ class UjianKodeRepository
                 $nyawa->save();
             }
 
+            // Simpan percobaan gagal agar ikut terhitung di total submit
+            $this->model->create([
+                'id_mahasiswa'          => $idUser,
+                'id_bank_soal_konversi' => $idBankSoalKonversi,
+                'id_level'              => $soalKonversi->id_level,
+                'jawaban'               => implode("\n", $jawabanMahasiswa),
+                'output'                => null,
+                'nilai'                 => 0,
+                'waktu'                 => $waktu,
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => [
