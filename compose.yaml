@@ -1,11 +1,11 @@
 services:
     pseudolearn-water:
         build:
-            context: './vendor/laravel/sail/runtimes/8.5'
-            dockerfile: Dockerfile
+            context: '.'
+            dockerfile: './docker/Dockerfile'
             args:
                 WWWGROUP: '${WWWGROUP}'
-        image: 'sail-8.5/app'
+        image: 'sail-8.5-java/app'
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         environment:
