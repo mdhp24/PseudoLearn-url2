@@ -217,88 +217,127 @@ public function questionList(Request $request)
         ->orderBy('order', 'asc')
         ->get();
 
-    $result     = [];
-    $unlockNext = true;
+    // Get ALL bank_soal_konversi entries for this level
+    $allBankKonversi = DB::table('bank_soal_konversi')
+        ->where('id_level', $levelId)
+        ->orderBy('order', 'asc')
+        ->get();
 
-    foreach ($soalList as $soal) {
-        $konversi = DB::table('bank_soal_konversi')
-            ->where('id_soal', $soal->id)
-            ->where('id_level', $levelId)
-            ->first();
+    // Get ALL konversi entries for this level
+    $allKonversi = DB::table('konversi')
+        ->where('id_level', $levelId)
+        ->orderBy('created_at', 'asc')
+        ->get();
 
-        $isPseudoDone = $this->ujianModel
-            ->where('id_mahasiswa', $idMahasiswa)
-            ->where('id_soal', $soal->id)
-            ->where('status', 1)
-            ->exists();
+    // Gabungkan semua konversi dari kedua tabel
+    $allKonversiList = [];
+    foreach ($allBankKonversi as $k) {
+        $allKonversiList[] = $k;
+    }
+    foreach ($allKonversi as $k) {
+        $allKonversiList[] = $k;
+    }
 
-        $isKonversiDone = true;
-        if ($konversi) {
+    // Batasi jumlah soal pseudo agar berpasangan dengan konversi (15 pseudo + 15 konversi = 30)
+    $maxSoal = min(count($soalList), count($allKonversiList));
+    $soalList = $soalList->take($maxSoal);
+
+    $result      = [];
+    $unlockNext  = true;
+    $soalIdx     = 0;
+    $konversiIdx = 0;
+
+    while ($soalIdx < count($soalList) || $konversiIdx < count($allKonversiList)) {
+        // === GANJIL: Pseudocode ===
+        if ($soalIdx < count($soalList)) {
+            $soal = $soalList[$soalIdx];
+            $soalIdx++;
+
+            $isPseudoDone = $this->ujianModel
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_soal', $soal->id)
+                ->where('status', 1)
+                ->exists();
+
+            if (!$unlockNext) {
+                $pseudoStatus = 'locked';
+            } elseif ($isPseudoDone) {
+                $pseudoStatus = 'done';
+            } else {
+                $pseudoStatus = 'active';
+            }
+
+            $badge = $this->labelSkorModel
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_level', $levelId)
+                ->where('id_soal', $soal->id)
+                ->value('label');
+
+            $result[] = [
+                'type'       => 'soal',
+                'id'         => $soal->id,
+                'judul'      => $soal->judul,
+                'difficulty' => $soal->difficulty,
+                'status'     => $pseudoStatus,
+                'badge'      => $badge,
+            ];
+        }
+
+        // === GENAP: Konversi Program ===
+        if ($konversiIdx < count($allKonversiList)) {
+            $konversi = $allKonversiList[$konversiIdx];
+            $konversiIdx++;
+
+            // Cari soal yang cocok untuk judul konversi
+            $soalJudul = $soal->judul ?? '';
+
             $isKonversiDone = DB::table('ujian_kode')
                 ->where('id_mahasiswa', $idUser)
                 ->where('id_bank_soal_konversi', $konversi->id)
                 ->exists();
-        }
 
-        // Status pseudo: tergantung unlockNext dari soal sebelumnya
-        if (!$unlockNext) {
-            $pseudoStatus = 'locked';
-        } elseif ($isPseudoDone) {
-            $pseudoStatus = 'done';
-        } else {
-            $pseudoStatus = 'active';
-        }
-
-        // ✅ PERBAIKAN: konversi hanya tergantung isPseudoDone, BUKAN unlockNext
-        if (!$isPseudoDone) {
-            $konversiStatus = 'locked';
-        } elseif ($isKonversiDone) {
-            $konversiStatus = 'done';
-        } else {
-            $konversiStatus = 'active';
-        }
-
-        $badge = $this->labelSkorModel
-            ->where('id_mahasiswa', $idMahasiswa)
-            ->where('id_level', $levelId)
-            ->where('id_soal', $soal->id)
-            ->value('label');
-
-        $result[] = [
-            'type'       => 'soal',
-            'id'         => $soal->id,
-            'judul'      => $soal->judul,
-            'difficulty' => $soal->difficulty,
-            'status'     => $pseudoStatus,
-            'badge'      => $badge,
-        ];
-
-        if ($konversi) {
-            $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? null;
-
-            $konversiSubtitle = null;
-            if (!empty($konversiJudul) && $konversiJudul !== $soal->judul) {
-                $konversiSubtitle = $soal->judul;
-            } else {
-                $konversiJudul    = $soal->judul;
-                $konversiSubtitle = null;
+            if (!$isKonversiDone) {
+                $isKonversiDone = DB::table('ujian_konversi')
+                    ->where('id_mahasiswa', $idMahasiswa)
+                    ->where('id_soal_konversi', $konversi->id)
+                    ->exists();
             }
+
+            $isPseudoDone = isset($soal) ? ($this->ujianModel
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_soal', $soal->id)
+                ->where('status', 1)
+                ->exists()) : false;
+
+            if (!$isPseudoDone) {
+                $konversiStatus = 'locked';
+            } elseif ($isKonversiDone) {
+                $konversiStatus = 'done';
+            } else {
+                $konversiStatus = 'active';
+            }
+
+            $konversiJudul = $konversi->judul_soal ?? $konversi->judul ?? $soalJudul;
 
             $result[] = [
                 'type'       => 'konversi',
                 'id'         => $konversi->id,
                 'judul'      => $konversiJudul,
-                'subtitle'   => $konversiSubtitle,
-                'difficulty' => $soal->difficulty,
+                'subtitle'   => null,
+                'difficulty' => $konversi->difficulty ?? 'easy',
                 'status'     => $konversiStatus,
             ];
-        }
 
-        // ✅ Unlock soal berikutnya hanya jika pseudo DAN konversi sudah selesai
-        if (!$isPseudoDone || !$isKonversiDone) {
-            $unlockNext = false;
+            // Unlock next hanya jika pseudo dan konversi sudah selesai
+            if (!$isPseudoDone || !$isKonversiDone) {
+                $unlockNext = false;
+            }
+        } elseif ($soalIdx <= count($soalList)) {
+            // Tidak ada konversi, unlock next hanya berdasarkan pseudo
+            if (isset($soal) && !$isPseudoDone) {
+                $unlockNext = false;
+            }
         }
-        // Jika keduanya done, $unlockNext tetap true → soal berikutnya terbuka
     }
 
     // Deduplicated konversi names
@@ -319,6 +358,9 @@ public function questionList(Request $request)
 
     $dataLevel          = $this->levelModel->find($levelId);
     $jumlahSoalKonversi = DB::table('bank_soal_konversi')
+        ->where('id_level', $levelId)
+        ->count()
+        + DB::table('konversi')
         ->where('id_level', $levelId)
         ->count();
 
