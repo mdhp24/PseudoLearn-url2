@@ -6,7 +6,6 @@ use App\Models\BankSoalKonversi;
 use App\Core\BaseResponse;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 class BankSoalKonversiRepository
@@ -297,31 +296,92 @@ class BankSoalKonversiRepository
             $filePath = $dirPath . '/' . $className . '.java';
             file_put_contents($filePath, $javaCode);
 
-            $javacPath = $this->resolveJavaToolPath('javac');
-            $javaPath  = $this->resolveJavaToolPath('java');
+            // Resolve javac/java paths: check JAVA_HOME, common install dirs, then PATH via where
+            $resolveBin = function (string $binary) use ($dirPath): string {
+                $javaHome = env('JAVA_HOME', '');
+                if ($javaHome !== '') {
+                    $candidate = rtrim($javaHome, '/\\') . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $binary;
+                    if (@is_file($candidate . '.exe') || @is_file($candidate)) {
+                        return $candidate;
+                    }
+                }
 
-            $compile = new Process([$javacPath, basename($filePath)], $dirPath);
+                // Search common Java installation directories
+                $commonRoots = [
+                    'C:\\Program Files\\Java',
+                    'C:\\Program Files\\Eclipse Adoptium',
+                    'C:\\Program Files\\Microsoft',
+                    'C:\\Program Files\\AdoptOpenJDK',
+                    'C:\\Program Files\\Zulu',
+                    'C:\\Program Files (x86)\\Java',
+                ];
+                foreach ($commonRoots as $root) {
+                    $pattern = $root . '\\*\\bin\\' . $binary . '.exe';
+                    foreach (glob($pattern) ?: [] as $candidate) {
+                        if (@is_file($candidate)) {
+                            return $candidate;
+                        }
+                    }
+                }
+
+                // Try via cmd /c where (works if Java is in system PATH)
+                $where = new Process(['cmd', '/c', 'where', $binary], $dirPath);
+                $where->setTimeout(10);
+                $where->run();
+                if ($where->isSuccessful()) {
+                    $lines = preg_split('/\r?\n/', trim($where->getOutput()));
+                    foreach ($lines as $line) {
+                        $path = trim($line);
+                        if ($path !== '' && @is_file($path)) {
+                            return $path;
+                        }
+                    }
+                }
+
+                return $binary;
+            };
+
+            $javacBin = $resolveBin('javac');
+            $javaBin  = $resolveBin('java');
+
+            // Compile with javac
+            $compile = new Process([$javacBin, $filePath], $dirPath);
             $compile->setTimeout(15);
             $compile->run();
 
-            if (!$compile->isSuccessful()) {
-                throw new ProcessFailedException($compile);
+            if ($compile->isSuccessful()) {
+                // Run compiled class
+                $run = new Process([$javaBin, '-cp', $dirPath, $className], $dirPath);
+                $run->setTimeout(15);
+                if ($soalInput !== '') {
+                    $run->setInput($soalInput);
+                }
+                $run->run();
+
+                if ($run->isSuccessful()) {
+                    $output = $run->getOutput();
+                } else {
+                    $msg = 'Eksekusi gagal:' . "\n" . $run->getErrorOutput();
+                    throw new \RuntimeException($msg);
+                }
+            } else {
+                // Fallback: try source-file launcher (java File.java)
+                $sourceRun = new Process([$javaBin, $filePath], $dirPath);
+                $sourceRun->setTimeout(15);
+                if ($soalInput !== '') {
+                    $sourceRun->setInput($soalInput);
+                }
+                $sourceRun->run();
+
+                if ($sourceRun->isSuccessful()) {
+                    $output = $sourceRun->getOutput();
+                } else {
+                    $errorOutput = $compile->getErrorOutput() ?: 'javac not found or compilation failed.';
+                    $sourceError = $sourceRun->getErrorOutput() ?: $sourceRun->getOutput();
+                    $message = "Kompilasi javac gagal:\n{$errorOutput}\n\nSource-run error:\n{$sourceError}";
+                    throw new \RuntimeException($message);
+                }
             }
-
-            $process = new Process([$javaPath, '-cp', $dirPath, $className], $dirPath);
-            $process->setTimeout(15);
-            $process->setInput($soalInput); // input dari form ke Scanner
-            $process->run();
-
-            if (!$process->isSuccessful()) {
-                throw new \RuntimeException(
-                    'Eksekusi gagal:' . "\n" . $process->getErrorOutput()
-                );
-            }
-
-            $output = $process->getOutput();
-
-            @unlink($dirPath . '/' . $className . '.class');
 
             return BaseResponse::json([
                 'status' => true,
@@ -335,79 +395,36 @@ class BankSoalKonversiRepository
 
     protected function renameJavaClassName(string $javaCode, string $className): string
     {
-        $updatedCode = preg_replace_callback(
-            '/\b((?:public\s+)?(?:abstract\s+|final\s+)?)class\s+[A-Za-z_][A-Za-z0-9_]*/i',
-            function ($matches) use ($className) {
-                return $matches[1] . 'class ' . $className;
-            },
-            $javaCode,
-            1
-        );
-        return $updatedCode ?? $javaCode;
-    }
+        $sourceClassName = null;
+        $updatedCode = $javaCode;
 
-    protected function resolveJavaToolPath(string $toolName): string
-    {
-        $toolName = trim($toolName);
-
-        $javaHome = getenv('JAVA_HOME') ?: getenv('JDK_HOME');
-        if (!empty($javaHome)) {
-            $javaHome = rtrim($javaHome, "\\/");
-
-            $candidates = [
-                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName . '.exe',
-                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName,
-            ];
-
-            foreach ($candidates as $candidate) {
-                if (file_exists($candidate)) {
-                    return $candidate;
-                }
-            }
+        if (preg_match('/\bpublic\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $publicClassMatch)) {
+            $sourceClassName = $publicClassMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(public\s+class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
+        } elseif (preg_match('/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $classMatch)) {
+            $sourceClassName = $classMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
         }
 
-        $commonRoots = [
-            'C:\\Program Files\\Java',
-            'C:\\Program Files\\Eclipse Adoptium',
-            'C:\\Program Files\\Microsoft',
-            'C:\\Program Files\\Amazon Corretto',
-            'C:\\Program Files (x86)\\Java',
-        ];
-
-        foreach ($commonRoots as $root) {
-            foreach (glob($root . '\\jdk*\\bin\\' . $toolName . '.exe') ?: [] as $candidate) {
-                if (file_exists($candidate)) {
-                    return $candidate;
-                }
-            }
+        if ($sourceClassName !== null && $sourceClassName !== $className) {
+            $updatedCode = preg_replace(
+                '/(^|\n)(\s*)(?:public\s+)?' . preg_quote($sourceClassName, '/') . '\s*\(/m',
+                '$1$2' . $className . '(',
+                $updatedCode
+            );
         }
 
-        $where = Process::fromShellCommandline('where ' . $toolName);
-        $where->run();
-
-        if ($where->isSuccessful()) {
-            $paths = preg_split('/\r?\n/', trim($where->getOutput()));
-
-            foreach ($paths as $path) {
-                $path = trim((string) $path);
-
-                if ($path === '') {
-                    continue;
-                }
-
-                $normalizedPath = strtolower(str_replace('/', '\\', $path));
-
-                if (str_contains($normalizedPath, '\\oracle\\java\\javapath\\')) {
-                    continue;
-                }
-
-                if (file_exists($path)) {
-                    return $path;
-                }
-            }
-        }
-
-        return $toolName;
+        return $updatedCode;
     }
 
     protected function extractMainBody(string $javaCode): array
