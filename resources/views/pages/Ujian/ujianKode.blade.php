@@ -507,6 +507,7 @@
         document.addEventListener('dblclick', function (e) {
             const item = e.target.closest('.drag-item');
             if (!item) return;
+            if (item.classList.contains('is-clue')) return; // clue tidak bisa dipindahkan
             if (item.closest('.answer-box')) {
                 const panel = document.getElementById('panel-pilihan-kode');
                 if (panel) {
