@@ -36,7 +36,7 @@
             background: #f5f5f5;
         }
 
-        /* ── Panel shared ── */
+        /*  Panel shared  */
         .panel-box {
             background-color: #CDD6E2;
             border-radius: 12px;
@@ -59,22 +59,7 @@
             padding: 1.2rem 1rem;
         }
 
-        /* ── Pseudocode box ── */
-        .step-title {
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .code-box {
-            background-color: #0a3a71;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        /* ── Drag items ── */
+        /*  Drag items  */
         .drag-item {
             background-color: #0a3a71;
             color: white;
@@ -102,7 +87,7 @@
             opacity: 0.4;
         }
 
-        /* ── Answer boxes ── */
+        /*  Answer boxes  */
         .answer-box {
             min-height: 44px;
             background-color: #CDD6E2;
@@ -120,18 +105,7 @@
             border-style: solid;
         }
 
-        /* Java structure wrapper boxes */
-        .code-box-input {
-            background-color: #0a3a71;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        /* ── Input panel wrapper ── */
+        /*  Input panel wrapper  */
         .input-panel {
             border: 4px solid #022349;
             border-radius: 12px;
@@ -155,27 +129,46 @@
             padding: 20px;
         }
 
-        /* ── Animations ── */
+        /*  Drag item clue (fixed, tidak bisa di-drag keluar)  */
+        .drag-item.is-clue {
+            background-color: #0a3a71;
+            color: #fff;
+            cursor: default;
+            border: 2px solid #0a3a71;
+            position: relative;
+        }
+
+        .drag-item.is-clue:hover {
+            background-color: #0a3a71;
+            transform: none;
+        }
+
+        .drag-item.is-clue::after {
+            content: '💡 Clue';
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 0.7rem;
+            opacity: 0.85;
+            font-family: sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        /* answer-box yang berisi clue: border solid, tidak bisa di-drop */
+        .answer-box.has-clue {
+            border-style: solid;
+            border-color: #022349;
+            /* background-color: #fef3c7; */
+        }
+
+        /*  Animations  */
         @keyframes shake {
-            0% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-6px);
-            }
-
-            50% {
-                transform: translateX(6px);
-            }
-
-            75% {
-                transform: translateX(-6px);
-            }
-
-            100% {
-                transform: translateX(0);
-            }
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-6px); }
+            100% { transform: translateX(0); }
         }
 
         .answer-box.shake {
@@ -188,32 +181,14 @@
         }
 
         @keyframes heartBeat {
-            0% {
-                transform: scale(1);
-            }
-
-            10% {
-                transform: scale(1.1);
-            }
-
-            20% {
-                transform: scale(1.2);
-            }
-
-            30% {
-                transform: scale(1.1);
-            }
-
-            40% {
-                transform: scale(1);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+            0%   { transform: scale(1); }
+            10%  { transform: scale(1.1); }
+            20%  { transform: scale(1.2); }
+            30%  { transform: scale(1.1); }
+            40%  { transform: scale(1); }
+            100% { transform: scale(1); }
         }
 
-        /* Pilihan kode drag-grid */
         .drag-grid-java {
             display: flex;
             flex-direction: column;
@@ -234,7 +209,7 @@
                         <div id="kt_app_content_container" class="app-container container-fluid p-10">
                             <div class="container card-container">
 
-                                {{-- ── Topbar ── --}}
+                                {{--  Topbar  --}}
                                 <div class="mb-8">
                                     <div class="card rounded-bottom shadow p-0 border-0"
                                         style="background-color: #0a3a71; border-radius: 1rem 1rem 0 0;">
@@ -252,8 +227,7 @@
                                                 style="font-size: 1.3rem;">
                                                 Waktu Pengerjaan
                                                 <span class="fw-bolder" id="timer-ujian">00:00:00</span>
-                                                <input type="hidden" id="waktu-ujian-detik" name="waktu"
-                                                    value="0" />
+                                                <input type="hidden" id="waktu-ujian-detik" name="waktu" value="0" />
                                             </div>
 
                                             <div class="d-flex align-items-center gap-7">
@@ -281,94 +255,69 @@
                                         </div>
                                     </div>
                                 </div>
-                                {{-- ── End Topbar ── --}}
+                                {{--  End Topbar  --}}
 
                                 <input type="hidden" id="id-level" value="{{ $soal->id_level }}">
 
                                 @php
-                                    $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
-                                    $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
-                                    $dataLangkah = 1;
+                                    // Parse jawaban lengkap dengan info clue
+                                    $jawabanWithClue = \App\Models\BankSoalKonversi::parseJawabanWithClue($konversi['jawaban'] ?? '');
 
-                                    $algoritmaTerpilih = $algoritmaList->filter(function ($row) {
-                                        if (isset($row['data_konversi'])) {
-                                            return (int) $row['data_konversi'] === 1;
-                                        }
-                                        if (isset($row['konversi'])) {
-                                            return (int) $row['konversi'] === 1;
-                                        }
-                                        return false;
-                                    });
+                                    // Kocok hanya baris non-clue untuk pilihan drag
+                                    $draggable = collect($jawabanWithClue)
+                                        ->filter(fn($item) => (int)($item['clue'] ?? 0) === 0)
+                                        ->values()
+                                        ->shuffle();
 
-                                    // Format jawaban (JSON array atau teks per baris)
-                                    $jawabanList = collect(
-                                        \App\Models\BankSoalKonversi::parseJawabanLines($konversi['jawaban'] ?? ''),
-                                    )->shuffle();
-
-                                    $totalLangkah = $jawabanList->count();
+                                    // Total langkah = SEMUA baris (clue + non-clue)
+                                    // karena kotak jawaban termasuk posisi clue juga
+                                    $totalLangkah = count($jawabanWithClue);
                                 @endphp
 
                                 <div class="row mb-4">
 
-                                    {{-- ── Kolom Kiri: Pseudocode + Pilihan Kode ── --}}
+                                    {{--  Kolom Kiri: Pilihan Kode  --}}
                                     <div class="col-md-5">
-
-                                        {{-- Pseudocode Panel --}}
-                                        {{-- <div class="panel-box">
-                                            <div class="panel-header">Pseudocode</div>
-                                            <div class="panel-body">
-                                                @foreach ($tipeDataList as $item)
-                                                    @if (!empty($item['variabel']))
-                                                        <div class="step-title">Langkah {{ $dataLangkah }}</div>
-                                                        <div class="code-box">
-                                                            {{ $item['variabel'] }} : {{ $item['tipe_data'] ?? '-' }}
-                                                        </div>
-                                                        @php $dataLangkah++; @endphp
-                                                    @endif
-                                                @endforeach
-
-                                                @foreach ($algoritmaTerpilih as $item)
-                                                    <div class="step-title">Langkah {{ $dataLangkah }}</div>
-                                                    <div class="code-box">{{ $item['langkah'] }}</div>
-                                                    @php $dataLangkah++; @endphp
-                                                @endforeach
-                                            </div>
-                                        </div> --}}
-
-                                        {{-- Pilihan Kode Java (Drag source) --}}
                                         <div class="panel-box">
                                             <div class="panel-header">Pilihan Kode Java</div>
                                             <div class="panel-body drag-grid-java" id="panel-pilihan-kode">
-                                                @foreach ($jawabanList as $jawaban)
+                                                @foreach ($draggable as $item)
                                                     <div class="drag-item" draggable="true" data-source="java">
-                                                        {{ $jawaban }}
+                                                        {{ $item['kode'] }}
                                                     </div>
                                                 @endforeach
                                             </div>
                                         </div>
-
                                     </div>
-                                    {{-- ── End Kolom Kiri ── --}}
+                                    {{--  End Kolom Kiri  --}}
 
-                                    {{-- ── Kolom Kanan: Input Kode Java (Drop zone) ── --}}
+                                    {{--  Kolom Kanan: Clue + Input Kode Java  --}}
                                     <div class="col-md-7">
+
+                                        {{-- Input Kode Java (Drop zone) --}}
                                         <div class="input-panel">
                                             <div class="input-header">Input Kode Java</div>
                                             <div class="input-body">
 
-                                                @for ($i = 1; $i <= $totalLangkah; $i++)
+                                                @foreach ($jawabanWithClue as $i => $item)
+                                                    @php $isClue = (int)($item['clue'] ?? 0) === 1; @endphp
                                                     <div class="ms-4 mb-3">
                                                         <div class="mb-1">
-                                                            <strong style="font-size: 0.9rem;">Langkah
-                                                                {{ $i }}</strong>
+                                                            <strong style="font-size: 0.9rem;">Langkah {{ $i + 1 }}</strong>
                                                         </div>
-                                                        <div class="answer-box box-java"
-                                                            data-index="{{ $i }}"
+                                                        <div class="answer-box box-java {{ $isClue ? 'has-clue' : '' }}"
+                                                            data-index="{{ $i + 1 }}"
+                                                            data-is-clue="{{ $isClue ? '1' : '0' }}"
                                                             style="min-height: 46px;">
-                                                            {{-- Drop item here --}}
+                                                            @if ($isClue)
+                                                                {{-- Baris clue: item sudah terpasang, tidak bisa digeser --}}
+                                                                <div class="drag-item is-clue" draggable="false">
+                                                                    {{ $item['kode'] }}
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     </div>
-                                                @endfor
+                                                @endforeach
 
                                             </div>
 
@@ -387,8 +336,9 @@
                                                 </button>
                                             </div>
                                         </div>
+
                                     </div>
-                                    {{-- ── End Kolom Kanan ── --}}
+                                    {{--  End Kolom Kanan  --}}
 
                                 </div>
                             </div>
@@ -429,11 +379,9 @@
     <script src="{!! asset('assets/plugins/custom/iconify/iconify-icon.min.js') !!}"></script>
 
     <script>
-        // ══════════════════════════════════════════
-        //  Timer (count-up, starts on first drop)
-        // ══════════════════════════════════════════
+        //  Timer (count-up)
         let timerInterval = null;
-        let timerStarted = false;
+        let timerStarted  = false;
         let elapsedSeconds = 0;
         window.waktuUjianDetik = 0;
 
@@ -462,29 +410,24 @@
             }, 1000);
         }
 
-        //  Drag & Drop – Java code
-        document.addEventListener('DOMContentLoaded', function() {
+        //  Drag & Drop
+        document.addEventListener('DOMContentLoaded', function () {
             updateTimerDisplay();
 
-            // Semua drag-item yang ada bisa di-drag
             document.querySelectorAll('.drag-item[data-source="java"]').forEach(makeDraggable);
-
-            // Drop: answer-box.box-java
             document.querySelectorAll('.answer-box.box-java').forEach(registerDropZone);
 
-            // Panel pilihan: bisa menerima kembali item yang di-drag keluar dari box
+            // Panel pilihan: terima kembali item yang di-drag keluar
             const panelPilihan = document.getElementById('panel-pilihan-kode');
             if (panelPilihan) {
                 panelPilihan.addEventListener('dragover', e => e.preventDefault());
                 panelPilihan.addEventListener('dragenter', () => panelPilihan.style.outline = '2px dashed #0a3a71');
                 panelPilihan.addEventListener('dragleave', () => panelPilihan.style.outline = '');
-                panelPilihan.addEventListener('drop', function(e) {
+                panelPilihan.addEventListener('drop', function (e) {
                     e.preventDefault();
                     panelPilihan.style.outline = '';
                     const dragged = document.querySelector('.drag-item.dragging');
                     if (!dragged) return;
-
-                    // Kembalikan ke panel pilihan
                     panelPilihan.appendChild(dragged);
                     dragged.classList.remove('dragging');
                     startTimer();
@@ -495,34 +438,35 @@
         function makeDraggable(item) {
             item.setAttribute('draggable', 'true');
 
-            item.addEventListener('dragstart', function(e) {
+            item.addEventListener('dragstart', function (e) {
                 e.dataTransfer.setData('text/plain', e.target.innerText.trim());
                 setTimeout(() => e.target.classList.add('dragging'), 0);
                 startTimer();
             });
 
-            item.addEventListener('dragend', function() {
+            item.addEventListener('dragend', function () {
                 item.classList.remove('dragging');
             });
         }
 
         function registerDropZone(box) {
-            box.addEventListener('dragover', function(e) {
+            box.addEventListener('dragover', function (e) {
                 e.preventDefault();
                 this.classList.add('drag-over');
             });
 
-            box.addEventListener('dragleave', function() {
+            box.addEventListener('dragleave', function () {
                 this.classList.remove('drag-over');
             });
 
-            box.addEventListener('drop', function(e) {
+            box.addEventListener('drop', function (e) {
                 e.preventDefault();
                 this.classList.remove('drag-over');
 
                 const dragged = document.querySelector('.drag-item.dragging');
                 if (!dragged) return;
 
+                // Jika kotak sudah terisi, tolak dan goyangkan
                 const existing = this.querySelector('.drag-item');
                 if (existing) {
                     this.classList.add('shake');
@@ -534,34 +478,33 @@
                 dragged.classList.remove('dragging');
                 startTimer();
 
-                // ── Log drag & drop ──
-                const index = this.getAttribute('data-index');
+                //  Log drag & drop
+                const index    = this.getAttribute('data-index');
                 const itemText = dragged.innerText.trim();
-                const idSoal = document.getElementById('id-soal-konversi').value;
-                const idLevel = document.getElementById('id-level').value;
+                const idSoal   = document.getElementById('id-soal-konversi').value;
+                const idLevel  = document.getElementById('id-level').value;
 
                 fetch(APP_URL + 'ujian-kode/log-drag', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                'content'),
-                        },
-                        body: JSON.stringify({
-                            id_bank_soal_konversi: idSoal,
-                            id_level: idLevel,
-                            index: index,
-                            item_text: itemText,
-                        }),
-                    })
-                    .then(res => res.json())
-                    .then(data => console.log('Log drag berhasil:', data))
-                    .catch(err => console.error('Log drag gagal:', err));
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        id_bank_soal_konversi: idSoal,
+                        id_level: idLevel,
+                        index: index,
+                        item_text: itemText,
+                    }),
+                })
+                .then(res => res.json())
+                .then(data => console.log('Log drag berhasil:', data))
+                .catch(err => console.error('Log drag gagal:', err));
             });
         }
 
         // Double-click pada item di dalam answer-box → kembalikan ke panel
-        document.addEventListener('dblclick', function(e) {
+        document.addEventListener('dblclick', function (e) {
             const item = e.target.closest('.drag-item');
             if (!item) return;
             if (item.closest('.answer-box')) {
@@ -573,14 +516,12 @@
             }
         });
 
-        // ══════════════════════════════════════════
         //  Kumpulkan jawaban sebelum submit
-        //  (dipanggil dari indexCodeProgram.js saat Cek Jawaban)
-        // ══════════════════════════════════════════
-        window.getJawabanKonversi = function() {
+        //  (dipanggil dari indexUjianKode.js)
+        window.getJawabanKonversi = function () {
             const hasil = {};
             document.querySelectorAll('.answer-box.box-java').forEach(box => {
-                const idx = box.getAttribute('data-index');
+                const idx  = box.getAttribute('data-index');
                 const item = box.querySelector('.drag-item');
                 hasil[idx] = item ? item.innerText.trim() : '';
             });

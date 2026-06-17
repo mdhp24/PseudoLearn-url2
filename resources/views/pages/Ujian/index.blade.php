@@ -195,11 +195,11 @@
                                                 <div class="panel-box text-center mb-8">
                                                     <div class="panel-header">Tipe Data</div>
                                                     @php
-                                                        $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true))
+                                                        $tipeDataList = collect($soal['kunci_tipe_data'])
                                                             ->pluck('tipe_data')
                                                             ->values()
                                                             ->shuffle();
-                                                        $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true))
+                                                        $algoritmaList = collect($soal['kunci_algoritma'])
                                                             ->where('clue', '0')
                                                             ->pluck('langkah')
                                                             ->values()
@@ -239,7 +239,7 @@
                                                                 </div>
                                                                 <div class="p-3">
                                                                     @php
-                                                                        $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true))
+                                                                        $tipeDataList = collect($soal['kunci_tipe_data'])
                                                                             ->pluck('variabel')
                                                                             ->filter(function($v) { return !is_null($v); })
                                                                             ->values();
@@ -265,7 +265,7 @@
                                                                 </div>
                                                                 <div class="p-3">
                                                                     @php
-                                                                        $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
+                                                                        $algoritmaList = collect($soal['kunci_algoritma']);
                                                                     @endphp
                                                                     @foreach($algoritmaList as $item)
                                                                         <div class="answer-box box-algo mb-2" data-index="{{ $loop->index }}" data-clue="{{ $item['clue'] }}">
