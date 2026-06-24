@@ -124,7 +124,7 @@
             color: #fff;
         }
 
-        .jawaban-code-preview {
+        /*.jawaban-code-preview {
             display: flex;
             flex-wrap: wrap;
             align-items: flex-start;
@@ -151,7 +151,7 @@
             font-family: "JetBrains Mono", "Fira Code", monospace;
             font-size: 12px;
             line-height: 1.6;
-        }
+        }*/
 
         #btn-run-konversi.loading {
             pointer-events: none;
@@ -357,7 +357,7 @@
                             </div>
                         </div>
 
-                        {{-- Preview chip urut --}}
+                        {{-- Preview chip urut
                         <div class="row mb-5 d-none" id="row-preview-chip">
                             <div class="fv-row col-md-12">
                                 <label class="form-label fs-6 text-muted">
@@ -365,7 +365,7 @@
                                 </label>
                                 <div id="preview-chip-wrap" class="jawaban-code-preview"></div>
                             </div>
-                        </div>
+                        </div> --}}
 
                         {{-- ══ PANEL CLUE ══ --}}
                         <div class="row mb-5 d-none" id="row-clue">
@@ -383,8 +383,6 @@
                                         <div class="clue-info-text">
                                             Centang baris yang ingin ditampilkan sebagai <strong>petunjuk</strong> di quiz
                                             drag-and-drop.
-                                            Baris clue akan tampil sebagai panel hint di atas area jawaban mahasiswa —
-                                            mahasiswa <strong>tidak perlu</strong> meletakkannya di kotak jawaban.
                                         </div>
                                         <div id="clue-list"></div>
                                     </div>
@@ -541,28 +539,28 @@
             }
         }
 
-        // ══════════════════════════════════════════
-        //  Render preview chip
-        // ══════════════════════════════════════════
-        function renderJawabanCodePreview(plainText) {
-            const lines = plainText ? plainText.split('\n').filter(l => l.trim() !== '') : [];
-            const $container = $('#preview-chip-wrap').empty();
+        // // ══════════════════════════════════════════
+        // //  Render preview chip
+        // // ══════════════════════════════════════════
+        // function renderJawabanCodePreview(plainText) {
+        //     const lines = plainText ? plainText.split('\n').filter(l => l.trim() !== '') : [];
+        //     const $container = $('#preview-chip-wrap').empty();
 
-            if (lines.length === 0) {
-                $('#row-preview-chip').addClass('d-none');
-                return;
-            }
+        //     if (lines.length === 0) {
+        //         $('#row-preview-chip').addClass('d-none');
+        //         return;
+        //     }
 
-            lines.forEach((line) => {
-                $container.append(`
-                    <div class="jawaban-code-card">
-                        <span class="jawaban-code-line-content">${escHtml(line)}</span>
-                    </div>
-                `);
-            });
+        //     lines.forEach((line) => {
+        //         $container.append(`
+        //             <div class="jawaban-code-card">
+        //                 <span class="jawaban-code-line-content">${escHtml(line)}</span>
+        //             </div>
+        //         `);
+        //     });
 
-            $('#row-preview-chip').removeClass('d-none');
-        }
+        //     $('#row-preview-chip').removeClass('d-none');
+        // }
 
         // ══════════════════════════════════════════
         //  Render panel CLUE
@@ -764,7 +762,7 @@
         function setJawaban(rawValue, savedClueIndexes) {
             const normalized = normalizeJawabanCode(rawValue);
             $('#jawaban-textarea').val(normalized);
-            renderJawabanCodePreview(normalized);
+            //renderJawabanCodePreview(normalized);
             renderCluePanel(normalized, savedClueIndexes || []);
         }
 
@@ -777,7 +775,7 @@
             // Pertahankan index yang sudah dicentang sebelum re-render
             const currentChecked = getCheckedClueIndexes();
 
-            renderJawabanCodePreview(normalized);
+            //renderJawabanCodePreview(normalized);
             renderCluePanel(normalized, currentChecked);
 
             if (!codeHasScanner(normalized)) {
