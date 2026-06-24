@@ -335,15 +335,38 @@ class BankSoalKonversiRepository
 
     protected function renameJavaClassName(string $javaCode, string $className): string
     {
-        $updatedCode = preg_replace_callback(
-            '/\b((?:public\s+)?(?:abstract\s+|final\s+)?)class\s+[A-Za-z_][A-Za-z0-9_]*/i',
-            function ($matches) use ($className) {
-                return $matches[1] . 'class ' . $className;
-            },
-            $javaCode,
-            1
-        );
-        return $updatedCode ?? $javaCode;
+        $sourceClassName = null;
+        $updatedCode = $javaCode;
+
+        // Prioritaskan public class (main class), lalu fallback ke class biasa
+        if (preg_match('/\bpublic\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $publicClassMatch)) {
+            $sourceClassName = $publicClassMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(public\s+class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
+        } elseif (preg_match('/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $classMatch)) {
+            $sourceClassName = $classMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
+        }
+
+        // Ganti juga constructor class lama dengan nama class baru
+        if ($sourceClassName !== null && $sourceClassName !== $className) {
+            $updatedCode = preg_replace(
+                '/(^|\n)(\s*)(?:public\s+)?' . preg_quote($sourceClassName, '/') . '\s*\(/m',
+                '$1$2' . $className . '(',
+                $updatedCode
+            );
+        }
+
+        return $updatedCode;
     }
 
     protected function resolveJavaToolPath(string $toolName): string

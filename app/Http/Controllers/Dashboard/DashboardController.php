@@ -60,7 +60,14 @@ class DashboardController extends Controller
 
             $getRankByIdMahasiswa = $this->leaderboardService->getRankByIdMahasiswa($mahasiswa->id);
             $idUser = Auth::id();
-            $nyawa = Nyawa::where('id_user', $idUser)->first();
+            $nyawa = Nyawa::firstOrCreate(
+                ['id_user' => $idUser],
+                [
+                    'id_mahasiswa' => $mahasiswa->id,
+                    'nyawa' => 100,
+                    'max_nyawa' => 100,
+                ]
+            );
 
             // Check and regenerate lives (1 life per 10 minutes)
             $nyawa->checkAndRegenerate();
@@ -89,7 +96,13 @@ class DashboardController extends Controller
 
      public function pencapaian()
     {
-        $nyawa = Nyawa::where('id_user', Auth::id())->first();
+        $nyawa = Nyawa::firstOrCreate(
+            ['id_user' => Auth::id()],
+            [
+                'nyawa' => 100,
+                'max_nyawa' => 100,
+            ]
+        );
 
         // Check and regenerate lives (1 life per 10 minutes)
         $nyawa->checkAndRegenerate();

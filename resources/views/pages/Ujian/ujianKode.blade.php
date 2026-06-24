@@ -286,8 +286,8 @@
                                 <input type="hidden" id="id-level" value="{{ $soal->id_level }}">
 
                                 @php
-                                    $tipeDataList = collect(json_decode($soal['kunci_tipe_data'], true));
-                                    $algoritmaList = collect(json_decode($soal['kunci_algoritma'], true));
+                                    $tipeDataList = collect(is_string($soal['kunci_tipe_data']) ? json_decode($soal['kunci_tipe_data'], true) : ($soal['kunci_tipe_data'] ?? []));
+                                    $algoritmaList = collect(is_string($soal['kunci_algoritma']) ? json_decode($soal['kunci_algoritma'], true) : ($soal['kunci_algoritma'] ?? []));
                                     $dataLangkah = 1;
 
                                     $algoritmaTerpilih = $algoritmaList->filter(function ($row) {
