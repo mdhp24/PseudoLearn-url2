@@ -72,8 +72,28 @@ class UjianKodeRepository
         }
 
         if (!empty($errors)) {
-            $this->decrementNyawaOnWrongAnswer($idUser);
             $nyawa = Nyawa::where('id_user', $idUser)->first();
+            if ($nyawa && $nyawa->nyawa > 0) {
+                $nyawa->nyawa -= 1;
+
+                // Set waktu regenerasi
+                if (is_null($nyawa->next_regen_at)) {
+                    $nyawa->next_regen_at = now()->addMinutes(10);
+                }
+
+                $nyawa->save();
+            }
+
+            // Simpan percobaan gagal agar ikut terhitung di total submit
+            $this->model->create([
+                'id_mahasiswa'          => $idUser,
+                'id_bank_soal_konversi' => $idBankSoalKonversi,
+                'id_level'              => $soalKonversi->id_level,
+                'jawaban'               => implode("\n", $jawabanMahasiswa),
+                'output'                => null,
+                'nilai'                 => 0,
+                'waktu'                 => $waktu,
+            ]);
 
             return response()->json([
                 'success' => false,

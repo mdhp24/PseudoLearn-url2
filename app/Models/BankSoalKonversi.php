@@ -34,74 +34,142 @@ class BankSoalKonversi extends BaseModel
         });
     }
 
-    public static function parseJawabanLines($rawJawaban): array
+    // ─────────────────────────────────────────────────────────────
+    //  FORMAT JAWABAN (dua format didukung, backward-compatible)
+    //
+    //  Format LAMA  → plain text per baris, atau JSON array of strings
+    //                 ["int x = 0;", "x++;", "System.out.println(x);"]
+    //
+    //  Format BARU  → JSON array of objects dengan flag clue
+    //                 [{"kode":"int x = 0;","clue":0},{"kode":"x++;","clue":1},...]
+    //
+    //  clue = 1  → baris ini ditampilkan sebagai petunjuk (hint) di quiz
+    //  clue = 0  → baris ini harus diurutkan oleh mahasiswa
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Parse kolom jawaban → array string kode (urut, tanpa clue info).
+     * Dipakai untuk mengacak pilihan drag-and-drop di quiz.
+     */
+    public static function parseJawabanLines(?string $raw): array
     {
-        if ($rawJawaban === null) {
+        $raw = trim((string) $raw);
+        if ($raw === '') {
             return [];
         }
 
-        if (is_array($rawJawaban)) {
-            $rawLines = $rawJawaban;
-        } else {
-            $text = trim((string) $rawJawaban);
-
-            if ($text === '') {
-                return [];
-            }
-
-            $decoded = json_decode($text, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                $rawLines = $decoded;
-            } else {
-                $normalized = str_replace(["\r\n", "\r"], "\n", $text);
-                $rawLines = preg_split('/\n/', $normalized) ?: [];
-            }
-        }
-
-        $lines = [];
-
-        foreach ($rawLines as $line) {
-            $normalizedLine = static::extractJawabanLineValue($line);
-
-            if ($normalizedLine !== '') {
-                $lines[] = $normalizedLine;
-            }
-        }
-
-        return array_values($lines);
-    }
-
-    public static function linesMatch($expected, $actual): bool
-    {
-        return static::normalizeJawabanLine($expected) === static::normalizeJawabanLine($actual);
-    }
-
-    protected static function extractJawabanLineValue($line): string
-    {
-        if (is_array($line)) {
-            foreach ($line as $value) {
-                $normalized = static::extractJawabanLineValue($value);
-                if ($normalized !== '') {
-                    return $normalized;
+        if (str_starts_with($raw, '[')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $lines = [];
+                foreach ($decoded as $item) {
+                    // Format baru: {"kode": "...", "clue": 0|1}
+                    if (is_array($item) && isset($item['kode'])) {
+                        $line = trim((string) $item['kode']);
+                        if ($line !== '') {
+                            $lines[] = $line;
+                        }
+                        continue;
+                    }
+                    // Format lama: string biasa
+                    if (is_string($item)) {
+                        $line = trim($item);
+                        if ($line !== '') {
+                            $lines[] = $line;
+                        }
+                    }
                 }
+                return array_values($lines);
             }
-
-            return '';
         }
 
-        if (is_object($line)) {
-            return static::extractJawabanLineValue((array) $line);
-        }
-
-        return static::normalizeJawabanLine($line);
+        // Fallback: plain text per baris
+        $lines = preg_split('/\R/', $raw) ?: [];
+        return array_values(array_filter(array_map('trim', $lines), fn($l) => $l !== ''));
     }
 
-    protected static function normalizeJawabanLine($line): string
+    /**
+     * Parse kolom jawaban → array objects lengkap dengan flag clue.
+     * Dipakai untuk menampilkan clue di quiz dan form.
+     *
+     * Return: [['kode' => '...', 'clue' => 0], ...]
+     */
+    public static function parseJawabanWithClue(?string $raw): array
     {
-        $line = str_replace("\xC2\xA0", ' ', (string) $line);
-        $line = trim($line);
-        $line = preg_replace('/\s+/u', ' ', $line);
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return [];
+        }
 
-        return $line ?? '';
+        if (str_starts_with($raw, '[')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $result = [];
+                foreach ($decoded as $item) {
+                    // Format baru
+                    if (is_array($item) && isset($item['kode'])) {
+                        $line = trim((string) $item['kode']);
+                        if ($line !== '') {
+                            $result[] = [
+                                'kode' => $line,
+                                'clue' => isset($item['clue']) ? (int) $item['clue'] : 0,
+                            ];
+                        }
+                        continue;
+                    }
+                    // Format lama: string biasa → clue default 0
+                    if (is_string($item)) {
+                        $line = trim($item);
+                        if ($line !== '') {
+                            $result[] = ['kode' => $line, 'clue' => 0];
+                        }
+                    }
+                }
+                return $result;
+            }
+        }
+
+        // Fallback: plain text → clue default 0
+        $lines = preg_split('/\R/', $raw) ?: [];
+        $result = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line !== '') {
+                $result[] = ['kode' => $line, 'clue' => 0];
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Encode array of objects [{kode, clue}] → JSON string untuk disimpan ke DB.
+     */
+    public static function encodeJawabanWithClue(array $items): string
+    {
+        return json_encode(array_values($items), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
+     * Ambil hanya baris yang ditandai clue = 1.
+     * Return: array string kode
+     */
+    public static function getClueLines(?string $raw): array
+    {
+        $items = static::parseJawabanWithClue($raw);
+        return array_values(
+            array_map(
+                fn($item) => $item['kode'],
+                array_filter($items, fn($item) => (int) $item['clue'] === 1)
+            )
+        );
+    }
+
+    /**
+     * Bandingkan dua baris kode Java, abaikan perbedaan spasi.
+     */
+    public static function linesMatch(string $kunci, string $jawaban): bool
+    {
+        $normalize = static fn(string $line) => preg_replace('/\s+/', '', trim($line)) ?? '';
+        return $normalize($kunci) === $normalize($jawaban);
     }
 }

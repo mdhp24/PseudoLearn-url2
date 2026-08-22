@@ -68,14 +68,14 @@ class LogUjianKodeController extends Controller
         return $this->ujianKodeService->tableUjianKode($request);
     }
 
-    public function detail($id)
+    public function detail(Request $request, $id)
     {
         $mahasiswa = $this->mahasiswaModel
             ->setView('v_mahasiswa')
             ->where('id_user', $id)
             ->first();
-        $levelId   = request()->query('level', request()->query('id_level'));
-        $soalId    = request()->query('soal', request()->query('id_soal'));
+        $levelId   = $request->query('level');
+        $soalId    = $request->query('soal');
 
         $level = $levelId ? $this->levelModel->find($levelId) : null;
         $soal  = $soalId  ? Soal::find($soalId) : null;
@@ -156,11 +156,11 @@ class LogUjianKodeController extends Controller
         return $this->ujianKodeService->tableDetail($request);
     }
 
-    public function detailKode($id)
+    public function detailKode(Request $request, $id)
     {
-        $idMahasiswa = request()->query('id_mahasiswa');
-        $idLevel     = request()->query('id_level');
-        $idSoal      = request()->query('id_soal');
+        $idMahasiswa = $request->query('id_mahasiswa');
+        $idLevel     = $request->query('id_level');
+        $idSoal      = $request->query('id_soal');
 
         $dataMahasiswa = $this->mahasiswaModel
             ->setView('v_mahasiswa')
