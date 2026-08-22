@@ -23,6 +23,7 @@ use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\LogActivity\LogActivityController;
 // LogDataChatbot removed
 use App\Http\Controllers\Overlapping\OverlappingController;
+use App\Http\Controllers\Quiz\QuestionListRefactorReferenceController;
 use App\Http\Controllers\UjianKonversi\UjianKonversiController;
 use App\Http\Controllers\LogUjianKode\LogUjianKodeController;
 // use App\Models\Setting;
@@ -52,8 +53,10 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
     Route::middleware('role:mahasiswa')->group(function () {
         Route::prefix('quiz')->name('quiz.')->group(function () {
             Route::get('/', [QuizController::class, 'index'])->name('index');
-            Route::get('/question-list', [QuizController::class, 'questionList'])->name('question-list');
+            Route::get('/question-list-z', [QuizController::class, 'questionList'])->name('question-list');
             Route::post('/calculateAvgSkor', [QuizController::class, 'calculateAvgSkor'])->name('calculateAvgSkor');
+            Route::get('/question-list', [QuizController::class, 'listQuestion'])->name('question-list-z');
+            Route::get('/question-list-v', [QuestionListRefactorReferenceController::class, 'questionList'])->name('question-list-v');
         });
 
         Route::prefix('leaderboard')->name('leaderboard.')->group(function () {
