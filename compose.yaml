@@ -77,7 +77,6 @@ services:
 volumes:
     db-data:
         driver: local
-
 networks:
     sail:
         driver: bridge

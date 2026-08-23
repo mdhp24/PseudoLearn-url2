@@ -292,52 +292,46 @@
             if ($step['type'] === 'soal') {
                 $onClick = "ujian('{$step['id']}')";
             } else {
-                $onClick = "ujianCodeProgram('{$step['id']}')";
+                $onClick = "ujianKode('{$step['id']}')";
             }
         }
     @endphp
 
-    <div class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
-
-        @if ($isEven)
-            {{-- KANAN --}}
-            <div class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
-                <h5>{{ $judul }}</h5>
-                <p>{{ $deskripsi }}</p>
-            </div>
-
-            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center"
-                @if($status !== 'locked')
-                    onclick="{{ $onClick }}" style="cursor:pointer;"
-                @endif>
-                
-                <div class="{{ $circleClass }} {{ $status }}">
-                    @if($status !== 'done')
-                        {{ $index }}
-                    @endif
-                </div>
-            </div>
-
-        @else
-            {{-- KIRI --}}
-            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center"
-                @if($status !== 'locked')
-                    onclick="{{ $onClick }}" style="cursor:pointer;"
-                @endif>
-                
-                <div class="{{ $circleClass }} {{ $status }}">
-                    @if($status !== 'done')
-                        {{ $index }}
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-6 text-black mb-4 mt-6">
-                <h5>{{ $judul }}</h5>
-                <p>{{ $deskripsi }}</p>
-            </div>
-        @endif
-    </div>
+                                                    <div class="row align-items-center how-it-works d-flex {{ $isEven ? 'justify-content-end' : '' }}">
+                                                        @if ($isEven)
+                                                            <div class="col-6 d-flex flex-column align-items-end text-black mb-4 mt-6">
+                                                                <h5 class="text-black">{{ $judul }}</h5>
+                                                                <p>{{ $deskripsi }}</p>
+                                                            </div>
+                                                            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
+                                                                @if($onClick)
+                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
+                                                                @endif>
+                                                                <div class="{{ $circleClass }} {{ $status }}">
+                                                                    @if($status === 'done')
+                                                                    @else
+                                                                        {{ $index }}
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @else
+                                                            <div class="col-2 text-center full d-inline-flex justify-content-center align-items-center text-black"
+                                                                @if($onClick)
+                                                                    onclick="{{ $onClick }}" style="cursor: pointer;"
+                                                                @endif>
+                                                                <div class="{{ $circleClass }} {{ $status }}">
+                                                                    @if($status === 'done')
+                                                                    @else
+                                                                        {{ $index }}
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6 text-black mb-4 mt-6">
+                                                                <h5 class="text-black">{{ $judul }}</h5>
+                                                                <p>{{ $deskripsi }}</p>
+                                                            </div>
+                                                        @endif
+                                                    </div>
 
     {{-- GARIS --}}
     @if (!$loop->last)

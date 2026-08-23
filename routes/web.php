@@ -17,17 +17,15 @@ use App\Http\Controllers\Labeling\LabelingController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Mahasiswa\MahasiswaController;
 use App\Http\Controllers\Confidence\ConfidenceController;
-// use App\Http\Controllers\Ujian\UjianCodeProgramController;
+use App\Http\Controllers\Ujian\UjianCodeProgramController;
 use App\Http\Controllers\UjianKode\UjianKodeController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\LogActivity\LogActivityController;
-use App\Http\Controllers\LogUjianKode\LogUjianKodeController;
-// LogDataChatbot removed
 use App\Http\Controllers\Overlapping\OverlappingController;
 use App\Http\Controllers\Quiz\QuestionListRefactorReferenceController;
 use App\Http\Controllers\UjianKonversi\UjianKonversiController;
 use App\Http\Controllers\ARS\ArsController;
-use App\Models\Setting;
+use App\Http\Controllers\LogUjianKode\LogUjianKodeController;
 
 Route::get('/', function () {
     return Auth::check() ? redirect('/dashboard') : redirect('/login');
@@ -51,9 +49,9 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
     Route::middleware('role:mahasiswa')->group(function () {
         Route::prefix('quiz')->name('quiz.')->group(function () {
             Route::get('/', [QuizController::class, 'index'])->name('index');
-            Route::get('/question-list-z', [QuizController::class, 'questionList'])->name('question-list');
+            Route::get('/question-list', [QuizController::class, 'questionList'])->name('question-list');
             Route::post('/calculateAvgSkor', [QuizController::class, 'calculateAvgSkor'])->name('calculateAvgSkor');
-            Route::get('/question-list', [QuizController::class, 'listQuestion'])->name('question-list-z');
+            Route::get('/question-list-z', [QuizController::class, 'questionList'])->name('question-list-z');
             Route::get('/question-list-v', [QuestionListRefactorReferenceController::class, 'questionList'])->name('question-list-v');
         });
 
@@ -81,14 +79,10 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::post('/submit', [UjianController::class, 'submit'])->name('submit');
             Route::post('/send-log', [UjianController::class, 'sendLog'])->name('send-log');
         });
-        // Route::prefix('code-program')->name('code-program.')->group(function () {
-        //     Route::get('/', [UjianCodeProgramController::class, 'index'])->name('code-program.index');
-        //     Route::post('submit-konversi', [UjianCodeProgramController::class, 'submitKonversi'])->name('code-program.submit-konversi');
-        // });
-        // Route::prefix('code-program')->name('code-program.')->group(function () {
-        //     Route::get('/', [UjianCodeProgramController::class, 'index'])->name('code-program.index');
-        //     Route::post('submit-konversi', [UjianCodeProgramController::class, 'submitKonversi'])->name('code-program.submit-konversi');
-        // });
+        Route::prefix('code-program')->name('code-program.')->group(function () {
+            Route::get('/', [UjianCodeProgramController::class, 'index'])->name('code-program.index');
+            Route::post('submit-konversi', [UjianCodeProgramController::class, 'submitKonversi'])->name('code-program.submit-konversi');
+        });
         Route::prefix('ujian-kode')->name('ujian-kode.')->group(function () {
             Route::get('/', [UjianKodeController::class, 'index'])->name('index');
             Route::post('submit-konversi', [UjianKodeController::class, 'submitKonversi'])->name('submit-konversi');
@@ -98,8 +92,6 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
         Route::prefix('nyawa')->name('nyawa.')->group(function () {
             Route::get('status', [NyawaController::class, 'status'])->name('nyawa.status');
         });
-
-        // Chatbot feature removed
     });
 
     // Role admin (dosen)
@@ -140,8 +132,8 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
         });
 
         // Soal
-        Route::prefix('soal')->name('soal.')->group(function() {    
-        Route::get('/', [SoalController::class, 'index'])->name('index');
+        Route::prefix('soal')->name('soal.')->group(function () {
+            Route::get('/', [SoalController::class, 'index'])->name('index');
             Route::get('/order', [SoalController::class, 'order'])->name('order');
             Route::post('/table', [SoalController::class, 'table'])->name('table');
             Route::get('/form', [SoalController::class, 'form'])->name('form');
@@ -151,7 +143,7 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::get('/{id}', [SoalController::class, 'getById'])->name('getById');
             Route::post('/saveOrder', [SoalController::class, 'saveOrder'])->name('saveOrder');
             Route::post('/updateStatusSoal', [SoalController::class, 'updateStatusSoal'])->name('updateStatusSoal');
-            });
+        });
 
         // Level
         Route::prefix('level')->name('level.')->group(function () {
@@ -261,16 +253,6 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::post('/export', [LogActivityController::class, 'export'])->name('export');
         });
 
-        // Log data chatbot routes removed
-
-        // Route::prefix('log-chatbot-adaptive')->name('log-chatbot-adaptive.')->group(function() {
-        //     Route::get('/', [LogChatbotAdaptiveController::class, 'index'])->name('index');
-        //     Route::post('/table', [LogChatbotAdaptiveController::class, 'table'])->name('table');
-        //     Route::get('/detail/{id}', [LogChatbotAdaptiveController::class, 'detail'])->name('detail');
-        //     Route::get('/getSoalByLevel', [LogChatbotAdaptiveController::class, 'getSoalByLevel'])->name('getSoalByLevel');
-        //     Route::post('/export', [LogChatbotAdaptiveController::class, 'export'])->name('export');
-        // });
-
         // labeling
         Route::prefix('labeling')->name('labeling.')->group(function () {
             Route::get('/', [LabelingController::class, 'index'])->name('index');
@@ -290,15 +272,7 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::post('/export', [ScoringController::class, 'export'])->name('export');
         });
 
-        // ujian konversi
-        Route::prefix('ujian-konversi')->name('ujian-konversi.')->group(function () {
-            Route::get('/', [UjianKonversiController::class, 'index'])->name('index');
-            Route::post('/table', [UjianKonversiController::class, 'table'])->name('table');
-            Route::get('/detail/{id}', [UjianKonversiController::class, 'detail'])->name('detail');
-            Route::post('/table-detail', [UjianKonversiController::class, 'tableDetail'])->name('tableDetail');
-            Route::get('/detail-konversi/{id}', [UjianKonversiController::class, 'detailKonversi'])->name('detailKonversi');
-        });
-
+        // ars
         Route::prefix('ars')->name('ars.')->group(function () {
             Route::get('/', [ArsController::class, 'index'])->name('index');
             Route::post('table', [ArsController::class, 'table'])->name('table');
@@ -307,6 +281,15 @@ Route::middleware(['auth', 'maintenance.mahasiswa'])->group(function () {
             Route::post('detail/table', [ArsController::class, 'getDetailArs'])->name('detail.table');
             Route::post('run', [ArsController::class, 'runArs'])->name('run');
             Route::get('/export', [ArsController::class, 'export'])->name('ars.export');
+        });
+
+        // ujian konversi
+        Route::prefix('ujian-konversi')->name('ujian-konversi.')->group(function () {
+            Route::get('/', [UjianKonversiController::class, 'index'])->name('index');
+            Route::post('/table', [UjianKonversiController::class, 'table'])->name('table');
+            Route::get('/detail/{id}', [UjianKonversiController::class, 'detail'])->name('detail');
+            Route::post('/table-detail', [UjianKonversiController::class, 'tableDetail'])->name('tableDetail');
+            Route::get('/detail-konversi/{id}', [UjianKonversiController::class, 'detailKonversi'])->name('detailKonversi');
         });
 
         // Guide

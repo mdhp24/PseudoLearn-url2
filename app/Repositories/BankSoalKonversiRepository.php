@@ -25,8 +25,7 @@ class BankSoalKonversiRepository
             'level.name as level_name',
             'soal.judul as soal',
             'bank_soal_konversi.jawaban',
-            'bank_soal_konversi.output',
-            'bank_soal_konversi.difficulty'
+            'bank_soal_konversi.output'
         )
         ->leftJoin('level', 'level.id', '=', 'bank_soal_konversi.id_level')
         ->leftJoin('soal', 'soal.id', '=', 'bank_soal_konversi.id_soal');
@@ -38,10 +37,9 @@ class BankSoalKonversiRepository
     }
 
     // Order
-    $query->orderBy('bank_soal_konversi.difficulty', 'asc')
-          ->orderBy('bank_soal_konversi.created_at', 'asc');
+    $query->orderBy('bank_soal_konversi.created_at', 'asc');
 
-    return DataTables::of($query)
+    $dataTable = DataTables::of($query)
         ->addIndexColumn()
         ->filterColumn('level_name', function ($query, $keyword) {
             $query->where('level.name', 'like', "%{$keyword}%");
@@ -59,8 +57,17 @@ class BankSoalKonversiRepository
             return $item->output ?? '-';
         })
 
-        ->rawColumns(['jawaban'])
-        ->make(true);
+        ->rawColumns(['jawaban']);
+
+    // Defensive guard: jika request order column tidak ada atau null,
+    // nonaktifkan ordering default Yajra untuk mencegah TypeError
+    // (Yajra\DataTables\QueryDataTable::hasOrderColumn() expects string, null given)
+    $orderColumn = $request->input('columns.' . $request->input('order.0.column', '') . '.name');
+    if (is_null($orderColumn) || $orderColumn === '') {
+        $dataTable->ordering(false);
+    }
+
+    return $dataTable->make(true);
 }
 
     protected function formatJawabanHtml($jawaban): string
@@ -124,33 +131,19 @@ class BankSoalKonversiRepository
         return DB::table('bank_soal_konversi')
             ->leftJoin('soal', 'soal.id', '=', 'bank_soal_konversi.id_soal')
             ->where('bank_soal_konversi.id_level', $levelId)
-            ->orderBy('bank_soal_konversi.difficulty', 'asc')
             ->orderBy('bank_soal_konversi.created_at', 'asc')
             ->select(
                 'bank_soal_konversi.id',
-                'bank_soal_konversi.difficulty',
                 'bank_soal_konversi.id_soal',
                 'soal.judul as judul'
             )
             ->get();
     }
 
-    public function saveOrder(array $difficulties): bool
+    public function saveOrder(array $orders): bool
     {
-        DB::beginTransaction();
-        try {
-            foreach ($difficulties as $item) {
-                if (!isset($item['id'], $item['difficulty'])) continue;
-                DB::table('bank_soal_konversi')
-                    ->where('id', $item['id'])
-                    ->update(['difficulty' => (int) $item['difficulty']]);
-            }
-            DB::commit();
-            return true;
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return false;
-        }
+        // Method ini tidak relevan lagi karena kolom 'order' dihapus.
+        return false;
     }
 
     public function getSoalByLevel($levelId)
@@ -169,21 +162,43 @@ class BankSoalKonversiRepository
 
     public function update($payload, $id)
     {
-        $data = $this->model->find($id);
+        $data = $this->model->find($id, ['*']);
         if (!$data) return false;
         return $data->update($payload);
     }
 
     public function destroy($id)
     {
-        $record = $this->model->find($id);
+        $record = $this->model->find($id, ['*']);
         if (!$record) return false;
         return $record->delete();
     }
 
     public function detail($id)
     {
-        return $this->model->find($id);
+        return $this->model->find($id, ['*']);
+    }
+
+    /**
+     * Table for ujian konversi (v_ujian_konversi or ujian_konversi view)
+     * Provides a DataTables response similar to other table methods.
+     */
+    public function tableUjianKonversi($request)
+    {
+        $query = DB::table('v_ujian_konversi')
+            ->select('*');
+
+        // optional filter by level
+        $level = $request->input('level');
+        if (!is_null($level) && $level !== '') {
+            $query->where('id_level', $level);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->make(true);
     }
 
     public function runJavaCode($request)

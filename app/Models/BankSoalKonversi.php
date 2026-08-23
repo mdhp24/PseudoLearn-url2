@@ -21,6 +21,7 @@ class BankSoalKonversi extends BaseModel
         'difficulty',
         'jawaban',
         'output',
+        'difficulty',
     ];
 
     protected static function boot()

@@ -29,7 +29,7 @@ class UjianController extends Controller
         $idUser = Auth::id();
         $nyawa = Nyawa::where('id_user', $idUser)->first();
 
-        // Check and regenerate lives (10 nyawa per menit)
+        // Check and regenerate lives (10 lives per minute)
         $nyawa->checkAndRegenerate();
 
         return view('pages.ujian.index', [

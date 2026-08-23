@@ -12,11 +12,13 @@ use App\Models\Mahasiswa;
 use App\Core\BaseResponse;
 use App\Models\Pencapaian;
 use Illuminate\Support\Str;
+use App\Services\DecoyAnswerService;
 use App\Models\HistoryJawaban;
 use App\Models\HistoryConfidence;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Prettus\Repository\Eloquent\BaseRepository;
 use App\Models\ArsResult;
     
@@ -146,8 +148,13 @@ class UjianRepository extends BaseRepository
                     $givenVariabel    = $this->normalizeAnswerText($jawabRow['variabel'] ?? '');
                     $givenTipe        = $this->normalizeAnswerText($jawabRow['jawaban'] ?? '');
 
-                    if (strtolower($expectedVariabel) !== strtolower($givenVariabel)
-                        || strtolower($expectedTipe) !== strtolower($givenTipe)) {
+                    // 🔥 TOLERANSI TIPE DATA: Hapus spasi dan jadikan huruf kecil semua
+                    $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
+                    $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
+                    $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
+                    $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
+
+                    if($normExpVar !== $normGivVar || $normExpTipe !== $normGivTipe){
                         $isCorrectTipe = false;
                         $tipeMismatch[] = [
                             'index'=>$i,
@@ -185,7 +192,12 @@ class UjianRepository extends BaseRepository
             } else {
                 foreach($kunciLangkah as $i => $exp){
                     $given = $jawabLangkah[$i] ?? '';
-                    if ($exp !== $given) {
+                    
+                    // 🔥 TOLERANSI ALGORITMA: Hapus spasi dan jadikan huruf kecil semua
+                    $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
+                    $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+
+                    if($normExpAlgo !== $normGivAlgo){
                         $isCorrectAlgo = false;
                         $algoMismatch[] = [
                             'index'=>$i,
@@ -300,18 +312,20 @@ class UjianRepository extends BaseRepository
                     ]);
                 }
 
-                $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-                    ->where('id_level', $soal->id_level)
-                    ->where('id_soal', $soal->id)
-                    ->first();
+                if (Schema::hasTable('ars_result')) {
+                    $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+                        ->where('id_level', $soal->id_level)
+                        ->where('id_soal', $soal->id)
+                        ->first();
 
-                if ($arsResult) {
-                    $arsResult->update([
-                        'pseudo_label'   => $label,
-                        'pseudo_score'   => $skor,
-                        'pseudo_langkah' => $totalDrag,      
-                        'pseudo_durasi'  => $totalWaktuDetik,
-                    ]);
+                    if ($arsResult) {
+                        $arsResult->update([
+                            'pseudo_label'   => $label,
+                            'pseudo_score'   => $skor,
+                            'pseudo_langkah' => $totalDrag,
+                            'pseudo_durasi'  => $totalWaktuDetik,
+                        ]);
+                    }
                 }
                     
                 if($label === 'Ideal' || $label === 'Normal'){
@@ -320,7 +334,6 @@ class UjianRepository extends BaseRepository
                             ->where('id_soal', $soal->id)
                             ->where('category', 'badge')
                             ->first();
-
                         
                         if ($dataPencapaianBadge && $dataPencapaianBadge->status == 0 && $isCorrectAll) {
                             $dataPencapaianBadge->update([
@@ -331,9 +344,7 @@ class UjianRepository extends BaseRepository
                             $returnPencapaianBadge = [
                                 'id' => $dataPencapaianBadge->id,
                             ];
-                            
                         }
-                       
                     }
 
                 $returnData = [
@@ -350,11 +361,13 @@ class UjianRepository extends BaseRepository
                     $nyawa->nyawa -= 1;
 
                     if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
-                        $nyawa->next_regen_at = now()->addMinutes(10);
+                        $nyawa->next_regen_at = now()->addMinute();
                     }
 
                     $nyawa->save();
                 }
+
+                $decoy = $this->buildDecoyForGaming($idMahasiswa, $soal, $kunciTipe, $kunciAlgo);
 
                 return BaseResponse::json([
                     'correct' => $isCorrectAll,
@@ -362,9 +375,8 @@ class UjianRepository extends BaseRepository
                     'correct_algoritma' => $isCorrectAlgo,
                     'tipe_mismatch' => $dataLevel->feedback_data_type ?? null,
                     'algoritma_mismatch' => $dataLevel->feedback_algorithm ?? null,
-                    'tipe_mismatch_index' => $tipeMismatchIndexes,
-                    'algoritma_mismatch_index' => $algoMismatchIndexes,
-                    'id_level' => $soal->id_level
+                    'id_level' => $soal->id_level,
+                    'decoy' => $decoy,
                 ]);
             }
 
@@ -372,6 +384,57 @@ class UjianRepository extends BaseRepository
             DB::rollBack();
             return BaseResponse::errorMessage($e->getMessage());
         }
+    }
+
+    private function buildDecoyForGaming($idMahasiswa, $soal, array $kunciTipe, array $kunciAlgo): ?array
+    {
+        $label = $this->labelSkorModel
+            ->where('id_level', $soal->id_level)
+            ->where('id_soal', $soal->id)
+            ->where('id_mahasiswa', $idMahasiswa)
+            ->orderByDesc('created_at')
+            ->value('label');
+
+        if ($label !== 'Gaming the System') {
+            return null;
+        }
+
+        $decoyService = new DecoyAnswerService();
+
+        $tipeLines = array_map(function ($row) {
+            $variabel = trim((string) ($row['variabel'] ?? ''));
+            $tipe = trim((string) ($row['tipe_data'] ?? ''));
+
+            if ($variabel === '' && $tipe === '') {
+                return '';
+            }
+
+            if ($variabel === '') {
+                return $tipe;
+            }
+
+            if ($tipe === '') {
+                return $variabel;
+            }
+
+            return $variabel . ' : ' . $tipe;
+        }, $kunciTipe);
+
+        $algoLines = array_map(function ($row) {
+            return trim((string) ($row['langkah'] ?? ''));
+        }, $kunciAlgo);
+
+        $tipeDecoy = $decoyService->makeDecoyLines($tipeLines);
+        $algoDecoy = $decoyService->makeDecoyLines($algoLines);
+
+        if (empty(array_filter($tipeDecoy)) && empty(array_filter($algoDecoy))) {
+            return null;
+        }
+
+        return [
+            'tipe_data' => $tipeDecoy,
+            'algoritma' => $algoDecoy,
+        ];
     }
 
     /**

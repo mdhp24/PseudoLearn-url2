@@ -6,9 +6,10 @@ use App\Models\UjianKode;
 use App\Models\BankSoalKonversi;
 use App\Models\Nyawa;
 use App\Models\Mahasiswa;
-use Illuminate\Support\Facades\Auth;
 use App\Models\ArsResult;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UjianKodeRepository
 {
@@ -78,11 +79,13 @@ class UjianKodeRepository
 
                 // Set waktu regenerasi
                 if (is_null($nyawa->next_regen_at)) {
-                    $nyawa->next_regen_at = now()->addMinutes(10);
+                    $nyawa->next_regen_at = now()->addMinute();
                 }
 
                 $nyawa->save();
             }
+
+            $decoy = $this->buildDecoyForGaming($idMahasiswa, $soalKonversi, $kunciJawaban);
 
             return response()->json([
                 'success' => false,
@@ -91,6 +94,7 @@ class UjianKodeRepository
                     'errors'  => $errors,
                 ],
                 'lives' => $nyawa->nyawa ?? 0,
+                'decoy' => $decoy,
             ], 422);
         }
 
@@ -105,32 +109,34 @@ class UjianKodeRepository
             'waktu'                 => $waktu,
         ]);
 
-        $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-    ->where('id_level', $soalKonversi->id_level)
-    ->where('id_soal', $soalKonversi->id_soal)
-    ->whereNull('konversi_label')
-    ->first();
+        if (Schema::hasTable('ars_result')) {
+            $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+                ->where('id_level', $soalKonversi->id_level)
+                ->where('id_soal', $soalKonversi->id_soal)
+                ->whereNull('konversi_label')
+                ->first();
 
-if ($arsResult) {
-    $langkah = DB::table('log_ujian_kode')
-        ->where('id_mahasiswa', $idMahasiswa)
-        ->where('id_bank_soal_konversi', $idBankSoalKonversi)
-        ->count();
+            if ($arsResult) {
+                $langkah = DB::table('log_ujian_kode')
+                    ->where('id_mahasiswa', $idMahasiswa)
+                    ->where('id_bank_soal_konversi', $idBankSoalKonversi)
+                    ->count();
 
-    $totalWaktu = DB::table('ujian_kode')
-        ->where('id_mahasiswa', $idMahasiswa)
-        ->where('id_bank_soal_konversi', $idBankSoalKonversi)
-        ->sum('waktu');
+                $totalWaktu = DB::table('ujian_kode')
+                    ->where('id_mahasiswa', $idMahasiswa)
+                    ->where('id_bank_soal_konversi', $idBankSoalKonversi)
+                    ->sum('waktu');
 
-    [$konversiLabel, $konversiScore] = $this->determineLabelAndScore($langkah, $totalWaktu);
+                [$konversiLabel, $konversiScore] = $this->determineLabelAndScore($langkah, $totalWaktu);
 
-    $arsResult->update([
-        'konversi_label' => $konversiLabel,
-        'konversi_score' => $konversiScore,
-        'konversi_langkah' => $langkah,
-        'konversi_durasi'  => $totalWaktu,
-    ]);
-}
+                $arsResult->update([
+                    'konversi_label' => $konversiLabel,
+                    'konversi_score' => $konversiScore,
+                    'konversi_langkah' => $langkah,
+                    'konversi_durasi'  => $totalWaktu,
+                ]);
+            }
+        }
 
         return response()->json([
             'success'     => true,

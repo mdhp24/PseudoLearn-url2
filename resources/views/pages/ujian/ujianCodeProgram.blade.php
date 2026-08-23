@@ -33,7 +33,7 @@
         body {
             background: #f5f5f5;
         }
-        
+
         .input-panel {
             border: 4px solid #022349;
             border-radius: 12px;
@@ -125,7 +125,7 @@
         .heart-beat {
             animation: heartBeat 1s infinite;
         }
-        
+
         @keyframes heartBeat {
             0% { transform: scale(1); }
             10% { transform: scale(1.1); }
@@ -296,10 +296,10 @@
     @extends('pages.guide.index')
     @extends('pages.ujian.modal')
     
-    {{-- Chatbot component removed --}}
-    
     <script>
         var hostUrl = "assets/";
+        var APP_URL = window.APP_URL || "/";
+        var QUIZ_QUESTION_LIST_URL = @json(route('quiz.question-list'));
     </script>
     <script src="{{ asset('js/ujian/indexCodeProgram.js') }}"></script>
     <script src="{!! asset('assets/plugins/global/plugins.bundle.js') !!}"></script>

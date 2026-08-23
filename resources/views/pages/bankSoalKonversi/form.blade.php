@@ -755,38 +755,55 @@
             $('#scanner-fields').empty();
         }
 
-        /**
-         * Set jawaban ke textarea + render preview chip + render clue panel.
-         * savedClueIndexes: array index baris yg sudah ditandai clue (opsional, untuk mode edit)
-         */
-        function setJawaban(rawValue, savedClueIndexes) {
-            const normalized = normalizeJawabanCode(rawValue);
-            $('#jawaban-textarea').val(normalized);
-            //renderJawabanCodePreview(normalized);
-            renderCluePanel(normalized, savedClueIndexes || []);
+        // Ambil baris-baris jawaban dari berbagai format (textarea multiline / JSON array)
+        function extractJawabanLines(raw) {
+            if (Array.isArray(raw)) {
+                return raw
+                    .map(v => String(v ?? '').trim())
+                    .filter(v => v.length > 0);
+            }
+
+            const text = String(raw ?? '');
+            const trimmed = text.trim();
+            if (!trimmed) return [];
+
+            // Jika jawaban tersimpan sebagai JSON array string: ["...","..."]
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) {
+                        return parsed
+                            .map(v => String(v ?? '').trim())
+                            .filter(v => v.length > 0);
+                    }
+                } catch (e) {
+                    // fallback ke split newline
+                }
+            }
+
+            return text
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(l => l.length > 0);
         }
 
-        // ══════════════════════════════════════════
-        //  Live update clue panel saat textarea berubah
-        // ══════════════════════════════════════════
+        // Set jawaban ke textarea + render preview chip
+        function setJawaban(plainText, savedClueIndexes) {
+            const normalized = normalizeJawabanCode(plainText);
+            $('#jawaban-textarea').val(normalized);
+            renderCluePanel(
+                normalized,
+                savedClueIndexes ?? extractSavedClueIndexes(plainText)
+            );
+        }
+
         $('#jawaban-textarea').on('input', function() {
-            const normalized = normalizeJawabanCode($(this).val());
-
-            // Pertahankan index yang sudah dicentang sebelum re-render
-            const currentChecked = getCheckedClueIndexes();
-
-            //renderJawabanCodePreview(normalized);
-            renderCluePanel(normalized, currentChecked);
-
-            if (!codeHasScanner(normalized)) {
-                $('#row-input-scanner').addClass('d-none');
-                $('#scanner-fields').empty();
-            }
+            const currentIndexes = getCheckedClueIndexes();
+            renderCluePanel(normalizeJawabanCode($(this).val()), currentIndexes);
         });
 
-        // ══════════════════════════════════════════
-        //  Scanner helpers (sama seperti sebelumnya)
-        // ══════════════════════════════════════════
+
+        // Deteksi apakah kode mengandung Scanner
         function codeHasScanner(text) {
             return /\bScanner\b/.test(text);
         }

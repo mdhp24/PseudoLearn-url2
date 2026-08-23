@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Services\LeaderboardService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -37,6 +38,20 @@ class DashboardController extends Controller
         $userId = Auth::id();
         if ($isAdmin == 0) {
             $mahasiswa = Mahasiswa::where('id_user', $userId)->first();
+            if (!$mahasiswa) {
+                return view('pages.dashboard.index', [
+                    'title' => 'Dashboard',
+                    'isAdmin' => $isAdmin,
+                    'name_kelas' => 'Tidak ada kelas',
+                    'id_kelas' => null,
+                    'algopoin' => 0,
+                    'algobadge' => 0,
+                    'leaderboard' => null,
+                    'lives' => 0,
+                    'max_lives' => (int) Setting::getValue('nyawa.max', 100),
+                    'next_regen_at' => null,
+                ]);
+            }
             $id_kelas = $mahasiswa ? $mahasiswa->id_kelas : null;
             $kelas = $id_kelas ? Kelas::find($id_kelas) : null;
             $name_kelas = $kelas ? $kelas->name : 'Tidak ada kelas';
@@ -69,7 +84,19 @@ class DashboardController extends Controller
                 ]
             );
 
-            // Check and regenerate lives (1 life per 10 minutes)
+            if (!$nyawa) {
+                $max = (int) Setting::getValue('nyawa.max', 100);
+                $nyawa = Nyawa::create([
+                    'id' => (string) Str::uuid(),
+                    'id_user' => $idUser,
+                    'id_mahasiswa' => $mahasiswa->id,
+                    'nyawa' => $max,
+                    'max_nyawa' => $max,
+                    'next_regen_at' => null,
+                ]);
+            }
+
+            // Check and regenerate lives (10 lives per minute)
             $nyawa->checkAndRegenerate();
 
             $dataReturn = [
@@ -104,7 +131,7 @@ class DashboardController extends Controller
             ]
         );
 
-        // Check and regenerate lives (1 life per 10 minutes)
+        // Check and regenerate lives (10 lives per minute)
         $nyawa->checkAndRegenerate();
 
         return view('pages.dashboard.pencapaian', [

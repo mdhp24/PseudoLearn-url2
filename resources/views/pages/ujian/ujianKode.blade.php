@@ -260,8 +260,24 @@
                                 <input type="hidden" id="id-level" value="{{ $soal->id_level }}">
 
                                 @php
-                                    // Parse jawaban lengkap dengan info clue
-                                    $jawabanWithClue = \App\Models\BankSoalKonversi::parseJawabanWithClue($konversi['jawaban'] ?? '');
+                                    $decodeKunci = static function ($value): array {
+                                        if (is_array($value)) {
+                                            return $value;
+                                        }
+
+                                        if (is_string($value) && $value !== '') {
+                                            return json_decode($value, true) ?: [];
+                                        }
+
+                                        return [];
+                                    };
+
+                                    $tipeDataList = collect($decodeKunci($soal['kunci_tipe_data'] ?? []));
+                                    $algoritmaList = collect($decodeKunci($soal['kunci_algoritma'] ?? []));
+                                    $dataLangkah = 1;
+                                    $jawabanWithClue = \App\Models\BankSoalKonversi::parseJawabanWithClue(
+                                        $konversi['jawaban'] ?? ''
+                                    );
 
                                     // Kocok hanya baris non-clue untuk pilihan drag
                                     $draggable = collect($jawabanWithClue)
@@ -354,6 +370,8 @@
 
     <script>
         var hostUrl = "assets/";
+        var APP_URL = window.APP_URL || "/";
+        var QUIZ_QUESTION_LIST_URL = @json(route('quiz.question-list'));
     </script>
     <script src="{{ asset('js/ujian/indexUjianKode.js') }}"></script>
     <script src="{!! asset('assets/plugins/global/plugins.bundle.js') !!}"></script>

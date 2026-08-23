@@ -149,7 +149,8 @@
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-tablet-text-up fs-2"></i>
                         </span>
-                        <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data Log Aktivitas</span>
+                        <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data
+                            Log Aktivitas</span>
                     </a>
                 </div>
                 <div class="menu-item">
@@ -193,6 +194,14 @@
                     </a>
                 </div>
                 <div class="menu-item">
+                    <a class="menu-link{{ request()->is('log-ujian-kode*') ? ' active' : '' }}" href="{{ url('log-ujian-kode') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-code fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('log-ujian-kode*') ? 'fw-bold' : 'fw-semibold' }}">Log Ujian Code</span>
+                    </a>
+                </div>
+                <div class="menu-item">
                     <a class="menu-link{{ request()->is('ars*') ? ' active' : '' }}" href="{{ url('ars') }}">
                         <span class="menu-icon me-2">
                             <i class="ki-solid ki-book-open fs-2"></i>
@@ -226,6 +235,14 @@
                             <i class="ki-solid ki-text fs-2 "></i>
                         </span>
                         <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank Soal</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('bank-soal-konversi*') ? ' active' : '' }}" href="{{ url('bank-soal-konversi') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-text fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Bank Soal Konversi</span>
                     </a>
                 </div>
                 <div class="menu-item">

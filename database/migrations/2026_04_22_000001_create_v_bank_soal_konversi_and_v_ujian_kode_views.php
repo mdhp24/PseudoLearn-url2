@@ -10,6 +10,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // In MySQL, `migrate:fresh` may not drop views unless explicitly requested.
+        // Make this migration safe to run even if the views already exist.
+        DB::statement("DROP VIEW IF EXISTS v_ujian_kode;");
+        DB::statement("DROP VIEW IF EXISTS v_bank_soal_konversi;");
+
         // 1. Create v_bank_soal_konversi
         DB::statement("
             CREATE VIEW v_bank_soal_konversi AS
@@ -22,7 +27,7 @@ return new class extends Migration
                 s.soal     AS soal_name,
                 bsk.jawaban,
                 bsk.output,
-                bsk.difficulty,
+                s.`order`  AS `order`,
                 bsk.created_at,
                 bsk.updated_at,
                 bsk.deleted_at,
