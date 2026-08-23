@@ -378,100 +378,102 @@ class BankSoalKonversiRepository
 
     protected function renameJavaClassName(string $javaCode, string $className): string
     {
-        // Cari class yang memiliki method main() — itu yang harus di-rename
-        // agar file .java bisa dijalankan dengan source-file mode.
-        $pattern = '/\b((?:public\s+)?(?:abstract\s+|final\s+)?)class\s+([A-Za-z_][A-Za-z0-9_]*)/i';
-        preg_match_all($pattern, $javaCode, $allMatches, PREG_SET_ORDER);
+        $sourceClassName = null;
+        $updatedCode = $javaCode;
 
-        if (empty($allMatches)) {
-            return $javaCode;
+        // Prioritaskan public class (main class), lalu fallback ke class biasa
+        if (preg_match('/\bpublic\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $publicClassMatch)) {
+            $sourceClassName = $publicClassMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(public\s+class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
+        } elseif (preg_match('/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/i', $javaCode, $classMatch)) {
+            $sourceClassName = $classMatch[1];
+            $updatedCode = preg_replace(
+                '/\b(class\s+)' . preg_quote($sourceClassName, '/') . '\b/i',
+                '$1' . $className,
+                $javaCode,
+                1
+            ) ?? $javaCode;
         }
 
-        // Jika hanya satu class, rename class tersebut
-        if (count($allMatches) === 1) {
-            $originalClass = $allMatches[0][2];
-            $updatedCode = preg_replace_callback($pattern, function ($m) use ($className) {
-                return $m[1] . 'class ' . $className;
-            }, $javaCode, 1);
-
-            // Rename juga constructornya
-            if ($originalClass !== $className) {
-                $updatedCode = $this->renameConstructors($updatedCode, $originalClass, $className);
-            }
-
-            return $updatedCode ?? $javaCode;
+        // Ganti juga constructor class lama dengan nama class baru
+        if ($sourceClassName !== null && $sourceClassName !== $className) {
+            $updatedCode = preg_replace(
+                '/(^|\n)(\s*)(?:public\s+)?' . preg_quote($sourceClassName, '/') . '\s*\(/m',
+                '$1$2' . $className . '(',
+                $updatedCode
+            );
         }
 
-        // Banyak class: cari class yang berisi main()
-        $targetClass = null;
-        foreach ($allMatches as $idx => $m) {
-            $cName = $m[2];
-            $fullMatch = $m[0];
-            $pos = strpos($javaCode, $fullMatch);
-            if ($pos === false) continue;
-
-            // Cari buka kurung { setelah deklarasi class
-            $openBrace = strpos($javaCode, '{', $pos + strlen($fullMatch));
-            if ($openBrace === false) continue;
-
-            // Cari tutup kurung } yang matching (sederhana: hitung depth)
-            $depth = 0;
-            $endPos = $openBrace;
-            for ($j = $openBrace; $j < strlen($javaCode); $j++) {
-                $ch = $javaCode[$j];
-                if ($ch === '{') $depth++;
-                elseif ($ch === '}') $depth--;
-                if ($depth === 0) { $endPos = $j; break; }
-            }
-
-            // Cari main() di dalam body class (antara { dan })
-            $body = substr($javaCode, $openBrace + 1, $endPos - $openBrace - 1);
-            if (preg_match('/public\s+static\s+void\s+main\s*\(/', $body)) {
-                $targetClass = $cName;
-                break;
-            }
-        }
-
-        // Fallback: rename class pertama jika tidak ada yang punya main()
-        if ($targetClass === null) {
-            $targetClass = $allMatches[0][2];
-        }
-
-        // Rename target class
-        $found = 0;
-        $updatedCode = preg_replace_callback($pattern, function ($m) use ($className, $targetClass, &$found) {
-            if ($m[2] === $targetClass && $found === 0) {
-                $found++;
-                return $m[1] . 'class ' . $className;
-            }
-            return $m[0]; // leave other classes unchanged
-        }, $javaCode);
-
-        // Rename constructors of the renamed class
-        if ($targetClass !== $className) {
-            $updatedCode = $this->renameConstructors($updatedCode, $targetClass, $className);
-        }
-
-        return $updatedCode ?? $javaCode;
+        return $updatedCode;
     }
 
-    /**
-     * Rename constructor declarations dari $oldName ke $newName.
-     * Hanya rename yang berupa constructor (bukan constructor call dengan new).
-     */
-    private function renameConstructors(string $code, string $oldName, string $newName): string
+    protected function resolveJavaToolPath(string $toolName): string
     {
-        // Pola: OldName( yang TIDAK didahului "new " → ganti dengan NewName(
-        // Gunakan \K untuk discard "new " dari match
-        $pattern = '/(?:new\s+)?\b' . preg_quote($oldName, '/') . '\s*\(/';
-        return preg_replace_callback($pattern, function ($m) use ($oldName, $newName) {
-            // Jika match diawali "new ", itu constructor call — jangan diubah
-            if (str_starts_with(trim($m[0]), 'new')) {
-                return $m[0];
+        $toolName = trim($toolName);
+
+        $javaHome = getenv('JAVA_HOME') ?: getenv('JDK_HOME');
+        if (!empty($javaHome)) {
+            $javaHome = rtrim($javaHome, "\\/");
+
+            $candidates = [
+                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName . '.exe',
+                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName,
+            ];
+
+            foreach ($candidates as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
             }
-            // Otherwise itu constructor declaration — ganti namanya
-            return $newName . '(';
-        }, $code);
+        }
+
+        $commonRoots = [
+            'C:\\Program Files\\Java',
+            'C:\\Program Files\\Eclipse Adoptium',
+            'C:\\Program Files\\Microsoft',
+            'C:\\Program Files\\Amazon Corretto',
+            'C:\\Program Files (x86)\\Java',
+        ];
+
+        foreach ($commonRoots as $root) {
+            foreach (glob($root . '\\jdk*\\bin\\' . $toolName . '.exe') ?: [] as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        $where = Process::fromShellCommandline('where ' . $toolName);
+        $where->run();
+
+        if ($where->isSuccessful()) {
+            $paths = preg_split('/\r?\n/', trim($where->getOutput()));
+
+            foreach ($paths as $path) {
+                $path = trim((string) $path);
+
+                if ($path === '') {
+                    continue;
+                }
+
+                $normalizedPath = strtolower(str_replace('/', '\\', $path));
+
+                if (str_contains($normalizedPath, '\\oracle\\java\\javapath\\')) {
+                    continue;
+                }
+
+                if (file_exists($path)) {
+                    return $path;
+                }
+            }
+        }
+
+        return $toolName;
     }
 
     protected function extractMainBody(string $javaCode): array

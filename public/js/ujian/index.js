@@ -7,6 +7,33 @@ function buildQuizQuestionListUrl(levelId) {
     return base + "?level=" + encodeURIComponent(levelId);
 }
 
+function clearMismatchHighlights() {
+    document.querySelectorAll('.answer-box.mismatch').forEach(function (box) {
+        box.classList.remove('mismatch');
+        box.style.borderColor = '';
+    });
+}
+
+function applyMismatchHighlights(tipeIndexes, algoritmaIndexes) {
+    clearMismatchHighlights();
+
+    (Array.isArray(tipeIndexes) ? tipeIndexes : []).forEach(function (index) {
+        const boxes = document.querySelectorAll('.answer-box.box-tipe');
+        if (boxes[index]) {
+            boxes[index].classList.add('mismatch');
+            boxes[index].style.borderColor = 'red';
+        }
+    });
+
+    (Array.isArray(algoritmaIndexes) ? algoritmaIndexes : []).forEach(function (index) {
+        const box = document.querySelector('.answer-box.box-algo[data-index="' + index + '"]');
+        if (box) {
+            box.classList.add('mismatch');
+            box.style.borderColor = 'red';
+        }
+    });
+}
+
 // $(() => {
 //     blockUI.block();
 //     initTable();

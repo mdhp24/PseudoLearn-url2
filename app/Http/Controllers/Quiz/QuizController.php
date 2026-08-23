@@ -229,7 +229,7 @@ class QuizController extends Controller
         $result = [];
         $visibleLimit = $this->visibleLimit;
         $pairCount = 0;
-        $unlockNext = true;
+        $previousPackageComplete = true;
 
         foreach ($soalList as $soal) {
             if ($pairCount >= $visibleLimit) break;
@@ -237,7 +237,13 @@ class QuizController extends Controller
             $konversi = DB::table('bank_soal_konversi')
                 ->where('id_soal', $soal->id)
                 ->where('id_level', $levelId)
+                ->whereNull('deleted_at')
                 ->first();
+
+            // Satu paket selalu terdiri dari pseudo dan konversi.
+            if (!$konversi) {
+                continue;
+            }
 
             $isPseudoDone = $this->ujianModel
                 ->where('id_mahasiswa', $idMahasiswa)
@@ -253,20 +259,20 @@ class QuizController extends Controller
                     ->exists(); 
             }
 
-            if (!$unlockNext) {
-                $pseudoStatus = 'locked';
-            } elseif ($isPseudoDone) {
+            if ($isPseudoDone) {
                 $pseudoStatus = 'done';
-            } else {
+            } elseif ($previousPackageComplete) {
                 $pseudoStatus = 'active';
+            } else {
+                $pseudoStatus = 'locked';
             }
 
-            if (!$isPseudoDone) {
-                $konversiStatus = 'locked';
-            } elseif ($isKonversiDone) {
+            if ($isKonversiDone) {
                 $konversiStatus = 'done';
-            } else {
+            } elseif ($previousPackageComplete && $isPseudoDone) {
                 $konversiStatus = 'active';
+            } else {
+                $konversiStatus = 'locked';
             }
 
             $badge = $this->labelSkorModel
@@ -284,21 +290,23 @@ class QuizController extends Controller
                 'badge'      => $badge
             ];
 
-            if ($konversi) {
-                $result[] = [
-                    'type'       => 'konversi',
-                    'id'         => $konversi->id,
-                    'judul'      => $soal->judul,
-                    'difficulty' => $soal->difficulty,
-                    'status'     => $konversiStatus
-                ];
-            }
+            $result[] = [
+                'type'       => 'konversi',
+                'id'         => $konversi->id,
+                'judul'      => $soal->judul,
+                'difficulty' => $soal->difficulty,
+                'status'     => $konversiStatus
+            ];
 
-            if (!$isPseudoDone || !$isKonversiDone) {
-                $unlockNext = false;
-            }
+            $packageComplete = $isPseudoDone && $isKonversiDone;
+            $previousPackageComplete = $packageComplete;
 
             $pairCount++;
+
+            // Render paket selesai dan satu paket aktif berikutnya saja.
+            if (!$packageComplete) {
+                break;
+            }
         }
 
         // Progress ARS

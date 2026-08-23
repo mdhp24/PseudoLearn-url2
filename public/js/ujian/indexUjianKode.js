@@ -58,6 +58,27 @@ function openModalFeedback() {
     modal.show();
 }
 
+function clearConversionMismatchHighlights() {
+    document.querySelectorAll('.answer-box.box-java.mismatch').forEach(function (box) {
+        box.classList.remove('mismatch');
+        box.classList.remove('shake');
+    });
+}
+
+function applyConversionMismatchHighlights(errors) {
+    clearConversionMismatchHighlights();
+
+    (Array.isArray(errors) ? errors : []).forEach(function (error) {
+        const box = document.querySelectorAll('.answer-box.box-java')[Number(error.index)];
+        if (!box) return;
+
+        box.classList.add('mismatch', 'shake');
+        window.setTimeout(function () {
+            box.classList.remove('shake');
+        }, 400);
+    });
+}
+
 function submitKonversi() {
     var modalKonfirmasi = bootstrap.Modal.getInstance(
         document.getElementById("modal-konfirmasi-jawaban-konversi"),
@@ -69,12 +90,19 @@ function submitKonversi() {
     var boxes = document.querySelectorAll(".answer-box.box-java");
     boxes.forEach(function (box) {
         var item = box.querySelector(".drag-item");
+        var line = item ? item.textContent : "";
         kodeLangkah.push(
-            item ? item.innerText.replace(/\s+/g, " ").trim() : "",
+            line
+                .replace(/[\u200B-\u200D\uFEFF]/g, "")
+                .replace(/\u00a0/g, " ")
+                .replace(/\r?\n|\r/g, " ")
+                .replace(/\s+/g, " ")
+                .trim(),
         );
     });
 
     // Reset highlight box sebelumnya
+    clearConversionMismatchHighlights();
     boxes.forEach(function (box) {
         box.style.borderColor = "";
         box.classList.remove("shake");
@@ -138,18 +166,7 @@ function submitKonversi() {
             const res = xhr.responseJSON;
 
             if (res?.message?.errors) {
-                var allBoxes = document.querySelectorAll(
-                    ".answer-box.box-java",
-                );
-                res.message.errors.forEach(function (err) {
-                    if (allBoxes[err.index]) {
-                        allBoxes[err.index].style.borderColor = "red";
-                        allBoxes[err.index].classList.add("shake");
-                        setTimeout(function () {
-                            allBoxes[err.index].classList.remove("shake");
-                        }, 400);
-                    }
-                });
+                applyConversionMismatchHighlights(res.message.errors);
             }
 
             $.ajax({

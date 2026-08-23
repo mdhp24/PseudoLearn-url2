@@ -45,7 +45,11 @@ class UjianKodeRepository
             ], 404);
         }
 
-        $kunciJawaban = BankSoalKonversi::parseJawabanLines($soalKonversi->jawaban);
+        $kunciDenganClue = BankSoalKonversi::parseJawabanWithClue($soalKonversi->jawaban);
+        $kunciJawaban = array_map(
+            static fn ($item) => BankSoalKonversi::normalizeCodeLine($item['kode'] ?? ''),
+            $kunciDenganClue
+        );
 
         if ($kunciJawaban === []) {
             return response()->json([
@@ -55,7 +59,10 @@ class UjianKodeRepository
         }
 
         // Jawaban mahasiswa — dari drag & drop (urutan langkah)
-        $jawabanMahasiswa = array_map(static fn ($line) => trim((string) $line), $kodeLangkah);
+        $jawabanMahasiswa = array_values(array_map(
+            static fn ($line) => trim((string) $line),
+            is_array($kodeLangkah) ? $kodeLangkah : []
+        ));
 
         while (
             count($jawabanMahasiswa) > count($kunciJawaban)
@@ -67,22 +74,24 @@ class UjianKodeRepository
         $errors = [];
         foreach ($kunciJawaban as $index => $kunci) {
             $jawaban = $jawabanMahasiswa[$index] ?? '';
-            if ($jawaban === '' || !BankSoalKonversi::linesMatch($kunci, $jawaban)) {
-                $errors[] = ['index' => $index];
+
+            if ($jawaban === '' && (($kunciDenganClue[$index]['clue'] ?? 0) === 1)) {
+                $jawaban = $kunci;
+            }
+
+            if ($jawaban === '' || BankSoalKonversi::normalizeCodeLine($jawaban) !== $kunci) {
+                $errors[] = [
+                    'index' => $index,
+                    'expected' => $kunci,
+                    'received' => BankSoalKonversi::normalizeCodeLine($jawaban),
+                ];
             }
         }
 
         if (!empty($errors)) {
             $nyawa = Nyawa::where('id_user', $idUser)->first();
             if ($nyawa && $nyawa->nyawa > 0) {
-                $nyawa->nyawa -= 1;
-
-                // Set waktu regenerasi
-                if (is_null($nyawa->next_regen_at)) {
-                    $nyawa->next_regen_at = now()->addMinute();
-                }
-
-                $nyawa->save();
+                $nyawa->applyWrongAnswerPenalty(1);
             }
 
             $decoy = $this->buildDecoyForGaming($idMahasiswa, $soalKonversi, $kunciJawaban);

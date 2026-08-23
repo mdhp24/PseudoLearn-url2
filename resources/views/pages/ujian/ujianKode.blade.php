@@ -105,6 +105,12 @@
             border-style: solid;
         }
 
+        .answer-box.mismatch {
+            border-color: #dc3545 !important;
+            background-color: #ffe9e9 !important;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+        }
+
         /*  Input panel wrapper  */
         .input-panel {
             border: 4px solid #022349;
@@ -274,7 +280,6 @@
 
                                     $tipeDataList = collect($decodeKunci($soal['kunci_tipe_data'] ?? []));
                                     $algoritmaList = collect($decodeKunci($soal['kunci_algoritma'] ?? []));
-                                    $dataLangkah = 1;
                                     $jawabanWithClue = \App\Models\BankSoalKonversi::parseJawabanWithClue(
                                         $konversi['jawaban'] ?? ''
                                     );
@@ -373,9 +378,9 @@
         var APP_URL = window.APP_URL || "/";
         var QUIZ_QUESTION_LIST_URL = @json(route('quiz.question-list'));
     </script>
-    <script src="{{ asset('js/ujian/indexUjianKode.js') }}"></script>
     <script src="{!! asset('assets/plugins/global/plugins.bundle.js') !!}"></script>
     <script src="{!! asset('assets/js/scripts.bundle.js') !!}"></script>
+    <script src="{{ asset('js/ujian/indexUjianKode.js') }}?v={{ filemtime(public_path('js/ujian/indexUjianKode.js')) }}"></script>
     <script src="{!! asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js') !!}"></script>
     <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>

@@ -363,14 +363,7 @@ class KonversiRepository extends BaseRepository
                 $nyawa = Nyawa::where('id_user', Auth::id())->first();
 
                 if ($nyawa->nyawa > 0) {
-                    $nyawa->nyawa -= 1;
-
-                    // kalau nyawa belum penuh dan tidak ada timer → set regen
-                    if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
-                        $nyawa->next_regen_at = now()->addMinute();
-                    }
-
-                    $nyawa->save();
+                    $nyawa->applyWrongAnswerPenalty(1);
                 }
 
                 $decoy = $this->buildDecoyForGaming($idMahasiswa, $soalKonversi);

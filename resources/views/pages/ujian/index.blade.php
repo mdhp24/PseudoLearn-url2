@@ -139,6 +139,12 @@
             background-color: #ffe9e9;
         }
 
+        .answer-box.mismatch {
+            border-color: #dc3545 !important;
+            background-color: #ffe9e9 !important;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+        }
+
         /* Tambahkan di bagian <style> */
         .heart-beat {
             animation: heartBeat 1s infinite;
@@ -332,9 +338,9 @@
         var APP_URL = window.APP_URL || "/";
         var QUIZ_QUESTION_LIST_URL = @json(route('quiz.question-list'));
     </script>
-    <script src="{{ asset('js/ujian/index.js') }}"></script>
     <script src="{!! asset('assets/plugins/global/plugins.bundle.js') !!}"></script>
     <script src="{!! asset('assets/js/scripts.bundle.js') !!}"></script>
+    <script src="{{ asset('js/ujian/index.js') }}?v={{ filemtime(public_path('js/ujian/index.js')) }}"></script>
     <script src="{!! asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js') !!}"></script>
     <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>

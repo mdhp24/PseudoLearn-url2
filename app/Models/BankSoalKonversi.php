@@ -170,7 +170,18 @@ class BankSoalKonversi extends BaseModel
      */
     public static function linesMatch(string $kunci, string $jawaban): bool
     {
-        $normalize = static fn(string $line) => preg_replace('/\s+/', '', trim($line)) ?? '';
-        return $normalize($kunci) === $normalize($jawaban);
+        return static::normalizeCodeLine($kunci) === static::normalizeCodeLine($jawaban);
+    }
+
+    /**
+     * Normalize one code line for position-based answer comparison.
+     */
+    public static function normalizeCodeLine(?string $line): string
+    {
+        $line = html_entity_decode((string) $line, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $line = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $line) ?? $line;
+        $line = str_replace("\xC2\xA0", ' ', $line);
+
+            return preg_replace('/\s+/u', ' ', trim($line)) ?? '';
     }
 }
