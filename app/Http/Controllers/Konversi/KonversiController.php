@@ -39,7 +39,7 @@ class KonversiController extends Controller
             ];
         })->values()->toArray();
 
-        return view('pages.Konversi.index', [
+        return view('pages.konversi.index', [
             'title' => 'Soal Konversi',
             'list_level' => $list_level
         ]);
@@ -69,7 +69,7 @@ class KonversiController extends Controller
             $data = $this->konversiModel->find($id);
         }
 
-        return view('pages.Konversi.form', [
+        return view('pages.konversi.form', [
             'title' => 'Form Konversi',
             'data' => $data,
             'levels' => $list_level

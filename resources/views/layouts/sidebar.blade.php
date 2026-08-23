@@ -130,191 +130,139 @@
                 </div>
                 @endif
 
-                {{-- Menu untuk Admin/Dosen --}}
-                @if ($isAdmin)
-                    <div class="menu-item">
-                        <div class="menu-heading text-uppercase fs-7 fw-bold">Menu</div>
-                        <div class="app-sidebar-separator separator my-2"></div>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('dashboard') ? ' active' : '' }}"
-                            href="{{ url('dashboard') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-home fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('dashboard') ? 'fw-bold' : 'fw-semibold' }}">Dashboard</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('log-activity*') ? ' active' : '' }}"
-                            href="{{ url('log-activity') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-tablet-text-up fs-2"></i>
-                            </span>
-                            <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data
-                                Log Aktivitas</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('confidence*') ? ' active' : '' }}"
-                            href="{{ url('confidence') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-arrow-circle-left fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('confidence*') ? 'fw-bold' : 'fw-semibold' }}">Confidence
-                                Tag</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('overlapping*') ? ' active' : '' }}"
-                            href="{{ url('overlapping') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-chart fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('overlapping*') ? 'fw-bold' : 'fw-semibold' }}">Overlapping
-                                Analysis</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('labeling*') ? ' active' : '' }}"
-                            href="{{ url('labeling') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-flag fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('labeling*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
-                                Labeling</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('scoring*') ? ' active' : '' }}"
-                            href="{{ url('scoring') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-percentage fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('scoring*') ? 'fw-bold' : 'fw-semibold' }}">Clustering
-                                Scoring</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('ujian-konversi*') ? ' active' : '' }}"
-                            href="{{ url('ujian-konversi') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-underlining fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('ujian-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Ujian
-                                Konversi</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('log-ujian-kode*') ? ' active' : '' }}"
-                            href="{{ url('log-ujian-kode') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-code fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('log-ujian-kode*') ? 'fw-bold' : 'fw-semibold' }}">Log
-                                Ujian Kode</span>
-                        </a>
-                    </div>
-                    {{-- <div class="menu-item">
-                        <a class="menu-link{{ request()->is('ars*') ? ' active' : '' }}" href="{{ url('ars') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-book-open fs-2"></i>
-                            </span>
-                            <span class="menu-title {{ request()->is('ars*') ? 'fw-bold' : 'fw-semibold' }}">ARS
-                                Report</span>
-                        </a>
-                    </div> --}}
-                    <div class="menu-item mt-5">
-                        <div class="menu-heading text-uppercase fs-7 fw-bold">Master</div>
-                        <div class="app-sidebar-separator separator my-2"></div>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('mahasiswa*') || request()->is('kelas*') ? ' active' : '' }}"
-                            href="{{ url('mahasiswa') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-user-square fs-2 "></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('mahasiswa*') || request()->is('kelas*') ? 'fw-bold' : 'fw-semibold' }}">Data
-                                Mahasiswa</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('level*') ? ' active' : '' }}" href="{{ url('level') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-category fs-2"></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('level*') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('soal*') ? ' active' : '' }}" href="{{ url('soal') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-text fs-2 "></i>
-                            </span>
-                            <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank
-                                Soal</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('konversi*') ? ' active' : '' }}"
-                            href="{{ url('konversi') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-arrow-mix fs-2 "></i>
-                            </span>
-                            <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal
-                                Konversi</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('bank-soal-konversi*') ? ' active' : '' }}"
-                            href="{{ url('bank-soal-konversi') }}">
-
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-book fs-2"></i>
-                            </span>
-
-                            <span
-                                class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">
-                                Bank Soal Konversi
-                            </span>
-                        </a>
-                    </div>
-                    <div class="menu-item mt-5">
-                        <div class="menu-heading text-uppercase fs-7 fw-bold">Pengaturan</div>
-                        <div class="app-sidebar-separator separator my-2"></div>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('guide*') ? ' active' : '' }}" href="{{ url('guide') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-book-square fs-2 "></i>
-                            </span>
-                            <span
-                                class="menu-title {{ request()->is('guide') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
-                        </a>
-                    </div>
-                    <div class="menu-item">
-                        <a class="menu-link{{ request()->is('setting-admin*') ? ' active' : '' }}"
-                            href="{{ url('setting-admin') }}">
-                            <span class="menu-icon me-2">
-                                <i class="ki-solid ki-security-user fs-2 "></i>
-                            </span>
-                            <span class="menu-title {{ request()->is('setting-admin') ? 'fw-bold' : 'fw-semibold' }}">Akun
-                                Admin</span>
-                        </a>
-                    </div>
-                @endif
-            </div>
+                      {{-- Menu untuk Admin/Dosen --}}
+            @if($isAdmin)
+                <div class="menu-item">
+                    <div class="menu-heading text-uppercase fs-7 fw-bold">Menu</div>
+                    <div class="app-sidebar-separator separator my-2"></div>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('dashboard') ? ' active' : '' }}" href="{{ url('dashboard') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-home fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('dashboard') ? 'fw-bold' : 'fw-semibold' }}">Dashboard</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('log-activity*') ? ' active' : '' }}" href="{{ url('log-activity') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-tablet-text-up fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('log-activity*') ? 'fw-bold' : 'fw-semibold' }}">Data Log Aktivitas</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('confidence*') ? ' active' : '' }}" href="{{ url('confidence') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-arrow-circle-left fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('confidence*') ? 'fw-bold' : 'fw-semibold' }}">Confidence Tag</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('overlapping*') ? ' active' : '' }}" href="{{ url('overlapping') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-chart fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('overlapping*') ? 'fw-bold' : 'fw-semibold' }}">Overlapping Analysis</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('labeling*') ? ' active' : '' }}" href="{{ url('labeling') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-flag fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('labeling*') ? 'fw-bold' : 'fw-semibold' }}">Clustering Labeling</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('scoring*') ? ' active' : '' }}" href="{{ url('scoring') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-percentage fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('scoring*') ? 'fw-bold' : 'fw-semibold' }}">Clustering Scoring</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('ujian-konversi*') ? ' active' : '' }}" href="{{ url('ujian-konversi') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-underlining fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('ujian-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Ujian Konversi</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('ars*') ? ' active' : '' }}" href="{{ url('ars') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-book-open fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('ars*') ? 'fw-bold' : 'fw-semibold' }}">ARS Report</span>
+                    </a>
+                </div>
+                <div class="menu-item mt-5">
+                    <div class="menu-heading text-uppercase fs-7 fw-bold">Master</div>
+                    <div class="app-sidebar-separator separator my-2"></div>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ (request()->is('mahasiswa*') || request()->is('kelas*')) ? ' active' : '' }}" href="{{ url('mahasiswa') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-user-square fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ (request()->is('mahasiswa*') || request()->is('kelas*')) ? 'fw-bold' : 'fw-semibold' }}">Data Mahasiswa</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('level*') ? ' active' : '' }}" href="{{ url('level') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-category fs-2"></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('level') ? 'fw-bold' : 'fw-semibold' }}">Level</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('soal*') ? ' active' : '' }}" href="{{ url('soal') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-text fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('soal') ? 'fw-bold' : 'fw-semibold' }}">Bank Soal</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('konversi*') ? ' active' : '' }}" href="{{ url('konversi') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-arrow-mix fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal Konversi</span>
+                    </a>
+                </div>
+                <div class="menu-item mt-5">
+                    <div class="menu-heading text-uppercase fs-7 fw-bold">Pengaturan</div>
+                    <div class="app-sidebar-separator separator my-2"></div>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('guide*') ? ' active' : '' }}" href="{{ url('guide') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-book-square fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('guide') ? 'fw-bold' : 'fw-semibold' }}">Panduan</span>
+                    </a>
+                </div>
+                <div class="menu-item">
+                    <a class="menu-link{{ request()->is('setting-admin*') ? ' active' : '' }}" href="{{ url('setting-admin') }}">
+                        <span class="menu-icon me-2">
+                            <i class="ki-solid ki-security-user fs-2 "></i>
+                        </span>
+                        <span class="menu-title {{ request()->is('setting-admin') ? 'fw-bold' : 'fw-semibold' }}">Akun Admin</span>
+                    </a>
+                </div>
+            @endif
         </div>
     </div>
+    {{-- <div class="position-relative">
+        <img src="{{ asset('assets/media/img/book.png') }}" alt="Book" style="max-width:180px; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0px;">
+    </div> --}}
+</div>
 
     @push('scripts')
         <script>

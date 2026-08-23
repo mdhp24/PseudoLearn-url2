@@ -18,7 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Prettus\Repository\Eloquent\BaseRepository;
-// use App\Models\ArsResult;
+use App\Models\ArsResult;
     
 /**
  * Class KelasRepository.
@@ -176,19 +176,8 @@ class UjianRepository extends BaseRepository
             $algoMismatch = [];
             $isCorrectAlgo = true;
 
-            // Ambil hanya langkah dari kunci (semua, clue apapun)
-            $kunciLangkah = array_map(fn($r) => $this->normalizeAnswerText($r['langkah'] ?? ''), $kunciAlgo);
-            $jawabLangkah = array_map(fn($r) => $this->normalizeAnswerText($r['langkah'] ?? ''), $jawabanAlgo);
-            $algoMismatchIndexes = [];
-
-            $maxAlgoCount = max(count($kunciLangkah), count($jawabLangkah));
-            for ($i = 0; $i < $maxAlgoCount; $i++) {
-                $expected = $kunciLangkah[$i] ?? '';
-                $given = $jawabLangkah[$i] ?? '';
-                if ($expected !== $given) {
-                    $algoMismatchIndexes[] = $i;
-                }
-            }
+            $kunciLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $kunciAlgo);
+            $jawabLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $jawabanAlgo);
 
             if(count($jawabLangkah) !== count($kunciLangkah)){
                 $isCorrectAlgo = false;
@@ -311,19 +300,19 @@ class UjianRepository extends BaseRepository
                     ]);
                 }
 
-                // $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-                //     ->where('id_level', $soal->id_level)
-                //     ->where('id_soal', $soal->id)
-                //     ->first();
+                $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+                    ->where('id_level', $soal->id_level)
+                    ->where('id_soal', $soal->id)
+                    ->first();
 
-                // if ($arsResult) {
-                //     $arsResult->update([
-                //         'pseudo_label'   => $label,
-                //         'pseudo_score'   => $skor,
-                //         'pseudo_langkah' => $totalDrag,      
-                //         'pseudo_durasi'  => $totalWaktuDetik,
-                //     ]);
-                // }
+                if ($arsResult) {
+                    $arsResult->update([
+                        'pseudo_label'   => $label,
+                        'pseudo_score'   => $skor,
+                        'pseudo_langkah' => $totalDrag,      
+                        'pseudo_durasi'  => $totalWaktuDetik,
+                    ]);
+                }
                     
                 if($label === 'Ideal' || $label === 'Normal'){
                         $dataPencapaianBadge = Pencapaian::where('id_mahasiswa', $idMahasiswa)
@@ -358,7 +347,13 @@ class UjianRepository extends BaseRepository
                 $nyawa = Nyawa::where('id_user', Auth::id())->first();
 
                 if ($nyawa->nyawa > 0) {
-                    $nyawa->applyWrongAnswerPenalty();
+                    $nyawa->nyawa -= 1;
+
+                    if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
+                        $nyawa->next_regen_at = now()->addMinutes(10);
+                    }
+
+                    $nyawa->save();
                 }
 
                 return BaseResponse::json([

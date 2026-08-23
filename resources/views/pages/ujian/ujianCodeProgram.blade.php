@@ -294,7 +294,7 @@
         </div>
     </div>
     @extends('pages.guide.index')
-    @extends('pages.Ujian.modal')
+    @extends('pages.ujian.modal')
     
     {{-- Chatbot component removed --}}
     

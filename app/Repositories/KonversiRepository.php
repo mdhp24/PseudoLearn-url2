@@ -19,7 +19,7 @@ use Symfony\Component\Process\Process;
 use App\Jobs\GeneratePencapaianKonversi;
 use Prettus\Repository\Eloquent\BaseRepository;
 use Symfony\Component\Process\Exception\ProcessFailedException;
-// use App\Models\ArsResult;
+use App\Models\ArsResult;
 
 /**
  * Class KelasRepository.
@@ -140,8 +140,7 @@ class KonversiRepository extends BaseRepository
                     $varTypes[$m[2]] = $m[1]; 
                 }
             }
-
-            // Step 2: cek assignment dan tambahkan cast jika perlu
+            
             foreach ($lines as $line) {
                 $trim = trim($line);
 
@@ -183,16 +182,13 @@ class KonversiRepository extends BaseRepository
             $filePath = $dirPath . "/Main_$safeSoalId.java";
             file_put_contents($filePath, $javaCode);
 
-            $javacPath = $this->resolveJavaToolPath('javac');
-            $javaPath  = $this->resolveJavaToolPath('java');
-
-            $compile = new Process([$javacPath, $filePath], $dirPath);
+            $compile = new Process(['javac', $filePath], $dirPath);
             $compile->run();
             if (!$compile->isSuccessful()) {
                 throw new ProcessFailedException($compile);
             }
 
-            $process = new Process([$javaPath, '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
+            $process = new Process(['java', '-cp', $dirPath, "Main_$safeSoalId"], $dirPath);
             $process->run();
             if (!$process->isSuccessful()) {
                 throw new \RuntimeException(
@@ -330,7 +326,13 @@ class KonversiRepository extends BaseRepository
                 $nyawa = Nyawa::where('id_user', Auth::id())->first();
 
                 if ($nyawa->nyawa > 0) {
-                    $nyawa->applyWrongAnswerPenalty();
+                    $nyawa->nyawa -= 1;
+
+                    if ($nyawa->next_regen_at === null && $nyawa->nyawa < $nyawa->max_nyawa) {
+                        $nyawa->next_regen_at = now()->addMinutes(10);
+                    }
+
+                    $nyawa->save();
                 }
 
                 return BaseResponse::errorMessage([
@@ -411,30 +413,30 @@ class KonversiRepository extends BaseRepository
                 ];
             }
 
-            // $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-            //     ->where('id_level', $soalKonversi->id_level)
-            //     ->where('id_soal', $soalKonversi->id_soal)
-            //     ->first();
+            $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+                ->where('id_level', $soalKonversi->id_level)
+                ->where('id_soal', $soalKonversi->id_soal)
+                ->first();
 
-            // if ($arsResult) {
-            //     $waktuKonversi = $request->input('waktu', 0);
-            //     $jumlahLangkah = count($kodeLangkah); // Hitung langkah konversi
+            if ($arsResult) {
+                $waktuKonversi = $request->input('waktu', 0);
+                $jumlahLangkah = count($kodeLangkah); // Hitung langkah konversi
 
-            //     if ($waktuKonversi < 53) {
-            //         $konversiLabel = 'Ideal';
-            //         $konversiScore = 90;
-            //     } else {
-            //         $konversiLabel = 'Normal';
-            //         $konversiScore = 70;
-            //     }
+                if ($waktuKonversi < 53) {
+                    $konversiLabel = 'Ideal';
+                    $konversiScore = 90;
+                } else {
+                    $konversiLabel = 'Normal';
+                    $konversiScore = 70;
+                }
 
-            //     $arsResult->update([
-            //         'konversi_label'   => $konversiLabel,
-            //         'konversi_score'   => $konversiScore,
-            //         'konversi_langkah' => $jumlahLangkah,
-            //         'konversi_durasi'  => $waktuKonversi, 
-            //     ]);
-            // }
+                $arsResult->update([
+                    'konversi_label'   => $konversiLabel,
+                    'konversi_score'   => $konversiScore,
+                    'konversi_langkah' => $jumlahLangkah,
+                    'konversi_durasi'  => $waktuKonversi, 
+                ]);
+            }
 
             DB::commit();
             return BaseResponse::json([
@@ -455,70 +457,6 @@ class KonversiRepository extends BaseRepository
         $pattern = '/(\s+|[a-zA-Z0-9_]+|[+\-*\/=<>!&|^~(){}[\],.;:])/';
         preg_match_all($pattern, $text, $matches);
         return $matches[0] ?? [];
-    }
-
-    protected function resolveJavaToolPath(string $toolName): string
-    {
-        $toolName = trim($toolName);
-
-        $javaHome = getenv('JAVA_HOME') ?: getenv('JDK_HOME');
-        if (!empty($javaHome)) {
-            $javaHome = rtrim($javaHome, "\\/");
-
-            $candidates = [
-                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName . '.exe',
-                $javaHome . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $toolName,
-            ];
-
-            foreach ($candidates as $candidate) {
-                if (file_exists($candidate)) {
-                    return $candidate;
-                }
-            }
-        }
-
-        $commonRoots = [
-            'C:\\Program Files\\Java',
-            'C:\\Program Files\\Eclipse Adoptium',
-            'C:\\Program Files\\Microsoft',
-            'C:\\Program Files\\Amazon Corretto',
-            'C:\\Program Files (x86)\\Java',
-        ];
-
-        foreach ($commonRoots as $root) {
-            foreach (glob($root . '\\jdk*\\bin\\' . $toolName . '.exe') ?: [] as $candidate) {
-                if (file_exists($candidate)) {
-                    return $candidate;
-                }
-            }
-        }
-
-        $where = Process::fromShellCommandline('where ' . $toolName);
-        $where->run();
-
-        if ($where->isSuccessful()) {
-            $paths = preg_split('/\r?\n/', trim($where->getOutput()));
-
-            foreach ($paths as $path) {
-                $path = trim((string) $path);
-
-                if ($path === '') {
-                    continue;
-                }
-
-                $normalizedPath = strtolower(str_replace('/', '\\', $path));
-
-                if (str_contains($normalizedPath, '\\oracle\\java\\javapath\\')) {
-                    continue;
-                }
-
-                if (file_exists($path)) {
-                    return $path;
-                }
-            }
-        }
-
-        return $toolName;
     }
 
     protected function generateKGrams(string $text, int $k = 2): array

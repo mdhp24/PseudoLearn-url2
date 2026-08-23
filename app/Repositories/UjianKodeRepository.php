@@ -7,8 +7,8 @@ use App\Models\BankSoalKonversi;
 use App\Models\Nyawa;
 use App\Models\Mahasiswa;
 use Illuminate\Support\Facades\Auth;
-// use App\Models\ArsResult;
-// use Illuminate\Support\Facades\DB;
+use App\Models\ArsResult;
+use Illuminate\Support\Facades\DB;
 
 class UjianKodeRepository
 {
@@ -84,17 +84,6 @@ class UjianKodeRepository
                 $nyawa->save();
             }
 
-            // Simpan percobaan gagal agar ikut terhitung di total submit
-            $this->model->create([
-                'id_mahasiswa'          => $idUser,
-                'id_bank_soal_konversi' => $idBankSoalKonversi,
-                'id_level'              => $soalKonversi->id_level,
-                'jawaban'               => implode("\n", $jawabanMahasiswa),
-                'output'                => null,
-                'nilai'                 => 0,
-                'waktu'                 => $waktu,
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => [
@@ -107,7 +96,7 @@ class UjianKodeRepository
 
         // Simpan hasil ujian
         $ujian = $this->model->create([
-            'id_mahasiswa'          => $idUser,
+            'id_mahasiswa'          => $idMahasiswa,
             'id_bank_soal_konversi' => $idBankSoalKonversi,
             'id_level'              => $soalKonversi->id_level,
             'jawaban'               => implode("\n", $jawabanMahasiswa),
@@ -116,27 +105,32 @@ class UjianKodeRepository
             'waktu'                 => $waktu,
         ]);
 
-//         $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-//     ->where('id_level', $soalKonversi->id_level)
-//     ->where('id_soal', $soalKonversi->id_soal)
-//     ->whereNull('konversi_label')
-//     ->first();
+        $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
+    ->where('id_level', $soalKonversi->id_level)
+    ->where('id_soal', $soalKonversi->id_soal)
+    ->whereNull('konversi_label')
+    ->first();
 
-// if ($arsResult) {
-//     $langkah = DB::table('log_ujian_kode')
-//         ->where('id_mahasiswa', $idMahasiswa)
-//         ->where('id_bank_soal_konversi', $idBankSoalKonversi)
-//         ->count();
+if ($arsResult) {
+    $langkah = DB::table('log_ujian_kode')
+        ->where('id_mahasiswa', $idMahasiswa)
+        ->where('id_bank_soal_konversi', $idBankSoalKonversi)
+        ->count();
 
-//     [$konversiLabel, $konversiScore] = $this->determineLabelAndScore($langkah, $waktu);
+    $totalWaktu = DB::table('ujian_kode')
+        ->where('id_mahasiswa', $idMahasiswa)
+        ->where('id_bank_soal_konversi', $idBankSoalKonversi)
+        ->sum('waktu');
 
-//     $arsResult->update([
-//         'konversi_label' => $konversiLabel,
-//         'konversi_score' => $konversiScore,
-//         'konversi_langkah' => $langkah,
-//         'konversi_durasi'  => $waktu,
-//     ]);
-// }
+    [$konversiLabel, $konversiScore] = $this->determineLabelAndScore($langkah, $totalWaktu);
+
+    $arsResult->update([
+        'konversi_label' => $konversiLabel,
+        'konversi_score' => $konversiScore,
+        'konversi_langkah' => $langkah,
+        'konversi_durasi'  => $totalWaktu,
+    ]);
+}
 
         return response()->json([
             'success'     => true,
@@ -147,59 +141,6 @@ class UjianKodeRepository
         ]);
     }
 
-    protected function decrementNyawaOnWrongAnswer(string $idUser): void
-    {
-        $nyawa = Nyawa::where('id_user', $idUser)->first();
-
-        if (!$nyawa || $nyawa->nyawa <= 0) {
-            return;
-        }
-
-        $nyawa->applyWrongAnswerPenalty();
-    }
-
-    private function parseJawabanList($rawJawaban): array
-    {
-        if ($rawJawaban === null) {
-            return [];
-        }
-
-        $rawJawaban = (string) $rawJawaban;
-        $decoded = json_decode($rawJawaban, true);
-
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            $lines = [];
-            foreach ($decoded as $item) {
-                if (is_array($item)) {
-                    foreach ($item as $value) {
-                        $lines[] = $value;
-                        break;
-                    }
-                } else {
-                    $lines[] = $item;
-                }
-            }
-
-            return $this->normalizeJawabanList($lines);
-        }
-
-        $lines = preg_split('/\r\n|\n|\r/', $rawJawaban) ?: [];
-        return $this->normalizeJawabanList($lines);
-    }
-
-    private function normalizeJawabanList(array $lines): array
-    {
-        $normalized = array_map([$this, 'normalizeJawabanLine'], $lines);
-        return array_values(array_filter($normalized, fn($line) => $line !== ''));
-    }
-
-    private function normalizeJawabanLine($line): string
-    {
-        $line = str_replace("\xC2\xA0", ' ', (string) $line);
-        $line = trim($line);
-        $line = preg_replace('/\s+/', ' ', $line);
-        return $line ?? '';
-    }
     private function determineLabelAndScore($totalDrag, $totalWaktuDetik)
 {
     if ($totalDrag <= 18 && $totalWaktuDetik < 53) {

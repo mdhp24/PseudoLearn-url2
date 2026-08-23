@@ -202,24 +202,19 @@
                                                 <div class="panel-box text-center mb-8">
                                                     <div class="panel-header">Tipe Data</div>
                                                     @php
-                                                        // Safely decode kunci_tipe_data (handle double-encoded JSON)
-                                                        $kunciTipeData = $soal->kunci_tipe_data;
-                                                        if (is_string($kunciTipeData)) {
-                                                            $decoded = json_decode($kunciTipeData, true);
-                                                            $kunciTipeData = is_array($decoded) ? $decoded : [];
-                                                        }
-                                                        $tipeDataList = collect($kunciTipeData)
+                                                        $tipeData = is_string($soal['kunci_tipe_data']) 
+                                                            ? json_decode($soal['kunci_tipe_data'], true) 
+                                                            : $soal['kunci_tipe_data'];
+
+                                                        $tipeDataList = collect($tipeData)
                                                             ->pluck('tipe_data')
                                                             ->values()
                                                             ->shuffle();
-                                                        
-                                                        // Safely decode kunci_algoritma (handle double-encoded JSON)
-                                                        $kunciAlgoritma = $soal->kunci_algoritma;
-                                                        if (is_string($kunciAlgoritma)) {
-                                                            $decoded = json_decode($kunciAlgoritma, true);
-                                                            $kunciAlgoritma = is_array($decoded) ? $decoded : [];
-                                                        }
-                                                        $algoritmaList = collect($kunciAlgoritma)
+                                                        $algoritma = is_string($soal['kunci_algoritma']) 
+                                                            ? json_decode($soal['kunci_algoritma'], true) 
+                                                            : $soal['kunci_algoritma'];
+
+                                                        $algoritmaList = collect($algoritma)
                                                             ->where('clue', '0')
                                                             ->pluck('langkah')
                                                             ->values()
@@ -259,13 +254,11 @@
                                                                 </div>
                                                                 <div class="p-3">
                                                                     @php
-                                                                        // Safely decode kunci_tipe_data (handle double-encoded JSON)
-                                                                        $kunciTipeData = $soal->kunci_tipe_data;
-                                                                        if (is_string($kunciTipeData)) {
-                                                                            $decoded = json_decode($kunciTipeData, true);
-                                                                            $kunciTipeData = is_array($decoded) ? $decoded : [];
-                                                                        }
-                                                                        $tipeDataList = collect($kunciTipeData)
+                                                                        $tipeData = is_string($soal['kunci_tipe_data']) 
+                                                                            ? json_decode($soal['kunci_tipe_data'], true) 
+                                                                            : $soal['kunci_tipe_data'];
+
+                                                                        $tipeDataList = collect($tipeData)
                                                                             ->pluck('variabel')
                                                                             ->filter(function($v) { return !is_null($v); })
                                                                             ->values();
@@ -291,14 +284,11 @@
                                                                 </div>
                                                                 <div class="p-3">
                                                                     @php
-                                                                        // Safely decode kunci_algoritma (handle double-encoded JSON)
-                                                                        $kunciAlgoritma = $soal->kunci_algoritma;
-                                                                        if (is_string($kunciAlgoritma)) {
-                                                                            $decoded = json_decode($kunciAlgoritma, true);
-                                                                            $kunciAlgoritma = is_array($decoded) ? $decoded : [];
-                                                                        }
-                                                                        $algoritmaList = collect($kunciAlgoritma);
-                                                                    @endphp
+                                                                        $algoritma = is_string($soal['kunci_algoritma']) 
+                                                                            ? json_decode($soal['kunci_algoritma'], true) 
+                                                                            : $soal['kunci_algoritma'];
+
+                                                                        $algoritmaList = collect($algoritma);                                                                    @endphp
                                                                     @foreach($algoritmaList as $item)
                                                                         <div class="answer-box box-algo mb-2" data-index="{{ $loop->index }}" data-clue="{{ $item['clue'] }}">
                                                                             @if($item['clue'] == '1')
@@ -335,7 +325,7 @@
         </div>
     </div>
     @extends('pages.guide.index')
-    @extends('pages.Ujian.modal')
+    @extends('pages.ujian.modal')
     
     {{-- Chatbot component removed --}}
     
