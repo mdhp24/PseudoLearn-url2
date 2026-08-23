@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Prettus\Repository\Eloquent\BaseRepository;
 use App\Models\ArsResult;
-    
+
 /**
  * Class KelasRepository.
  * 
@@ -71,13 +71,14 @@ class UjianRepository extends BaseRepository
         // Add your boot logic here
     }
 
-    public function submit($request){
+    public function submit($request)
+    {
         try {
             DB::beginTransaction();
 
             $idMahasiswa = $this->mahasiswaModel->where('id_user', Auth::id())->value('id');
             $soal = $this->model->where('id', $request->input('soal_id'))->first();
-            if(!$soal){
+            if (!$soal) {
                 DB::rollBack();
                 return BaseResponse::errorMessage('Soal tidak ditemukan');
             }
@@ -90,13 +91,16 @@ class UjianRepository extends BaseRepository
             $historyJawabanTipe = [];
             $historyJawabanAlgo = [];
 
-           $decodeJson = function ($raw) {
-                if (is_array($raw)) return $raw;
+            $decodeJson = function ($raw) {
+                if (is_array($raw))
+                    return $raw;
 
                 $clean = trim($raw);
 
-                if ((Str::startsWith($clean, '"') && Str::endsWith($clean, '"')) ||
-                    (Str::startsWith($clean, "'") && Str::endsWith($clean, "'"))) {
+                if (
+                    (Str::startsWith($clean, '"') && Str::endsWith($clean, '"')) ||
+                    (Str::startsWith($clean, "'") && Str::endsWith($clean, "'"))
+                ) {
                     $clean = substr($clean, 1, -1);
                 }
 
@@ -131,96 +135,116 @@ class UjianRepository extends BaseRepository
                 $givenVariabel = $this->normalizeAnswerText($givenRow['variabel'] ?? '');
                 $givenTipe = $this->normalizeAnswerText($givenRow['jawaban'] ?? '');
 
-                if (strtolower($expectedVariabel) !== strtolower($givenVariabel)
-                    || strtolower($expectedTipe) !== strtolower($givenTipe)) {
+                $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
+                $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
+                $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
+                $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
+
+                if ($normExpVar !== $normGivVar || $normExpTipe !== $normGivTipe) {
                     $tipeMismatchIndexes[] = $i;
                 }
             }
 
-            if(count($jawabanTipe) !== count($kunciTipe)){
+            if (count($jawabanTipe) !== count($kunciTipe) || count($tipeMismatchIndexes) > 0) {
                 $isCorrectTipe = false;
-                $tipeMismatch[] = ['reason'=>'length_not_match','expected_count'=>count($kunciTipe),'given_count'=>count($jawabanTipe)];
-            } else {
-                foreach($kunciTipe as $i => $row){
-                    $jawabRow = $jawabanTipe[$i] ?? [];
-                    $expectedVariabel = $this->normalizeAnswerText($row['variabel'] ?? '');
-                    $expectedTipe     = $this->normalizeAnswerText($row['tipe_data'] ?? '');
-                    $givenVariabel    = $this->normalizeAnswerText($jawabRow['variabel'] ?? '');
-                    $givenTipe        = $this->normalizeAnswerText($jawabRow['jawaban'] ?? '');
+                if (count($jawabanTipe) !== count($kunciTipe)) {
+                    $tipeMismatch[] = ['reason' => 'length_not_match', 'expected_count' => count($kunciTipe), 'given_count' => count($jawabanTipe)];
+                }
+            }
 
-                    // 🔥 TOLERANSI TIPE DATA: Hapus spasi dan jadikan huruf kecil semua
-                    $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
-                    $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
-                    $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
-                    $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
+            foreach ($kunciTipe as $i => $row) {
+                $jawabRow = $jawabanTipe[$i] ?? [];
+                $expectedVariabel = $this->normalizeAnswerText($row['variabel'] ?? '');
+                $expectedTipe = $this->normalizeAnswerText($row['tipe_data'] ?? '');
+                $givenVariabel = $this->normalizeAnswerText($jawabRow['variabel'] ?? '');
+                $givenTipe = $this->normalizeAnswerText($jawabRow['jawaban'] ?? '');
 
-                    if($normExpVar !== $normGivVar || $normExpTipe !== $normGivTipe){
-                        $isCorrectTipe = false;
-                        $tipeMismatch[] = [
-                            'index'=>$i,
-                            'expected'=>['variabel'=>$expectedVariabel,'tipe_data'=>$expectedTipe],
-                            'given'=>['variabel'=>$givenVariabel,'tipe_data'=>$givenTipe]
-                        ];
-                    }
+                $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
+                $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
+                $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
+                $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
 
-                    $historyJawabanTipe[] = [
-                        'id' => (string) Str::uuid(),
-                        'id_level' => $soal->id_level,
-                        'id_soal' => $soal->id,
-                        'id_mahasiswa' => $idMahasiswa,
-                        'index_tipe_data' => $i,
-                        'tipe_data' => $givenTipe,
-                        'index_algoritma' => null,
-                        'algoritma' => null,
-                        'status' => $isCorrectTipe ? 'benar' : 'salah',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'deleted_at' => null,
+                $rowIsCorrect = ($normExpVar === $normGivVar && $normExpTipe === $normGivTipe);
+                if (!$rowIsCorrect) {
+                    $tipeMismatch[] = [
+                        'index' => $i,
+                        'expected' => ['variabel' => $expectedVariabel, 'tipe_data' => $expectedTipe],
+                        'given' => ['variabel' => $givenVariabel, 'tipe_data' => $givenTipe]
                     ];
                 }
+
+                $historyJawabanTipe[] = [
+                    'id' => (string) Str::uuid(),
+                    'id_level' => $soal->id_level,
+                    'id_soal' => $soal->id,
+                    'id_mahasiswa' => $idMahasiswa,
+                    'index_tipe_data' => $i,
+                    'tipe_data' => $givenTipe,
+                    'index_algoritma' => null,
+                    'algoritma' => null,
+                    'status' => $rowIsCorrect ? 'benar' : 'salah',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'deleted_at' => null,
+                ];
             }
 
             $algoMismatch = [];
             $isCorrectAlgo = true;
+            $algoritmaMismatchIndexes = [];
 
-            $kunciLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $kunciAlgo);
-            $jawabLangkah = array_map(fn($r)=>trim($r['langkah'] ?? ''), $jawabanAlgo);
+            $kunciLangkah = array_map(fn($r) => trim($r['langkah'] ?? ''), $kunciAlgo);
+            $jawabLangkah = array_map(fn($r) => trim($r['langkah'] ?? ''), $jawabanAlgo);
+            $maxAlgoCount = max(count($kunciLangkah), count($jawabLangkah));
 
-            if(count($jawabLangkah) !== count($kunciLangkah)){
+            for ($i = 0; $i < $maxAlgoCount; $i++) {
+                $exp = $kunciLangkah[$i] ?? '';
+                $given = $jawabLangkah[$i] ?? '';
+
+                $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
+                $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+
+                if ($normExpAlgo !== $normGivAlgo) {
+                    $algoritmaMismatchIndexes[] = $i;
+                }
+            }
+
+            if (count($jawabLangkah) !== count($kunciLangkah) || count($algoritmaMismatchIndexes) > 0) {
                 $isCorrectAlgo = false;
-                $algoMismatch[] = ['reason'=>'length_not_match','expected_count'=>count($kunciLangkah),'given_count'=>count($jawabLangkah)];
-            } else {
-                foreach($kunciLangkah as $i => $exp){
-                    $given = $jawabLangkah[$i] ?? '';
-                    
-                    // 🔥 TOLERANSI ALGORITMA: Hapus spasi dan jadikan huruf kecil semua
-                    $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
-                    $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+                if (count($jawabLangkah) !== count($kunciLangkah)) {
+                    $algoMismatch[] = ['reason' => 'length_not_match', 'expected_count' => count($kunciLangkah), 'given_count' => count($jawabLangkah)];
+                }
+            }
 
-                    if($normExpAlgo !== $normGivAlgo){
-                        $isCorrectAlgo = false;
-                        $algoMismatch[] = [
-                            'index'=>$i,
-                            'expected'=>$exp,
-                            'given'=>$given
-                        ];
-                    }
+            foreach ($kunciLangkah as $i => $exp) {
+                $given = $jawabLangkah[$i] ?? '';
 
-                    $historyJawabanAlgo[] = [
-                        'id' => (string) Str::uuid(),
-                        'id_level' => $soal->id_level,
-                        'id_soal' => $soal->id,
-                        'id_mahasiswa' => $idMahasiswa,
-                        'index_tipe_data' => null,
-                        'tipe_data' => null,
-                        'index_algoritma' => $i,
-                        'algoritma' => $given,
-                        'status' => $isCorrectAlgo ? 'benar' : 'salah',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'deleted_at' => null,
+                $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
+                $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+
+                $rowIsCorrect = ($normExpAlgo === $normGivAlgo);
+                if (!$rowIsCorrect) {
+                    $algoMismatch[] = [
+                        'index' => $i,
+                        'expected' => $exp,
+                        'given' => $given
                     ];
                 }
+
+                $historyJawabanAlgo[] = [
+                    'id' => (string) Str::uuid(),
+                    'id_level' => $soal->id_level,
+                    'id_soal' => $soal->id,
+                    'id_mahasiswa' => $idMahasiswa,
+                    'index_tipe_data' => null,
+                    'tipe_data' => null,
+                    'index_algoritma' => $i,
+                    'algoritma' => $given,
+                    'status' => $rowIsCorrect ? 'benar' : 'salah',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'deleted_at' => null,
+                ];
             }
 
             $isCorrectAll = $isCorrectTipe && $isCorrectAlgo;
@@ -249,7 +273,7 @@ class UjianRepository extends BaseRepository
             $this->historyJawabanModel->insert(array_merge($historyJawabanTipe, $historyJawabanAlgo));
             $this->ujianModel->insert($dataUjian);
             $this->historyConfidenceModel->create($dataHistoryConfidence);
-            
+
             $dataPencapaian = Pencapaian::where('id_mahasiswa', $idMahasiswa)
                 ->where('id_level', $soal->id_level)
                 ->where('id_soal', $soal->id)
@@ -258,7 +282,7 @@ class UjianRepository extends BaseRepository
 
             $returnPencapaian = null;
             $returnPencapaianBadge = null;
-            
+
             if ($dataPencapaian && $dataPencapaian->status == 0 && $isCorrectAll) {
                 $dataPencapaian->update([
                     'status' => 1,
@@ -272,7 +296,7 @@ class UjianRepository extends BaseRepository
 
             DB::commit();
 
-            if($isCorrectAll) {
+            if ($isCorrectAll) {
                 $ujianQuery = $this->ujianModel->setView('v_ujian')
                     ->where('id_mahasiswa', $idMahasiswa)
                     ->where('id_level', $soal->id_level)
@@ -320,32 +344,32 @@ class UjianRepository extends BaseRepository
 
                     if ($arsResult) {
                         $arsResult->update([
-                            'pseudo_label'   => $label,
-                            'pseudo_score'   => $skor,
+                            'pseudo_label' => $label,
+                            'pseudo_score' => $skor,
                             'pseudo_langkah' => $totalDrag,
-                            'pseudo_durasi'  => $totalWaktuDetik,
+                            'pseudo_durasi' => $totalWaktuDetik,
                         ]);
                     }
                 }
-                    
-                if($label === 'Ideal' || $label === 'Normal'){
-                        $dataPencapaianBadge = Pencapaian::where('id_mahasiswa', $idMahasiswa)
-                            ->where('id_level', $soal->id_level)
-                            ->where('id_soal', $soal->id)
-                            ->where('category', 'badge')
-                            ->first();
-                        
-                        if ($dataPencapaianBadge && $dataPencapaianBadge->status == 0 && $isCorrectAll) {
-                            $dataPencapaianBadge->update([
-                                'status' => 1,
-                                'updated_at' => now(),
-                            ]);
 
-                            $returnPencapaianBadge = [
-                                'id' => $dataPencapaianBadge->id,
-                            ];
-                        }
+                if ($label === 'Ideal' || $label === 'Normal') {
+                    $dataPencapaianBadge = Pencapaian::where('id_mahasiswa', $idMahasiswa)
+                        ->where('id_level', $soal->id_level)
+                        ->where('id_soal', $soal->id)
+                        ->where('category', 'badge')
+                        ->first();
+
+                    if ($dataPencapaianBadge && $dataPencapaianBadge->status == 0 && $isCorrectAll) {
+                        $dataPencapaianBadge->update([
+                            'status' => 1,
+                            'updated_at' => now(),
+                        ]);
+
+                        $returnPencapaianBadge = [
+                            'id' => $dataPencapaianBadge->id,
+                        ];
                     }
+                }
 
                 $returnData = [
                     'correct' => true,
@@ -369,6 +393,12 @@ class UjianRepository extends BaseRepository
                     'correct_algoritma' => $isCorrectAlgo,
                     'tipe_mismatch' => $dataLevel->feedback_data_type ?? null,
                     'algoritma_mismatch' => $dataLevel->feedback_algorithm ?? null,
+                    'tipe_mismatch_index' => array_values(array_unique($tipeMismatchIndexes)),
+                    'algoritma_mismatch_index' => array_values(array_unique($algoritmaMismatchIndexes)),
+                    'incorrect_slots' => [
+                        'tipe_data' => array_values(array_unique($tipeMismatchIndexes)),
+                        'algoritma' => array_values(array_unique($algoritmaMismatchIndexes)),
+                    ],
                     'id_level' => $soal->id_level,
                     'decoy' => $decoy,
                 ]);
@@ -482,13 +512,13 @@ class UjianRepository extends BaseRepository
             $idMahasiswa = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
 
             $data = [
-                'id_soal'      => $request['soal_id'],
+                'id_soal' => $request['soal_id'],
                 'id_mahasiswa' => $idMahasiswa,
-                'index'        => $request['index'],
-                'itemText'     => $request['item'],
+                'index' => $request['index'],
+                'itemText' => $request['item'],
                 'timer_second' => $request['timer_second'],
-                'type'         => $request['jenis'],
-                'variabel'     => $request['variabel']
+                'type' => $request['jenis'],
+                'variabel' => $request['variabel']
             ];
 
             $opr = $this->logDataModel->create($data);

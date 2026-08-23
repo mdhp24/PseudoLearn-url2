@@ -102,6 +102,7 @@ class UjianKodeRepository
                     'message' => 'Terdapat jawaban salah',
                     'errors'  => $errors,
                 ],
+                'incorrect_slots' => array_column($errors, 'index'),
                 'lives' => $nyawa->nyawa ?? 0,
                 'decoy' => $decoy,
             ], 422);

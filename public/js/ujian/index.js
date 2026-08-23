@@ -8,28 +8,94 @@ function buildQuizQuestionListUrl(levelId) {
 }
 
 function clearMismatchHighlights() {
-    document.querySelectorAll('.answer-box.mismatch').forEach(function (box) {
-        box.classList.remove('mismatch');
+    document.querySelectorAll('.answer-box').forEach(function (box) {
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
         box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
     });
+}
+
+function normalizeCodeText(str) {
+    if (!str) return '';
+    return str
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r?\n|\r/g, ' ')
+        .replace(/\s+/g, '')
+        .toLowerCase()
+        .trim();
 }
 
 function applyMismatchHighlights(tipeIndexes, algoritmaIndexes) {
     clearMismatchHighlights();
 
-    (Array.isArray(tipeIndexes) ? tipeIndexes : []).forEach(function (index) {
-        const boxes = document.querySelectorAll('.answer-box.box-tipe');
-        if (boxes[index]) {
-            boxes[index].classList.add('mismatch');
-            boxes[index].style.borderColor = 'red';
+    const tipeMismatch = Array.isArray(tipeIndexes) ? tipeIndexes : [];
+    const algoMismatch = Array.isArray(algoritmaIndexes) ? algoritmaIndexes : [];
+
+    const tipeBoxes = document.querySelectorAll('.answer-box.box-tipe');
+    tipeBoxes.forEach(function (box, index) {
+        const item = box.querySelector('.drag-item');
+        const hasItem = item !== null;
+
+        const expectedText = normalizeCodeText(box.dataset.expected || '');
+        const givenText = item ? normalizeCodeText(item.textContent) : '';
+
+        let isIncorrect = tipeMismatch.includes(index);
+        if (!isIncorrect && expectedText.length > 0) {
+            if (!hasItem || givenText !== expectedText) {
+                isIncorrect = true;
+            }
+        }
+
+        if (isIncorrect) {
+            // HANYA yang SALAH diberi warna merah
+            box.classList.add('mismatch', 'is-incorrect', 'shake');
+            box.style.borderColor = '#ef4444';
+            box.style.borderStyle = 'solid';
+            box.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
+            setTimeout(function () { box.classList.remove('shake'); }, 400);
+        } else {
+            // Yang BENAR tetap DEFAULT
+            box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+            box.style.borderColor = '';
+            box.style.backgroundColor = '';
+            box.style.borderStyle = '';
         }
     });
 
-    (Array.isArray(algoritmaIndexes) ? algoritmaIndexes : []).forEach(function (index) {
-        const box = document.querySelector('.answer-box.box-algo[data-index="' + index + '"]');
-        if (box) {
-            box.classList.add('mismatch');
-            box.style.borderColor = 'red';
+    const algoBoxes = document.querySelectorAll('.answer-box.box-algo');
+    algoBoxes.forEach(function (box, index) {
+        const dataIdx = box.dataset.index !== undefined ? parseInt(box.dataset.index) : index;
+        const isClue = box.dataset.clue === '1';
+        const item = box.querySelector('.drag-item');
+        const hasItem = item !== null;
+
+        if (isClue) return;
+
+        const expectedText = normalizeCodeText(box.dataset.expected || '');
+        const givenText = item ? normalizeCodeText(item.textContent) : '';
+
+        let isIncorrect = algoMismatch.includes(dataIdx) || algoMismatch.includes(index);
+        if (!isIncorrect && expectedText.length > 0) {
+            if (!hasItem || givenText !== expectedText) {
+                isIncorrect = true;
+            }
+        }
+
+        if (isIncorrect) {
+            // HANYA yang SALAH diberi warna merah
+            box.classList.add('mismatch', 'is-incorrect', 'shake');
+            box.style.borderColor = '#ef4444';
+            box.style.borderStyle = 'solid';
+            box.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
+            setTimeout(function () { box.classList.remove('shake'); }, 400);
+        } else {
+            // Yang BENAR tetap DEFAULT
+            box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+            box.style.borderColor = '';
+            box.style.backgroundColor = '';
+            box.style.borderStyle = '';
         }
     });
 }
@@ -469,6 +535,7 @@ document.addEventListener('dragstart', function (e) {
     const dragged = e.target && e.target.closest ? e.target.closest('.drag-item') : null;
     if (!dragged) return;
 
+    clearMismatchHighlights();
     startUjianTimer();
 });
 

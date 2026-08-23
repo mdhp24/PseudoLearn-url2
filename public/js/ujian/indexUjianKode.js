@@ -58,24 +58,71 @@ function openModalFeedback() {
     modal.show();
 }
 
+function normalizeCodeText(str) {
+    if (!str) return '';
+    return str
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r?\n|\r/g, ' ')
+        .replace(/\s+/g, '')
+        .toLowerCase()
+        .trim();
+}
+
 function clearConversionMismatchHighlights() {
-    document.querySelectorAll('.answer-box.box-java.mismatch').forEach(function (box) {
-        box.classList.remove('mismatch');
-        box.classList.remove('shake');
+    document.querySelectorAll('.answer-box.box-java').forEach(function (box) {
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+        box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
     });
 }
 
 function applyConversionMismatchHighlights(errors) {
     clearConversionMismatchHighlights();
 
-    (Array.isArray(errors) ? errors : []).forEach(function (error) {
-        const box = document.querySelectorAll('.answer-box.box-java')[Number(error.index)];
-        if (!box) return;
+    const boxes = document.querySelectorAll('.answer-box.box-java');
+    const errIndexes = (Array.isArray(errors) ? errors : []).map(function (e) {
+        if (typeof e === 'object' && e !== null && e.index !== undefined) {
+            return Number(e.index);
+        }
+        return Number(e);
+    });
 
-        box.classList.add('mismatch', 'shake');
-        window.setTimeout(function () {
-            box.classList.remove('shake');
-        }, 400);
+    boxes.forEach(function (box, index) {
+        const isClue = box.dataset.isClue === '1' || box.classList.contains('has-clue');
+        const item = box.querySelector('.drag-item');
+        const hasItem = item !== null;
+
+        if (isClue) return;
+
+        const expectedText = normalizeCodeText(box.dataset.expected || '');
+        const givenText = item ? normalizeCodeText(item.textContent) : '';
+
+        // Slot dianggap salah jika ada di errIndexes server ATAU (memiliki expected text DAN (tidak terisi ATAU given != expected))
+        let isIncorrect = errIndexes.includes(index);
+        if (!isIncorrect && expectedText.length > 0) {
+            if (!hasItem || givenText !== expectedText) {
+                isIncorrect = true;
+            }
+        }
+
+        if (isIncorrect) {
+            // HANYA yang SALAH diberi warna merah
+            box.classList.add('mismatch', 'is-incorrect', 'shake');
+            box.style.borderColor = '#ef4444';
+            box.style.borderStyle = 'solid';
+            box.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
+            window.setTimeout(function () {
+                box.classList.remove('shake');
+            }, 400);
+        } else {
+            // Yang BENAR tetap DEFAULT (netral / tanpa highlight hijau)
+            box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+            box.style.borderColor = '';
+            box.style.backgroundColor = '';
+            box.style.borderStyle = '';
+        }
     });
 }
 
@@ -163,11 +210,9 @@ function submitKonversi() {
             };
         },
         error: function (xhr) {
-            const res = xhr.responseJSON;
-
-            if (res?.message?.errors) {
-                applyConversionMismatchHighlights(res.message.errors);
-            }
+            const res = xhr.responseJSON || {};
+            const errorList = res.incorrect_slots || (res.message && res.message.errors) || res.errors || [];
+            applyConversionMismatchHighlights(errorList);
 
             $.ajax({
                 url: APP_URL + "nyawa/status",

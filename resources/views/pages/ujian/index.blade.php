@@ -139,11 +139,17 @@
             background-color: #ffe9e9;
         }
 
-        .answer-box.mismatch {
-            border-color: #dc3545 !important;
-            background-color: #ffe9e9 !important;
-            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+        /* Feedback Visual Merah (Salah) & Hijau (Benar) */
+        .answer-box.mismatch,
+        .answer-box.is-incorrect,
+        .answer-box.wrong {
+            border: 2px solid #ef4444 !important;
+            border-style: solid !important;
+            background-color: rgba(239, 68, 68, 0.18) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
         }
+
+
 
         /* Tambahkan di bagian <style> */
         .heart-beat {
@@ -269,13 +275,22 @@
                                                                             ->filter(function($v) { return !is_null($v); })
                                                                             ->values();
                                                                     @endphp
-                                                                    @foreach($tipeDataList as $i => $variabel)
+                                                                    @php
+                                                                        $tipeDataRaw = is_string($soal['kunci_tipe_data']) 
+                                                                            ? json_decode($soal['kunci_tipe_data'], true) 
+                                                                            : $soal['kunci_tipe_data'];
+
+                                                                        $tipeDataRows = collect($tipeDataRaw)
+                                                                            ->filter(function($r) { return !empty($r['variabel'] ?? null); })
+                                                                            ->values();
+                                                                    @endphp
+                                                                    @foreach($tipeDataRows as $i => $row)
                                                                         <div class="row align-items-center mb-3">
                                                                             <div class="col-4 fw-bold">
-                                                                                {{ $variabel }}
+                                                                                {{ $row['variabel'] }}
                                                                             </div>
                                                                             <div class="col-8">
-                                                                                <div class="answer-box box-tipe" data-variable="{{ $variabel }}"></div>
+                                                                                <div class="answer-box box-tipe" data-index="{{ $i }}" data-variable="{{ $row['variabel'] }}" data-expected="{{ e($row['tipe_data'] ?? '') }}"></div>
                                                                             </div>
                                                                         </div>
                                                                     @endforeach
@@ -290,13 +305,16 @@
                                                                 </div>
                                                                 <div class="p-3">
                                                                     @php
-                                                                        $algoritma = is_string($soal['kunci_algoritma']) 
+                                                                        $algoritmaRaw = is_string($soal['kunci_algoritma']) 
                                                                             ? json_decode($soal['kunci_algoritma'], true) 
                                                                             : $soal['kunci_algoritma'];
 
-                                                                        $algoritmaList = collect($algoritma);                                                                    @endphp
-                                                                    @foreach($algoritmaList as $item)
-                                                                        <div class="answer-box box-algo mb-2" data-index="{{ $loop->index }}" data-clue="{{ $item['clue'] }}">
+                                                                        $algoritmaList = collect($algoritmaRaw)
+                                                                            ->filter(function($r) { return !empty($r['langkah'] ?? null); })
+                                                                            ->values();
+                                                                    @endphp
+                                                                    @foreach($algoritmaList as $i => $item)
+                                                                        <div class="answer-box box-algo mb-2" data-index="{{ $i }}" data-clue="{{ $item['clue'] }}" data-expected="{{ e($item['langkah'] ?? '') }}">
                                                                             @if($item['clue'] == '1')
                                                                                 <div class="drag-item" data-id="item-{{ $loop->index }}">
                                                                                     {{ $item['langkah'] }}

@@ -105,11 +105,7 @@
             border-style: solid;
         }
 
-        .answer-box.mismatch {
-            border-color: #dc3545 !important;
-            background-color: #ffe9e9 !important;
-            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
-        }
+
 
         /*  Input panel wrapper  */
         .input-panel {
@@ -177,10 +173,29 @@
             100% { transform: translateX(0); }
         }
 
+        /* Feedback Visual Merah (Salah) & Hijau (Benar) */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-6px); }
+            100% { transform: translateX(0); }
+        }
+
         .answer-box.shake {
             animation: shake 0.4s;
-            border-color: red !important;
         }
+
+        .answer-box.mismatch,
+        .answer-box.is-incorrect,
+        .answer-box.wrong {
+            border: 2px solid #ef4444 !important;
+            border-style: solid !important;
+            background-color: rgba(239, 68, 68, 0.18) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+        }
+
+
 
         .heart-beat {
             animation: heartBeat 1s infinite;
@@ -329,6 +344,7 @@
                                                         <div class="answer-box box-java {{ $isClue ? 'has-clue' : '' }}"
                                                             data-index="{{ $i + 1 }}"
                                                             data-is-clue="{{ $isClue ? '1' : '0' }}"
+                                                            data-expected="{{ e($item['kode'] ?? '') }}"
                                                             style="min-height: 46px;">
                                                             @if ($isClue)
                                                                 {{-- Baris clue: item sudah terpasang, tidak bisa digeser --}}
@@ -455,6 +471,9 @@
                     panelPilihan.style.outline = '';
                     const dragged = document.querySelector('.drag-item.dragging');
                     if (!dragged) return;
+                    if (typeof clearConversionMismatchHighlights === 'function') {
+                        clearConversionMismatchHighlights();
+                    }
                     panelPilihan.appendChild(dragged);
                     dragged.classList.remove('dragging');
                 });
@@ -465,6 +484,9 @@
             item.setAttribute('draggable', 'true');
 
             item.addEventListener('dragstart', function (e) {
+                if (typeof clearConversionMismatchHighlights === 'function') {
+                    clearConversionMismatchHighlights();
+                }
                 e.dataTransfer.setData('text/plain', e.target.innerText.trim());
                 setTimeout(() => e.target.classList.add('dragging'), 0);
             });
@@ -499,6 +521,9 @@
                     return;
                 }
 
+                if (typeof clearConversionMismatchHighlights === 'function') {
+                    clearConversionMismatchHighlights();
+                }
                 this.appendChild(dragged);
                 dragged.classList.remove('dragging');
                 startTimer();
