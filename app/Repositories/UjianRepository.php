@@ -337,21 +337,20 @@ class UjianRepository extends BaseRepository
                 }
 
                 if (Schema::hasTable('ars_result')) {
-                    $arsResult = ArsResult::where('id_mahasiswa', $idMahasiswa)
-                        ->where('id_level', $soal->id_level)
-                        ->where('id_soal', $soal->id)
-                        ->first();
-
-                    if ($arsResult) {
-                        $arsResult->update([
+                    ArsResult::updateOrCreate(
+                        [
+                            'id_mahasiswa' => $idMahasiswa,
+                            'id_level' => $soal->id_level,
+                            'id_soal' => $soal->id,
+                        ],
+                        [
                             'pseudo_label' => $label,
                             'pseudo_score' => $skor,
                             'pseudo_langkah' => $totalDrag,
                             'pseudo_durasi' => $totalWaktuDetik,
-                        ]);
-                    }
+                        ]
+                    );
                 }
-
                 if ($label === 'Ideal' || $label === 'Normal') {
                     $dataPencapaianBadge = Pencapaian::where('id_mahasiswa', $idMahasiswa)
                         ->where('id_level', $soal->id_level)

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Services\ArsEngineService;
 use App\Repositories\ArsReportRepository;
 use App\Models\ArsResult;
+use Illuminate\Support\Facades\DB;
 
 class ArsReportService
 {
@@ -62,6 +63,13 @@ class ArsReportService
 
     public function getDetailArs($idMahasiswa, $idLevel)
     {
+        $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+        if ($m) {
+            $levels = DB::table('level')->pluck('id');
+            foreach ($levels as $lvl) {
+                $this->processArs($m->id, $lvl);
+            }
+        }
         return $this->arsReportRepository->getDetailArs($idMahasiswa, $idLevel);
     }
 
@@ -79,12 +87,16 @@ class ArsReportService
                     'id_soal'      => $item['id_soal'],
                 ],
                 [
-                    'ars_batch'      => $item['batch'] ?? 1,
-                    'difficulty'     => $item['difficulty'],
-                    'pseudo_label'   => $item['pseudo']['label'],
-                    'pseudo_score'   => $item['pseudo']['score'],
-                    'konversi_label' => $item['konversi']['label'],
-                    'konversi_score' => $item['konversi']['score'],
+                    'ars_batch'        => $item['batch'] ?? 1,
+                    'difficulty'       => $item['difficulty'],
+                    'pseudo_label'     => $item['pseudo']['label'],
+                    'pseudo_score'     => $item['pseudo']['score'],
+                    'pseudo_langkah'   => $item['pseudo']['langkah'] ?? null,
+                    'pseudo_durasi'    => $item['pseudo']['durasi'] ?? null,
+                    'konversi_label'   => $item['konversi']['label'],
+                    'konversi_score'   => $item['konversi']['score'],
+                    'konversi_langkah' => $item['konversi']['langkah'] ?? null,
+                    'konversi_durasi'  => $item['konversi']['durasi'] ?? null,
                 ]
             );
         }

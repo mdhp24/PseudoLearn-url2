@@ -50,7 +50,10 @@ class ArsReportRepository extends BaseRepository
     {
         $query = DB::table('mahasiswa as m')
             ->leftJoin('kelas as k', 'k.id', '=', 'm.id_kelas')
-            ->leftJoin('ars_result as ar', 'ar.id_mahasiswa', '=', 'm.id')
+            ->leftJoin('ars_result as ar', function ($join) {
+                $join->on('ar.id_mahasiswa', '=', 'm.id')
+                    ->orOn('ar.id_mahasiswa', '=', 'm.id_user');
+            })
             ->when($request->kelas, fn($q) => $q->where('m.id_kelas', $request->kelas))
             ->when($request->search['value'] ?? false, function ($q) use ($request) {
                 $search = $request->search['value'];
@@ -58,8 +61,8 @@ class ArsReportRepository extends BaseRepository
                     $query->where('m.name', 'like', "%{$search}%")
                         ->orWhere('m.nim', 'like', "%{$search}%")
                         ->orWhere('k.name', 'like', "%{$search}%");
-                    });
-                })
+                });
+            })
             ->select(
                 'm.id',
                 'm.nim',
@@ -70,7 +73,7 @@ class ArsReportRepository extends BaseRepository
                 DB::raw("COALESCE(COUNT(DISTINCT ar.id_soal),0) as total_soal"),
                 DB::raw("COALESCE(SUM(COALESCE(ar.pseudo_durasi,0) + COALESCE(ar.konversi_durasi,0)),0) as total_waktu")
             )
-            ->groupBy('m.id','m.nim','m.name','k.name');
+            ->groupBy('m.id', 'm.nim', 'm.name', 'k.name');
 
         return [
             "draw" => intval($request->draw),
@@ -82,11 +85,17 @@ class ArsReportRepository extends BaseRepository
 
     public function tableArsLog($request)
     {
+        $idMahasiswa = $request->idMahasiswa;
+        $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+        $ids = $m ? array_filter([$m->id, $m->id_user]) : [$idMahasiswa];
+
         $query = DB::table('ars_result as ar')
             ->join('soal as s', 's.id', '=', 'ar.id_soal')
             ->join('level as l', 'l.id', '=', 'ar.id_level')
-            ->where('ar.id_mahasiswa', $request->idMahasiswa)
-            ->when($request->idLevel, fn($q) =>
+            ->whereIn('ar.id_mahasiswa', $ids)
+            ->when(
+                $request->idLevel,
+                fn($q) =>
                 $q->where('ar.id_level', $request->idLevel)
             )
             ->select(
@@ -104,19 +113,22 @@ class ArsReportRepository extends BaseRepository
             ->orderBy('ar.created_at', 'desc');
 
         return [
-            'draw'            => intval($request->draw),
-            'recordsTotal'    => $query->count(),
+            'draw' => intval($request->draw),
+            'recordsTotal' => $query->count(),
             'recordsFiltered' => $query->count(),
-            'data'            => $query->get()
+            'data' => $query->get()
         ];
     }
 
     public function getDetailArs($idMahasiswa, $idLevel = null)
     {
+        $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+        $ids = $m ? array_filter([$m->id, $m->id_user]) : [$idMahasiswa];
+
         $query = DB::table('ars_result as ar')
             ->join('soal as s', 's.id', '=', 'ar.id_soal')
             ->join('level as l', 'l.id', '=', 'ar.id_level')
-            ->where('ar.id_mahasiswa', $idMahasiswa);
+            ->whereIn('ar.id_mahasiswa', $ids);
 
         if ($idLevel) {
             $query->where('ar.id_level', $idLevel);
@@ -135,24 +147,24 @@ class ArsReportRepository extends BaseRepository
 
         //Summary ARS
         $totalArs = DB::table('ars_result')
-            ->where('id_mahasiswa', $idMahasiswa)
+            ->whereIn('id_mahasiswa', $ids)
             ->when($idLevel, fn($q) => $q->where('id_level', $idLevel))
             ->where(function ($q) {
                 $q->where('pseudo_label', 'Struggling')
-                  ->orWhere('pseudo_label', 'Gaming the System')
-                  ->orWhere('konversi_label', 'Struggling')
-                  ->orWhere('konversi_label', 'Gaming the System');
+                    ->orWhere('pseudo_label', 'Gaming the System')
+                    ->orWhere('konversi_label', 'Struggling')
+                    ->orWhere('konversi_label', 'Gaming the System');
             })
             ->count();
 
         $totalWaktu = DB::table('ars_result')
-            ->where('id_mahasiswa', $idMahasiswa)
+            ->whereIn('id_mahasiswa', $ids)
             ->when($idLevel, fn($q) => $q->where('id_level', $idLevel))
             ->select(DB::raw('COALESCE(SUM(pseudo_durasi),0) + COALESCE(SUM(konversi_durasi),0) as total'))
             ->value('total');
 
         $jumlahSoalTambahan = DB::table('ars_result')
-            ->where('id_mahasiswa', $idMahasiswa)
+            ->whereIn('id_mahasiswa', $ids)
             ->when($idLevel, fn($q) => $q->where('id_level', $idLevel))
             ->count();
 

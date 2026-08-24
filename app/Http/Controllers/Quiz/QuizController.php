@@ -202,11 +202,64 @@ class QuizController extends Controller
 
         $idUser = Auth::id();
         $idMahasiswa = $this->mahasiswaModel->where('id_user', $idUser)->value('id');
-        $soalList = $this->soalModel
+        $soalListRaw = $this->soalModel
             ->where('id_level', $levelId)
             ->where('status', 1)
-            ->orderBy('order', 'asc')
             ->get();
+
+        // Filter hanya soal yang memiliki pasangan konversi (1 pseudo + 1 konversi per paket)
+        $validSoal = $soalListRaw->filter(function($s) use ($levelId) {
+            return DB::table('bank_soal_konversi')
+                ->where('id_soal', $s->id)
+                ->where('id_level', $levelId)
+                ->whereNull('deleted_at')
+                ->exists();
+        });
+
+        // Acak urutan paket soal deterministik per siswa & per level (persisten selama sesi/refresh)
+        $seed = crc32(($idMahasiswa ?? $idUser) . '_' . $levelId);
+        mt_srand($seed);
+        $soalArray = $validSoal->values()->all();
+        for ($i = count($soalArray) - 1; $i > 0; $i--) {
+            $j = mt_rand(0, $i);
+            $tmp = $soalArray[$i];
+            $soalArray[$i] = $soalArray[$j];
+            $soalArray[$j] = $tmp;
+        }
+        mt_srand();
+
+        // Pisahkan paket yang sudah selesai dan yang belum selesai agar progress tetap teratur
+        $completedPairs = [];
+        $uncompletedPairs = [];
+        foreach ($soalArray as $soal) {
+            $konversi = DB::table('bank_soal_konversi')
+                ->where('id_soal', $soal->id)
+                ->where('id_level', $levelId)
+                ->whereNull('deleted_at')
+                ->first();
+
+            $isPseudoDone = $this->ujianModel
+                ->where('id_mahasiswa', $idMahasiswa)
+                ->where('id_soal', $soal->id)
+                ->where('status', 1)
+                ->exists();
+
+            $isKonversiDone = false;
+            if ($konversi) {
+                $isKonversiDone = DB::table('ujian_kode')
+                    ->where('id_mahasiswa', $idMahasiswa)
+                    ->where('id_bank_soal_konversi', $konversi->id)
+                    ->exists();
+            }
+
+            if ($isPseudoDone && $isKonversiDone) {
+                $completedPairs[] = $soal;
+            } else {
+                $uncompletedPairs[] = $soal;
+            }
+        }
+
+        $soalList = collect(array_merge($completedPairs, $uncompletedPairs));
 
         $nilaiKonversiList = DB::table('ujian_kode as uk')
             ->join('bank_soal_konversi as bsk', 'bsk.id', '=', 'uk.id_bank_soal_konversi')
@@ -517,7 +570,7 @@ class QuizController extends Controller
         $effectiveLimit = max(1, (int) ($level->limit_soal ?? $this->visibleLimit));
 
         // Ambil semua soal pada level ini (urut berdasarkan order)
-        $allSoal = $this->soalModel->where('id_level', $levelId)->where('status', 1)->orderBy('order', 'asc')->get();
+        $allSoal = $this->soalModel->where('id_level', $levelId)->where('status', 1)->inRandomOrder()->get();
 
         // Tentukan soal mana yang masuk hitungan:
         // 1. Soal yang sudah dikerjakan (ada di ujian), diurutkan berdasarkan first attempt

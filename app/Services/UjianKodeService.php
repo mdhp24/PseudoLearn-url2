@@ -111,7 +111,11 @@ class UjianKodeService
                 'uk.updated_at',
                 'uk.deleted_at'
             )
-            ->where('uk.id_mahasiswa', $idMahasiswa)
+            ->where(function($q) use ($idMahasiswa) {
+                $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+                $ids = $m ? array_filter([$m->id, $m->id_user]) : [$idMahasiswa];
+                $q->whereIn('uk.id_mahasiswa', $ids);
+            })
             ->whereNull('uk.deleted_at');
 
         if (!empty($idLevel)) {
@@ -129,8 +133,11 @@ class UjianKodeService
             ->limit($length)
             ->get();
 
+        $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+        $ids = $m ? array_filter([$m->id, $m->id_user]) : [$idMahasiswa];
+
         // ── Tambah kolom drag_drop & total_submit per baris ──
-        $data = $data->map(function ($row) use ($idMahasiswa) {
+        $data = $data->map(function ($row) use ($ids) {
             if (empty($row->judul_soal)) {
                 $row->judul_soal = $this->resolveSoalJudul(
                     $row->id_soal ?? null,
@@ -140,15 +147,22 @@ class UjianKodeService
 
             // Total drag & drop untuk soal ini
             $row->drag_drop = DB::table('log_ujian_kode')
-                ->where('id_mahasiswa', $idMahasiswa)
-                ->where('id_bank_soal_konversi', $row->id_bank_soal_konversi)
+                ->whereIn('id_mahasiswa', $ids)
+                ->when(!empty($row->id_bank_soal_konversi), fn($q) => $q->where('id_bank_soal_konversi', $row->id_bank_soal_konversi))
                 ->whereNull('deleted_at')
                 ->count();
 
             // Total submit untuk soal ini
             $row->total_submit = DB::table('v_ujian_kode')
-                ->where('id_mahasiswa', $idMahasiswa)
-                ->where('id_bank_soal_konversi', $row->id_bank_soal_konversi)
+                ->whereIn('id_mahasiswa', $ids)
+                ->where(function($q) use ($row) {
+                    if (!empty($row->id_bank_soal_konversi)) {
+                        $q->where('id_bank_soal_konversi', $row->id_bank_soal_konversi);
+                    }
+                    if (!empty($row->id_soal)) {
+                        $q->orWhere('id_soal', $row->id_soal);
+                    }
+                })
                 ->whereNull('deleted_at')
                 ->count();
 

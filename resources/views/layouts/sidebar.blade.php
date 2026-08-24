@@ -245,14 +245,6 @@
                         <span class="menu-title {{ request()->is('bank-soal-konversi*') ? 'fw-bold' : 'fw-semibold' }}">Bank Soal Konversi</span>
                     </a>
                 </div>
-                <div class="menu-item">
-                    <a class="menu-link{{ request()->is('konversi*') ? ' active' : '' }}" href="{{ url('konversi') }}">
-                        <span class="menu-icon me-2">
-                            <i class="ki-solid ki-arrow-mix fs-2 "></i>
-                        </span>
-                        <span class="menu-title {{ request()->is('konversi*') ? 'fw-bold' : 'fw-semibold' }}">Soal Konversi</span>
-                    </a>
-                </div>
                 <div class="menu-item mt-5">
                     <div class="menu-heading text-uppercase fs-7 fw-bold">Pengaturan</div>
                     <div class="app-sidebar-separator separator my-2"></div>

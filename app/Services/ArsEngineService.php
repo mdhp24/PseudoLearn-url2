@@ -111,11 +111,15 @@ class ArsEngineService
                 'pseudo' => [
                     'label' => $pLabel,
                     'score' => $pScore,
+                    'langkah' => $pair['pseudo']['langkah'] ?? 0,
+                    'durasi' => $pair['pseudo']['durasi'] ?? 0,
                 ],
 
                 'konversi' => [
                     'label' => $kLabel,
                     'score' => $kScore,
+                    'langkah' => $pair['konversi']['langkah'] ?? 0,
+                    'durasi' => $pair['konversi']['durasi'] ?? 0,
                 ],
 
                 'is_ars' => $isArs,

@@ -72,8 +72,11 @@ class LogUjianKodeController extends Controller
     {
         $mahasiswa = $this->mahasiswaModel
             ->setView('v_mahasiswa')
-            ->where('id_user', $id)
+            ->where(function($q) use ($id) { $q->where('id_user', $id)->orWhere('id', $id); })
             ->first();
+
+        $mUser = DB::table('mahasiswa')->where('id_user', $id)->orWhere('id', $id)->first();
+        $mIds = $mUser ? array_filter([$mUser->id, $mUser->id_user]) : [$id];
         $levelId   = $request->query('level');
         $soalId    = $request->query('soal');
 
@@ -81,7 +84,7 @@ class LogUjianKodeController extends Controller
         $soal  = $soalId  ? Soal::find($soalId) : null;
 
         $latestUjian = $this->ujianKodeModel->setView('v_ujian_kode')
-            ->where('id_mahasiswa', $id)
+            ->whereIn('id_mahasiswa', $mIds)
             ->when(!empty($levelId), fn($query) => $query->where('id_level', $levelId))
             ->when(!empty($soalId), fn($query) => $query->where('id_soal', $soalId))
             ->orderBy('created_at', 'desc')
@@ -108,7 +111,7 @@ class LogUjianKodeController extends Controller
             ->toArray();
 
         $ujianQuery = $this->ujianKodeModel->setView('v_ujian_kode')
-            ->where('id_mahasiswa', $id);
+            ->whereIn('id_mahasiswa', $mIds);
 
         if (!empty($levelId)) {
             $ujianQuery->where('id_level', $levelId);
@@ -129,7 +132,7 @@ class LogUjianKodeController extends Controller
 
         $dragQuery = DB::table('log_ujian_kode as luk')
             ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
-            ->where('luk.id_mahasiswa', $id);
+            ->whereIn('luk.id_mahasiswa', $mIds);
 
         if (!empty($levelId)) $dragQuery->where('luk.id_level', $levelId);
         if (!empty($soalId))  $dragQuery->where('bsk.id_soal', $soalId);

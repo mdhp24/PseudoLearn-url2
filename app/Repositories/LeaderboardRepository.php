@@ -82,7 +82,7 @@ class LeaderboardRepository extends BaseRepository
 
         // Order (DataTables) - dukung multi kolom dan hormati 'orderable'
         $columns = $request->input('columns', []);
-        $orders  = $request->input('order', []);
+        $orders = $request->input('order', []);
         $validOrders = [];
 
         if (is_array($orders) && is_array($columns)) {
@@ -145,10 +145,10 @@ class LeaderboardRepository extends BaseRepository
         $data = array_slice($leaderboard, $start, $length);
 
         return [
-            "draw"            => (int) $request->input('draw', 0),
-            "recordsTotal"    => $recordsTotal,
+            "draw" => (int) $request->input('draw', 0),
+            "recordsTotal" => $recordsTotal,
             "recordsFiltered" => $recordsFiltered,
-            "data"            => array_values($data),
+            "data" => array_values($data),
         ];
     }
 
@@ -192,11 +192,11 @@ class LeaderboardRepository extends BaseRepository
                 // Hitung jumlah soal aktif yg sudah dikerjakan (distinct id_soal) dengan join/filter aktif
                 $soalSelesai = Ujian::where('id_mahasiswa', $mahasiswaId)
                     ->where('id_level', $levelId)
-                    ->whereIn('id_soal', function($q) use ($levelId) {
+                    ->whereIn('id_soal', function ($q) use ($levelId) {
                         $q->select('id')
-                          ->from('soal')
-                          ->where('id_level', $levelId)
-                          ->where('status', 1);
+                            ->from('soal')
+                            ->where('id_level', $levelId)
+                            ->where('status', 1);
                     })
                     ->distinct('id_soal')
                     ->count('id_soal');
@@ -206,19 +206,15 @@ class LeaderboardRepository extends BaseRepository
                     ->where('id_level', $levelId)
                     ->whereIn('id_soal_konversi', function ($q) use ($levelId) {
                         $q->select('k.id')
-                          ->from('konversi as k')
-                          ->join('soal as s', 's.id', '=', 'k.id_soal')
-                          ->where('k.id_level', $levelId)
-                          ->where('s.status', 1);    // hanya konversi yg soal-nya aktif
+                            ->from('konversi as k')
+                            ->join('soal as s', 's.id', '=', 'k.id_soal')
+                            ->where('k.id_level', $levelId)
+                            ->where('s.status', 1);    // hanya konversi yg soal-nya aktif
                     })
                     ->distinct('id_soal_konversi')
                     ->count('id_soal_konversi');
 
-                if (
-                    $jumlahSoal > 0 && $jumlahKonversi > 0 &&
-                    $soalSelesai == $jumlahSoal &&
-                    $konversiSelesai == $jumlahKonversi
-                ) {
+                if ($jumlahSoal > 0 && $soalSelesai == $jumlahSoal) {
                     $algopoin = (float) $this->labelSkorModel->where('id_mahasiswa', $mahasiswaId)
                         ->whereNull('id_soal')
                         ->whereNull('label')
@@ -256,7 +252,7 @@ class LeaderboardRepository extends BaseRepository
                     break; // Ambil hanya level tertinggi yang sudah selesai
                 }
             }
-    
+
             // Jika tidak ada level yang memenuhi, tetap tampilkan dengan skor 0
             if (!$found) {
                 $dataAlgopoin[] = [
