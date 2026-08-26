@@ -94,7 +94,14 @@ initTable = () => {
                 {
                     targets: 4,
                     render: function (data, type, row) {
-                        return row.difficulty ?? '';
+                        if (!row.difficulty) return '-';
+                        const diff = String(row.difficulty).toLowerCase();
+                        let badgeClass = 'badge-light-primary';
+                        if (diff === 'easy') badgeClass = 'badge-light-success';
+                        else if (diff === 'medium') badgeClass = 'badge-light-warning';
+                        else if (diff === 'hard') badgeClass = 'badge-light-danger';
+                        const label = diff.charAt(0).toUpperCase() + diff.slice(1);
+                        return `<span class="badge ${badgeClass}">${label}</span>`;
                     },
                 },
                 {

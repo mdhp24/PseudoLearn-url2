@@ -29,7 +29,7 @@ enum SoalDifficulty: string
             return [
                 'value' => $difficulty->value,
                 // Converts 'EASY' to 'Easy', 'MEDIUM_HARD' to 'Medium Hard'
-                'label' => Str::title($difficulty->name), 
+                'label' => Str::title($difficulty->name),
             ];
         }, self::cases());
     }

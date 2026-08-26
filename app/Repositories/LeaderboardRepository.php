@@ -214,13 +214,15 @@ class LeaderboardRepository extends BaseRepository
                     ->distinct('id_soal_konversi')
                     ->count('id_soal_konversi');
 
-                if ($jumlahSoal > 0 && $soalSelesai == $jumlahSoal) {
-                    $algopoin = (float) $this->labelSkorModel->where('id_mahasiswa', $mahasiswaId)
-                        ->whereNull('id_soal')
-                        ->whereNull('label')
-                        ->where('id_level', $levelId)
-                        ->sum('skor');
+                $algopoin = (float) $this->labelSkorModel->where('id_mahasiswa', $mahasiswaId)
+                    ->whereNull('id_soal')
+                    ->whereNull('label')
+                    ->where('id_level', $levelId)
+                    ->sum('skor');
 
+                $targetSoalCount = min($jumlahSoal, 5);
+
+                if (($targetSoalCount > 0 && $soalSelesai >= $targetSoalCount) || $algopoin > 0) {
                     $avgNilaiUjianKonversi = (float) $this->ujianKonversiModel
                         ->where('id_mahasiswa', $mahasiswaId)
                         ->where('id_level', $levelId)

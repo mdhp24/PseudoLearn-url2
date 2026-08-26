@@ -336,5 +336,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/leaderboard/index.js') }}"></script>
+<script src="{{ asset('js/pages/leaderboard.js') }}"></script>
 @endpush

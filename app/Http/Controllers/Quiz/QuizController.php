@@ -386,13 +386,16 @@ class QuizController extends Controller
             $isStable = in_array($pseudoLabel, ['Ideal', 'Normal']) &&
                         in_array($konversiLabel, ['Ideal', 'Normal']);
 
+            $mainSoalIds = collect($result)->where('type', 'soal')->pluck('id')->toArray();
+
             $result = array_values(collect($result)
                 ->filter(fn($r) => !isset($r['is_tambahan']) || $r['is_tambahan'] === false)
                 ->toArray());
 
-            // Soal ARS finish
+            // Soal ARS finish (Hanya soal tambahan yang bukan 5 soal utama)
             $arsResultDone = ArsResult::where('id_mahasiswa', $idMahasiswa)
                 ->where('id_level', $levelId)
+                ->whereNotIn('id_soal', $mainSoalIds)
                 ->whereNotNull('pseudo_label')
                 ->whereNotNull('konversi_label')
                 ->orderBy('created_at', 'asc')
@@ -422,7 +425,7 @@ class QuizController extends Controller
                     $result[] = [
                         'type'        => 'konversi',
                         'id'          => $konversiArs->id,
-                        'judul'       => $konversiArs->judul_soal ?? $konversiArs->judul ?? null,
+                        'judul'       => $konversiArs->judul_soal ?? $konversiArs->judul ?? $soalArs->judul,
                         'difficulty'  => $soalArs->difficulty,
                         'status'      => 'done',
                         'is_tambahan' => true,
@@ -431,10 +434,13 @@ class QuizController extends Controller
                 }
             }
 
-            // Soal ARS belum selesai
+            // Soal ARS belum selesai (Hanya soal tambahan yang bukan 5 soal utama)
             $arsResultAktif = ArsResult::where('id_mahasiswa', $idMahasiswa)
                 ->where('id_level', $levelId)
-                ->whereNull('konversi_label')
+                ->whereNotIn('id_soal', $mainSoalIds)
+                ->where(function($q) {
+                    $q->whereNull('pseudo_label')->orWhereNull('konversi_label');
+                })
                 ->orderBy('created_at', 'asc')
                 ->get();
 
@@ -456,9 +462,9 @@ class QuizController extends Controller
                 $isKonversiDone = false;
                 if ($konversiArs) {
                     $isKonversiDone = DB::table('ujian_kode')
-                    ->where('id_mahasiswa', $idMahasiswa)
-                    ->where('id_bank_soal_konversi', $konversiArs->id)
-                    ->exists();
+                        ->where('id_mahasiswa', $idMahasiswa)
+                        ->where('id_bank_soal_konversi', $konversiArs->id)
+                        ->exists();
                 }
 
                 $result[] = [
@@ -476,7 +482,7 @@ class QuizController extends Controller
                     $result[] = [
                         'type'        => 'konversi',
                         'id'          => $konversiArs->id,
-                        'judul'       => $konversiArs->judul_soal ?? $konversiArs->judul ?? null,
+                        'judul'       => $konversiArs->judul_soal ?? $konversiArs->judul ?? $soalArs->judul,
                         'difficulty'  => $soalArs->difficulty,
                         'status'      => !$isPseudoDone ? 'locked' : ($isKonversiDone ? 'done' : 'active'),
                         'is_tambahan' => true,
@@ -485,10 +491,13 @@ class QuizController extends Controller
                 }
             }
 
-            // Tahan soal baru jika belum selesai
+            // Tahan soal baru jika ada ARS yang belum selesai
             $adaYangBelumSelesai = ArsResult::where('id_mahasiswa', $idMahasiswa)
                 ->where('id_level', $levelId)
-                ->whereNull('konversi_label')
+                ->whereNotIn('id_soal', $mainSoalIds)
+                ->where(function($q) {
+                    $q->whereNull('pseudo_label')->orWhereNull('konversi_label');
+                })
                 ->exists();
 
            if ($isStable && $lastDifficulty === 'hard') {
@@ -510,6 +519,7 @@ class QuizController extends Controller
                     if (!$exists) {
                         $jumlahSoalTambahan = ArsResult::where('id_mahasiswa', $idMahasiswa)
                             ->where('id_level', $levelId)
+                            ->whereNotIn('id_soal', $mainSoalIds)
                             ->count();
 
                         ArsResult::create([
