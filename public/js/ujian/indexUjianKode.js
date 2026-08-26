@@ -36,33 +36,59 @@ function back(id_level) {
 }
 
 function openModalGuide() {
-    var modal = new bootstrap.Modal(document.getElementById("modal-guide"));
-    modal.show();
+    var el = document.getElementById("modal-guide");
+    if (el && typeof bootstrap !== "undefined") {
+        var modal = bootstrap.Modal.getOrCreateInstance(el);
+        modal.show();
+    }
 }
 
 function openModalKonfirmasi() {
-    var modal = new bootstrap.Modal(
-        document.getElementById("modal-konfirmasi-jawaban-konversi"),
-    );
-    modal.show();
+    var el = document.getElementById("modal-konfirmasi-jawaban-konversi");
+    if (el && typeof bootstrap !== "undefined") {
+        var modal = bootstrap.Modal.getOrCreateInstance(el);
+        modal.show();
+    }
 }
 
 function openModalFeedback() {
-    var modal = new bootstrap.Modal(document.getElementById("modal-feedback"));
-    var modalKonfirmasi = bootstrap.Modal.getInstance(
-        document.getElementById("modal-konfirmasi-jawaban-konversi"),
-    );
-    if (modalKonfirmasi) {
-        modalKonfirmasi.hide();
+    var el = document.getElementById("modal-feedback");
+    if (el && typeof bootstrap !== "undefined") {
+        var modal = bootstrap.Modal.getOrCreateInstance(el);
+        var modalKonfirmasi = bootstrap.Modal.getInstance(
+            document.getElementById("modal-konfirmasi-jawaban-konversi"),
+        );
+        if (modalKonfirmasi) {
+            modalKonfirmasi.hide();
+        }
+        modal.show();
     }
-    modal.show();
 }
+
+// Global safeguard: Hapus backdrop abu-abu yang tertinggal saat modal ditutup
+document.addEventListener("hidden.bs.modal", function () {
+    const openModals = document.querySelectorAll(".modal.show");
+    if (openModals.length === 0) {
+        document.querySelectorAll(".modal-backdrop").forEach(function (b) {
+            b.remove();
+        });
+        document.body.classList.remove("modal-open");
+        document.body.style.overflow = "";
+        document.body.style.paddingRight = "";
+    }
+});
 
 function normalizeCodeText(str) {
     if (!str) return '';
     return str
         .replace(/[\u200B-\u200D\uFEFF]/g, '')
         .replace(/\u00a0/g, ' ')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#039;/gi, "'")
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/["'“”`’‘]/g, '"')
         .replace(/\r?\n|\r/g, ' ')
         .replace(/\s+/g, '')
         .toLowerCase()
@@ -78,6 +104,33 @@ function clearConversionMismatchHighlights() {
     });
 }
 
+function updateBoxHighlight(box) {
+    if (!box) return;
+    const isClue = box.dataset.isClue === '1' || box.classList.contains('has-clue');
+    if (isClue) return;
+
+    const item = box.querySelector('.drag-item');
+    if (!item) {
+        // Jika slot dikosongkan kembali, hilangkan sorotan merah
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+        box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
+        return;
+    }
+
+    const expectedText = normalizeCodeText(box.dataset.expected || '');
+    const givenText = normalizeCodeText(item.textContent);
+
+    // Balok yang BENAR terpasang -> hapus warna merah secara reaktif
+    if (expectedText.length > 0 && givenText === expectedText) {
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+        box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
+    }
+}
+
 function applyConversionMismatchHighlights(errors) {
     clearConversionMismatchHighlights();
 
@@ -91,24 +144,42 @@ function applyConversionMismatchHighlights(errors) {
 
     boxes.forEach(function (box, index) {
         const isClue = box.dataset.isClue === '1' || box.classList.contains('has-clue');
-        const item = box.querySelector('.drag-item');
-        const hasItem = item !== null;
-
         if (isClue) return;
 
+        const dataIdx = box.dataset.index !== undefined ? parseInt(box.dataset.index, 10) : index;
+        const item = box.querySelector('.drag-item');
+        const hasItem = item !== null;
         const expectedText = normalizeCodeText(box.dataset.expected || '');
         const givenText = item ? normalizeCodeText(item.textContent) : '';
 
-        // Slot dianggap salah jika ada di errIndexes server ATAU (memiliki expected text DAN (tidak terisi ATAU given != expected))
-        let isIncorrect = errIndexes.includes(index);
-        if (!isIncorrect && expectedText.length > 0) {
-            if (!hasItem || givenText !== expectedText) {
+        // Tentukan apakah slot ini salah:
+        // 1. Slot kosong (!hasItem) -> SALAH (merah)
+        // 2. ATAU balok yang dipasang tidak cocok dengan kunci (givenText !== expectedText) -> SALAH (merah)
+        // 3. ATAU indeks slot ini ada di errIndexes dari server
+        let isIncorrect = false;
+
+        if (!hasItem) {
+            isIncorrect = true;
+        } else if (expectedText.length > 0 && givenText !== expectedText) {
+            isIncorrect = true;
+        } else if (
+            errIndexes.includes(index) ||
+            errIndexes.includes(dataIdx) ||
+            errIndexes.includes(index + 1) ||
+            errIndexes.includes(dataIdx - 1)
+        ) {
+            if (givenText !== expectedText) {
                 isIncorrect = true;
             }
         }
 
+        // Proteksi mutlak: Jika slot terisi & teks yang terpasang SAMA dengan expected key,
+        // slot TERSEBUT DIJAMIN BENAR (TIDAK PERNAH MERAH).
+        if (hasItem && expectedText.length > 0 && givenText === expectedText) {
+            isIncorrect = false;
+        }
+
         if (isIncorrect) {
-            // HANYA yang SALAH diberi warna merah
             box.classList.add('mismatch', 'is-incorrect', 'shake');
             box.style.borderColor = '#ef4444';
             box.style.borderStyle = 'solid';
@@ -117,7 +188,6 @@ function applyConversionMismatchHighlights(errors) {
                 box.classList.remove('shake');
             }, 400);
         } else {
-            // Yang BENAR tetap DEFAULT (netral / tanpa highlight hijau)
             box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
             box.style.borderColor = '';
             box.style.backgroundColor = '';
@@ -193,21 +263,25 @@ function submitKonversi() {
                 if (scannerSection) scannerSection.classList.add("d-none");
             }
 
-            var modalCorrect = new bootstrap.Modal(
-                document.getElementById("modal-feedback-correct-konversi"),
-            );
-            modalCorrect.show();
+            var modalCorrectEl = document.getElementById("modal-feedback-correct-konversi");
+            if (modalCorrectEl && typeof bootstrap !== "undefined") {
+                var modalCorrect = bootstrap.Modal.getOrCreateInstance(modalCorrectEl);
+                modalCorrect.show();
+            }
 
             // Tombol selesai — assign URL dinamis sesuai response
-            document.querySelector(
+            var btnLanjut = document.querySelector(
                 "#modal-feedback-correct-konversi .btn-lanjut-correct",
-            ).onclick = function () {
-                let url = buildQuizQuestionListUrl(document.getElementById("id-level").value);
-                if (response.konversi) {
-                    url += `&konversi_id=${encodeURIComponent(response.konversi.id)}`;
-                }
-                window.location.href = url;
-            };
+            );
+            if (btnLanjut) {
+                btnLanjut.onclick = function () {
+                    let url = buildQuizQuestionListUrl(document.getElementById("id-level").value);
+                    if (response.konversi) {
+                        url += `&konversi_id=${encodeURIComponent(response.konversi.id)}`;
+                    }
+                    window.location.href = url;
+                };
+            }
         },
         error: function (xhr) {
             const res = xhr.responseJSON || {};
@@ -287,10 +361,10 @@ function setDecoyKonversi(decoy, lives) {
 }
 
 function openModalFeedbackIncorrect(feedbackText, lives = null, decoy = null) {
-    // Tampilkan modal incorrect konversi
-    var modalIncorrect = new bootstrap.Modal(
-        document.getElementById("modal-feedback-incorrect-konversi"),
-    );
+    var modalIncorrectEl = document.getElementById("modal-feedback-incorrect-konversi");
+    if (!modalIncorrectEl || typeof bootstrap === "undefined") return;
+
+    var modalIncorrect = bootstrap.Modal.getOrCreateInstance(modalIncorrectEl);
     var modalKonfirmasi = bootstrap.Modal.getInstance(
         document.getElementById("modal-konfirmasi-jawaban-konversi"),
     );
@@ -298,8 +372,11 @@ function openModalFeedbackIncorrect(feedbackText, lives = null, decoy = null) {
 
     // Ganti pesan dan tombol jika nyawa habis
     if (parseInt(lives) <= 0) {
-        document.getElementById("feedback-ujian-konversi").innerHTML =
-            '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
+        var fbEl = document.getElementById("feedback-ujian-konversi");
+        if (fbEl) {
+            fbEl.innerHTML =
+                '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
+        }
 
         // Ganti tombol modal
         var modalFooter = document.querySelector(

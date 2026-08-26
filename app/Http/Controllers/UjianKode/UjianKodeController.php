@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UjianKode;
 
 use App\Models\Soal;
 use App\Models\Nyawa;
+use App\Models\Mahasiswa;
 use App\Models\BankSoalKonversi;
 use App\Models\LogUjianKode;
 use Illuminate\Http\Request;
@@ -87,15 +88,67 @@ class UjianKodeController extends Controller
 
     public function logDrag(Request $request)
     {
-        $data = $request->json()->all();
-        LogUjianKode::create([
-            'id_mahasiswa' => Auth::id(),
-            'id_bank_soal_konversi' => $data['id_bank_soal_konversi'],
-            'id_level'              => $data['id_level'],
-            'index'                 => $data['index'],
-            'item_text'             => $data['item_text'],
+        $data = $request->isJson() ? $request->json()->all() : $request->all();
+
+        $idUser = Auth::id() ?? $request->input('id_user') ?? ($data['id_user'] ?? null);
+        $mhs = $idUser ? Mahasiswa::where('id_user', $idUser)->orWhere('id', $idUser)->first() : null;
+        $idMahasiswa = $mhs ? $mhs->id_user : ($idUser ?? 'system-test');
+
+        $idBankSoalKonversi = $data['id_bank_soal_konversi'] ?? null;
+        $idSoalInput = $data['id_soal'] ?? null;
+        $idLevel = $data['id_level'] ?? null;
+        $index = isset($data['index']) ? (int) $data['index'] : null;
+        $itemText = trim((string) ($data['item_text'] ?? ''));
+        $blockId = isset($data['block_id']) ? (string) $data['block_id'] : null;
+        $waktu = isset($data['waktu']) ? (int) $data['waktu'] : (isset($data['duration']) ? (int) $data['duration'] : 0);
+
+        $soalKonversi = null;
+        if (!empty($idBankSoalKonversi)) {
+            $soalKonversi = BankSoalKonversi::find($idBankSoalKonversi);
+        }
+        if (!$soalKonversi && !empty($idSoalInput)) {
+            $soalKonversi = BankSoalKonversi::where('id_soal', $idSoalInput)->first();
+            if ($soalKonversi) {
+                $idBankSoalKonversi = $soalKonversi->id;
+            }
+        }
+
+        $idSoal = $soalKonversi ? $soalKonversi->id_soal : $idSoalInput;
+        if (!$idLevel && $soalKonversi) {
+            $idLevel = $soalKonversi->id_level;
+        }
+
+        $isCorrect = false;
+        if ($soalKonversi && $index !== null) {
+            $kunciDenganClue = BankSoalKonversi::parseJawabanWithClue($soalKonversi->jawaban);
+            $targetIdx = $index - 1;
+            if (isset($kunciDenganClue[$targetIdx])) {
+                $expectedCode = BankSoalKonversi::normalizeCodeLine($kunciDenganClue[$targetIdx]['kode'] ?? '');
+                $givenCode = BankSoalKonversi::normalizeCodeLine($itemText);
+                $isCorrect = ($expectedCode !== '' && $givenCode === $expectedCode);
+            }
+        }
+
+        if (isset($data['is_correct'])) {
+            $isCorrect = filter_var($data['is_correct'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $log = LogUjianKode::create([
+            'id_mahasiswa'          => $idMahasiswa,
+            'id_bank_soal_konversi' => $idBankSoalKonversi,
+            'id_soal'               => $idSoal,
+            'id_level'              => $idLevel,
+            'index'                 => $index,
+            'block_id'              => $blockId,
+            'item_text'             => $itemText,
+            'is_correct'            => $isCorrect,
+            'waktu'                 => $waktu,
         ]);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success'    => true,
+            'log_id'     => $log->id,
+            'is_correct' => $isCorrect,
+        ]);
     }
 }

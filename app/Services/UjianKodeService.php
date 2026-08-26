@@ -97,19 +97,14 @@ class UjianKodeService
             ->leftJoin('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
             ->leftJoin('soal as s', 'bsk.id_soal', '=', 's.id')
             ->select(
-                'uk.id',
-                'uk.id_level',
                 'uk.id_bank_soal_konversi',
                 'bsk.id_soal',
-                'uk.id_mahasiswa',
+                'uk.id_level',
                 's.judul as judul_soal',
-                'uk.jawaban',
-                'uk.output',
-                'uk.nilai',
-                'uk.waktu',
-                'uk.created_at',
-                'uk.updated_at',
-                'uk.deleted_at'
+                DB::raw('COUNT(uk.id) as total_submit'),
+                DB::raw('MAX(uk.created_at) as created_at'),
+                DB::raw('MAX(uk.waktu) as waktu'),
+                DB::raw('MAX(uk.nilai) as nilai')
             )
             ->where(function($q) use ($idMahasiswa) {
                 $m = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
@@ -126,9 +121,14 @@ class UjianKodeService
             $query->where('bsk.id_soal', $idSoal);
         }
 
-        $total = (clone $query)->count();
-        $data  = (clone $query)
-            ->orderBy('uk.created_at', 'desc')
+        $query->groupBy('uk.id_bank_soal_konversi', 'bsk.id_soal', 'uk.id_level', 's.judul');
+
+        $total = DB::table(DB::raw("({$query->toSql()}) as sub"))
+            ->mergeBindings($query)
+            ->count();
+
+        $data = (clone $query)
+            ->orderBy('created_at', 'desc')
             ->offset($start)
             ->limit($length)
             ->get();
@@ -145,15 +145,8 @@ class UjianKodeService
                 ) ?? '-';
             }
 
-            // Total drag & drop untuk soal ini
+            // Total drag & drop khusus untuk soal ini
             $row->drag_drop = DB::table('log_ujian_kode')
-                ->whereIn('id_mahasiswa', $ids)
-                ->when(!empty($row->id_bank_soal_konversi), fn($q) => $q->where('id_bank_soal_konversi', $row->id_bank_soal_konversi))
-                ->whereNull('deleted_at')
-                ->count();
-
-            // Total submit untuk soal ini
-            $row->total_submit = DB::table('v_ujian_kode')
                 ->whereIn('id_mahasiswa', $ids)
                 ->where(function($q) use ($row) {
                     if (!empty($row->id_bank_soal_konversi)) {

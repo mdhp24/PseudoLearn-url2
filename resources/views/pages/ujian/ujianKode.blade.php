@@ -271,6 +271,7 @@
                                         </div>
 
                                         <input type="hidden" id="id-soal-konversi" value="{{ $konversi->id }}">
+                                        <input type="hidden" id="id-soal" value="{{ $soal->id }}">
                                         <div class="bg-white rounded-bottom p-8 fs-6">
                                             {!! $soal['soal'] !!}
                                         </div>
@@ -317,8 +318,8 @@
                                         <div class="panel-box">
                                             <div class="panel-header">Pilihan Kode Java</div>
                                             <div class="panel-body drag-grid-java" id="panel-pilihan-kode">
-                                                @foreach ($draggable as $item)
-                                                    <div class="drag-item" draggable="true" data-source="java">
+                                                @foreach ($draggable as $idx => $item)
+                                                    <div class="drag-item" draggable="true" data-source="java" data-block-id="{{ $item['id'] ?? ($idx + 1) }}">
                                                         {{ $item['kode'] }}
                                                     </div>
                                                 @endforeach
@@ -471,11 +472,12 @@
                     panelPilihan.style.outline = '';
                     const dragged = document.querySelector('.drag-item.dragging');
                     if (!dragged) return;
-                    if (typeof clearConversionMismatchHighlights === 'function') {
-                        clearConversionMismatchHighlights();
-                    }
+                    const oldBox = dragged.closest('.answer-box');
                     panelPilihan.appendChild(dragged);
                     dragged.classList.remove('dragging');
+                    if (oldBox && typeof updateBoxHighlight === 'function') {
+                        updateBoxHighlight(oldBox);
+                    }
                 });
             }
         });
@@ -484,9 +486,6 @@
             item.setAttribute('draggable', 'true');
 
             item.addEventListener('dragstart', function (e) {
-                if (typeof clearConversionMismatchHighlights === 'function') {
-                    clearConversionMismatchHighlights();
-                }
                 e.dataTransfer.setData('text/plain', e.target.innerText.trim());
                 setTimeout(() => e.target.classList.add('dragging'), 0);
             });
@@ -521,18 +520,30 @@
                     return;
                 }
 
-                if (typeof clearConversionMismatchHighlights === 'function') {
-                    clearConversionMismatchHighlights();
-                }
+                const oldBox = dragged.closest('.answer-box');
                 this.appendChild(dragged);
                 dragged.classList.remove('dragging');
                 startTimer();
 
-                //  Log drag & drop
-                const index    = this.getAttribute('data-index');
-                const itemText = dragged.innerText.trim();
-                const idSoal   = document.getElementById('id-soal-konversi').value;
-                const idLevel  = document.getElementById('id-level').value;
+                // Evaluasi reaktif visual feedback untuk box ini
+                if (typeof updateBoxHighlight === 'function') {
+                    updateBoxHighlight(this);
+                    if (oldBox) updateBoxHighlight(oldBox);
+                }
+
+                // Log drag & drop komprehensif
+                const index       = this.getAttribute('data-index');
+                const itemText    = dragged.innerText.trim();
+                const blockId     = dragged.getAttribute('data-block-id') || '';
+                const idSoalKonversi = document.getElementById('id-soal-konversi').value;
+                const idSoalEl    = document.getElementById('id-soal');
+                const idSoal      = idSoalEl ? idSoalEl.value : '';
+                const idLevel     = document.getElementById('id-level').value;
+                const waktu       = window.waktuUjianDetik || 0;
+
+                const expectedCode = typeof normalizeCodeText === 'function' ? normalizeCodeText(this.getAttribute('data-expected') || '') : '';
+                const givenCode    = typeof normalizeCodeText === 'function' ? normalizeCodeText(itemText) : '';
+                const isCorrect    = (expectedCode.length > 0 && givenCode === expectedCode);
 
                 fetch(APP_URL + 'ujian-kode/log-drag', {
                     method: 'POST',
@@ -541,10 +552,14 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                     },
                     body: JSON.stringify({
-                        id_bank_soal_konversi: idSoal,
+                        id_bank_soal_konversi: idSoalKonversi,
+                        id_soal: idSoal,
                         id_level: idLevel,
                         index: index,
+                        block_id: blockId,
                         item_text: itemText,
+                        is_correct: isCorrect,
+                        waktu: waktu,
                     }),
                 })
                 .then(res => res.json())
@@ -553,16 +568,20 @@
             });
         }
 
-        // Double-click pada item di dalam answer-box → kembalikan ke panel
+        // Double-click pada item di dalam answer-box -> kembalikan ke panel
         document.addEventListener('dblclick', function (e) {
             const item = e.target.closest('.drag-item');
             if (!item) return;
             if (item.classList.contains('is-clue')) return; // clue tidak bisa dipindahkan
-            if (item.closest('.answer-box')) {
+            const oldBox = item.closest('.answer-box');
+            if (oldBox) {
                 const panel = document.getElementById('panel-pilihan-kode');
                 if (panel) {
                     panel.appendChild(item);
                     item.classList.remove('dragging');
+                    if (typeof updateBoxHighlight === 'function') {
+                        updateBoxHighlight(oldBox);
+                    }
                 }
             }
         });

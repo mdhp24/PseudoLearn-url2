@@ -21,10 +21,39 @@ function normalizeCodeText(str) {
     return str
         .replace(/[\u200B-\u200D\uFEFF]/g, '')
         .replace(/\u00a0/g, ' ')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#039;/gi, "'")
+        .replace(/&amp;/gi, '&')
+        .replace(/["'“”`’‘]/g, '"')
         .replace(/\r?\n|\r/g, ' ')
         .replace(/\s+/g, '')
         .toLowerCase()
         .trim();
+}
+
+function updateBoxHighlight(box) {
+    if (!box) return;
+    const isClue = box.dataset.clue === '1' || box.classList.contains('has-clue');
+    if (isClue) return;
+
+    const item = box.querySelector('.drag-item');
+    if (!item) {
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+        box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
+        return;
+    }
+
+    const expectedText = normalizeCodeText(box.dataset.expected || '');
+    const givenText = normalizeCodeText(item.textContent);
+
+    if (expectedText.length > 0 && givenText === expectedText) {
+        box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
+        box.style.borderColor = '';
+        box.style.backgroundColor = '';
+        box.style.borderStyle = '';
+    }
 }
 
 function applyMismatchHighlights(tipeIndexes, algoritmaIndexes) {
@@ -48,15 +77,18 @@ function applyMismatchHighlights(tipeIndexes, algoritmaIndexes) {
             }
         }
 
+        // Slot yang terisi BENAR TIDAK PERNAH diberi warna merah
+        if (hasItem && expectedText.length > 0 && givenText === expectedText) {
+            isIncorrect = false;
+        }
+
         if (isIncorrect) {
-            // HANYA yang SALAH diberi warna merah
             box.classList.add('mismatch', 'is-incorrect', 'shake');
             box.style.borderColor = '#ef4444';
             box.style.borderStyle = 'solid';
             box.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
             setTimeout(function () { box.classList.remove('shake'); }, 400);
         } else {
-            // Yang BENAR tetap DEFAULT
             box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
             box.style.borderColor = '';
             box.style.backgroundColor = '';
@@ -83,15 +115,18 @@ function applyMismatchHighlights(tipeIndexes, algoritmaIndexes) {
             }
         }
 
+        // Slot yang terisi BENAR TIDAK PERNAH diberi warna merah
+        if (hasItem && expectedText.length > 0 && givenText === expectedText) {
+            isIncorrect = false;
+        }
+
         if (isIncorrect) {
-            // HANYA yang SALAH diberi warna merah
             box.classList.add('mismatch', 'is-incorrect', 'shake');
             box.style.borderColor = '#ef4444';
             box.style.borderStyle = 'solid';
             box.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
             setTimeout(function () { box.classList.remove('shake'); }, 400);
         } else {
-            // Yang BENAR tetap DEFAULT
             box.classList.remove('mismatch', 'is-incorrect', 'is-correct', 'shake', 'wrong');
             box.style.borderColor = '';
             box.style.backgroundColor = '';
@@ -134,8 +169,21 @@ function openModalKonfirmasi() {
     if (hidden) hidden.value = JSON.stringify(data);
 
     const modalEl = document.getElementById('modal-konfirmasi-jawaban');
-    if (modalEl && typeof bootstrap !== 'undefined') new bootstrap.Modal(modalEl).show();
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 }
+
+// Global safeguard: Hapus backdrop abu-abu yang tertinggal saat modal ditutup
+document.addEventListener('hidden.bs.modal', function () {
+    const openModals = document.querySelectorAll('.modal.show');
+    if (openModals.length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+});
 
 // Submit jawaban ke server
 function submitForm(confidence) {
@@ -259,16 +307,14 @@ function setDecoyUjian(decoy, lives) {
     const tipeCount = renderDecoyList(tipeList, decoy.tipe_data || []);
     const algoCount = renderDecoyList(algoList, decoy.algoritma || []);
 
-    if (tipeCount === 0 && algoCount === 0) {
-        section.classList.add('d-none');
-        return;
-    }
-
     section.classList.remove('d-none');
 }
 
 function openModalFeedbackIncorrect(feedbackText, lives = null, decoy = null) {
-    var modal = new bootstrap.Modal(document.getElementById('modal-feedback-incorrect'));
+    const modalEl = document.getElementById('modal-feedback-incorrect');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban'));
     document.getElementById('feedback-ujian').innerText = feedbackText;
     var id_level = document.getElementById('id-level').value;
@@ -302,7 +348,10 @@ function openModalFeedbackIncorrect(feedbackText, lives = null, decoy = null) {
 }
 
 function openModalFeedbackCorrect(pencapaian = null, badge = null) {
-    var modal = new bootstrap.Modal(document.getElementById('modal-feedback-correct'));
+    const modalEl = document.getElementById('modal-feedback-correct');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban'));
     if (modalKonfirmasi) {
         modalKonfirmasi.hide();
@@ -573,8 +622,14 @@ document.querySelectorAll('.answer-box').forEach(box => {
             return;
         }
 
+        const oldBox = dragged.closest('.answer-box');
         this.appendChild(dragged);
         dragged.classList.remove('dragging');
+
+        if (typeof updateBoxHighlight === 'function') {
+            updateBoxHighlight(this);
+            if (oldBox) updateBoxHighlight(oldBox);
+        }
 
         // LOG hanya saat sukses isi answer-box
         const itemText = dragged.innerText.trim();
@@ -622,6 +677,9 @@ document.querySelectorAll('.panel-body, .panel-body-algoritma').forEach(panel =>
 
         if (sourceWasAnswerBox) {
             sourceParent.removeChild(dragged);
+            if (typeof updateBoxHighlight === 'function') {
+                updateBoxHighlight(sourceParent);
+            }
         }
 
         this.appendChild(dragged);

@@ -130,15 +130,10 @@ class UjianRepository extends BaseRepository
             for ($i = 0; $i < $maxTipeCount; $i++) {
                 $expectedRow = $kunciTipe[$i] ?? [];
                 $givenRow = $jawabanTipe[$i] ?? [];
-                $expectedVariabel = $this->normalizeAnswerText($expectedRow['variabel'] ?? '');
-                $expectedTipe = $this->normalizeAnswerText($expectedRow['tipe_data'] ?? '');
-                $givenVariabel = $this->normalizeAnswerText($givenRow['variabel'] ?? '');
-                $givenTipe = $this->normalizeAnswerText($givenRow['jawaban'] ?? '');
-
-                $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
-                $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
-                $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
-                $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
+                $normExpVar = $this->normalizeAnswerText($expectedRow['variabel'] ?? '');
+                $normExpTipe = $this->normalizeAnswerText($expectedRow['tipe_data'] ?? '');
+                $normGivVar = $this->normalizeAnswerText($givenRow['variabel'] ?? '');
+                $normGivTipe = $this->normalizeAnswerText($givenRow['jawaban'] ?? '');
 
                 if ($normExpVar !== $normGivVar || $normExpTipe !== $normGivTipe) {
                     $tipeMismatchIndexes[] = $i;
@@ -154,15 +149,15 @@ class UjianRepository extends BaseRepository
 
             foreach ($kunciTipe as $i => $row) {
                 $jawabRow = $jawabanTipe[$i] ?? [];
-                $expectedVariabel = $this->normalizeAnswerText($row['variabel'] ?? '');
-                $expectedTipe = $this->normalizeAnswerText($row['tipe_data'] ?? '');
-                $givenVariabel = $this->normalizeAnswerText($jawabRow['variabel'] ?? '');
-                $givenTipe = $this->normalizeAnswerText($jawabRow['jawaban'] ?? '');
+                $expectedVariabel = $row['variabel'] ?? '';
+                $expectedTipe = $row['tipe_data'] ?? '';
+                $givenVariabel = $jawabRow['variabel'] ?? '';
+                $givenTipe = $jawabRow['jawaban'] ?? '';
 
-                $normExpVar = preg_replace('/\s+/', '', strtolower($expectedVariabel ?? ''));
-                $normGivVar = preg_replace('/\s+/', '', strtolower($givenVariabel ?? ''));
-                $normExpTipe = preg_replace('/\s+/', '', strtolower($expectedTipe ?? ''));
-                $normGivTipe = preg_replace('/\s+/', '', strtolower($givenTipe ?? ''));
+                $normExpVar = $this->normalizeAnswerText($expectedVariabel);
+                $normGivVar = $this->normalizeAnswerText($givenVariabel);
+                $normExpTipe = $this->normalizeAnswerText($expectedTipe);
+                $normGivTipe = $this->normalizeAnswerText($givenTipe);
 
                 $rowIsCorrect = ($normExpVar === $normGivVar && $normExpTipe === $normGivTipe);
                 if (!$rowIsCorrect) {
@@ -201,8 +196,8 @@ class UjianRepository extends BaseRepository
                 $exp = $kunciLangkah[$i] ?? '';
                 $given = $jawabLangkah[$i] ?? '';
 
-                $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
-                $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+                $normExpAlgo = $this->normalizeAnswerText($exp);
+                $normGivAlgo = $this->normalizeAnswerText($given);
 
                 if ($normExpAlgo !== $normGivAlgo) {
                     $algoritmaMismatchIndexes[] = $i;
@@ -219,8 +214,8 @@ class UjianRepository extends BaseRepository
             foreach ($kunciLangkah as $i => $exp) {
                 $given = $jawabLangkah[$i] ?? '';
 
-                $normExpAlgo = preg_replace('/\s+/', '', strtolower($exp));
-                $normGivAlgo = preg_replace('/\s+/', '', strtolower($given));
+                $normExpAlgo = $this->normalizeAnswerText($exp);
+                $normGivAlgo = $this->normalizeAnswerText($given);
 
                 $rowIsCorrect = ($normExpAlgo === $normGivAlgo);
                 if (!$rowIsCorrect) {
@@ -493,9 +488,14 @@ class UjianRepository extends BaseRepository
             return '';
         }
 
-        // Normalize non-breaking spaces and collapse whitespace.
+        // Normalize non-breaking spaces, zero-width spaces, HTML entities, quotes, and whitespace.
         $text = str_replace("\xc2\xa0", ' ', $text);
-        $text = preg_replace('/\s+/', ' ', $text);
+        $text = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $text);
+        $text = preg_replace('/&quot;/i', '"', $text);
+        $text = preg_replace('/&#039;/i', "'", $text);
+        $text = preg_replace('/&amp;/i', '&', $text);
+        $text = preg_replace('/["\'“”`’‘]/u', '"', $text);
+        $text = preg_replace('/\s+/', '', strtolower($text));
 
         return $text ?? '';
     }

@@ -20,9 +20,19 @@ class LogUjianKode extends BaseModel
         'id',
         'id_mahasiswa',
         'id_bank_soal_konversi',
+        'id_soal',
         'id_level',
         'index',
-        'item_text'
+        'block_id',
+        'item_text',
+        'is_correct',
+        'waktu',
+    ];
+
+    protected $casts = [
+        'is_correct' => 'boolean',
+        'waktu'      => 'integer',
+        'index'      => 'integer',
     ];
 
     protected static function boot()

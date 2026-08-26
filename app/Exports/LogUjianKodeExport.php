@@ -28,25 +28,23 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
+        $mUser = DB::table('mahasiswa')->where('id_user', $this->idMahasiswa)->orWhere('id', $this->idMahasiswa)->first();
+        $ids = $mUser ? array_filter([$mUser->id, $mUser->id_user]) : [$this->idMahasiswa];
+
         $query = DB::table('ujian_kode as uk')
             ->leftJoin('bank_soal_konversi as bsk', 'uk.id_bank_soal_konversi', '=', 'bsk.id')
             ->leftJoin('soal as s', 'bsk.id_soal', '=', 's.id')
             ->select(
-                'uk.id',
-                'uk.id_level',
                 'uk.id_bank_soal_konversi',
                 'bsk.id_soal',
-                'uk.id_mahasiswa',
+                'uk.id_level',
                 's.judul as judul_soal',
-                'uk.jawaban',
-                'uk.output',
-                'uk.nilai',
-                'uk.waktu',
-                'uk.created_at',
-                'uk.updated_at',
-                'uk.deleted_at'
+                DB::raw('COUNT(uk.id) as total_submit'),
+                DB::raw('MAX(uk.created_at) as created_at'),
+                DB::raw('MAX(uk.waktu) as waktu'),
+                DB::raw('MAX(uk.nilai) as nilai')
             )
-            ->where('uk.id_mahasiswa', $this->idMahasiswa)
+            ->whereIn('uk.id_mahasiswa', $ids)
             ->whereNull('uk.deleted_at');
 
         if (!empty($this->idLevel)) {
@@ -56,9 +54,11 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
             $query->where('bsk.id_soal', $this->idSoal);
         }
 
-        $data = $query->orderBy('uk.created_at', 'desc')->get();
+        $data = $query->groupBy('uk.id_bank_soal_konversi', 'bsk.id_soal', 'uk.id_level', 's.judul')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return $data->map(function ($row) {
+        return $data->map(function ($row) use ($ids) {
             if (empty($row->judul_soal)) {
                 $row->judul_soal = $this->resolveSoalJudul(
                     $row->id_soal ?? null,
@@ -67,14 +67,28 @@ class LogUjianKodeExport implements FromCollection, WithHeadings, WithMapping
             }
 
             $row->drag_drop = DB::table('log_ujian_kode')
-                ->where('id_mahasiswa', $this->idMahasiswa)
-                ->where('id_bank_soal_konversi', $row->id_bank_soal_konversi)
+                ->whereIn('id_mahasiswa', $ids)
+                ->where(function($q) use ($row) {
+                    if (!empty($row->id_bank_soal_konversi)) {
+                        $q->where('id_bank_soal_konversi', $row->id_bank_soal_konversi);
+                    }
+                    if (!empty($row->id_soal)) {
+                        $q->orWhere('id_soal', $row->id_soal);
+                    }
+                })
                 ->whereNull('deleted_at')
                 ->count();
 
-            $row->total_submit = DB::table('ujian_kode')
-                ->where('id_mahasiswa', $this->idMahasiswa)
-                ->where('id_bank_soal_konversi', $row->id_bank_soal_konversi)
+            $row->total_submit = DB::table('v_ujian_kode')
+                ->whereIn('id_mahasiswa', $ids)
+                ->where(function($q) use ($row) {
+                    if (!empty($row->id_bank_soal_konversi)) {
+                        $q->where('id_bank_soal_konversi', $row->id_bank_soal_konversi);
+                    }
+                    if (!empty($row->id_soal)) {
+                        $q->orWhere('id_soal', $row->id_soal);
+                    }
+                })
                 ->whereNull('deleted_at')
                 ->count();
 

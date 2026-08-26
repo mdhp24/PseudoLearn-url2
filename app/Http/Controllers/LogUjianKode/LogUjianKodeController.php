@@ -131,11 +131,14 @@ class LogUjianKodeController extends Controller
         );
 
         $dragQuery = DB::table('log_ujian_kode as luk')
-            ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
-            ->whereIn('luk.id_mahasiswa', $mIds);
+            ->leftJoin('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->whereIn('luk.id_mahasiswa', $mIds)
+            ->whereNull('luk.deleted_at');
 
         if (!empty($levelId)) $dragQuery->where('luk.id_level', $levelId);
-        if (!empty($soalId))  $dragQuery->where('bsk.id_soal', $soalId);
+        if (!empty($soalId))  $dragQuery->where(function($q) use ($soalId) {
+            $q->where('bsk.id_soal', $soalId)->orWhere('luk.id_soal', $soalId);
+        });
 
         $totalDrag = (clone $dragQuery)->count();
 
@@ -196,8 +199,11 @@ class LogUjianKodeController extends Controller
         $idLevel     = $request->query('id_level', $request->query('level'));
         $idSoal      = $request->query('id_soal', $request->query('soal'));
 
+        $mUser = DB::table('mahasiswa')->where('id_user', $idMahasiswa)->orWhere('id', $idMahasiswa)->first();
+        $mIds = $mUser ? array_filter([$mUser->id, $mUser->id_user]) : [$idMahasiswa];
+
         $ujianQuery = $this->ujianKodeModel->setView('v_ujian_kode')
-            ->where('id_mahasiswa', $idMahasiswa);
+            ->whereIn('id_mahasiswa', $mIds);
 
         if (!empty($idLevel)) $ujianQuery->where('id_level', $idLevel);
         if (!empty($idSoal))  $ujianQuery->where('id_soal', $idSoal);
@@ -206,13 +212,16 @@ class LogUjianKodeController extends Controller
         $totalWaktuDetik = (clone $ujianQuery)->sum('waktu');
 
         $dragQuery = DB::table('log_ujian_kode as luk')
-            ->join('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
-            ->where('luk.id_mahasiswa', $idMahasiswa);
+            ->leftJoin('bank_soal_konversi as bsk', 'luk.id_bank_soal_konversi', '=', 'bsk.id')
+            ->whereIn('luk.id_mahasiswa', $mIds)
+            ->whereNull('luk.deleted_at');
 
         if (!empty($idLevel)) $dragQuery->where('luk.id_level', $idLevel);
-        if (!empty($idSoal))  $dragQuery->where('bsk.id_soal', $idSoal);
+        if (!empty($idSoal))  $dragQuery->where(function($q) use ($idSoal) {
+            $q->where('bsk.id_soal', $idSoal)->orWhere('luk.id_soal', $idSoal);
+        });
 
-        $totalDrag = $dragQuery->count();
+        $totalDrag = (clone $dragQuery)->count();
 
         return response()->json([
             'total_drag'   => $totalDrag,

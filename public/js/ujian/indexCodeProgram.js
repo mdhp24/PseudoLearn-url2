@@ -36,23 +36,37 @@ function back(id_level){
 }
 
 function openModalGuide() {
-    var modal = new bootstrap.Modal(document.getElementById('modal-guide'));
-    modal.show();
+    var el = document.getElementById('modal-guide');
+    if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
 }
 
 function openModalKonfirmasi() {
-    var modal = new bootstrap.Modal(document.getElementById('modal-konfirmasi-jawaban-konversi'));
-    modal.show();
+    var el = document.getElementById('modal-konfirmasi-jawaban-konversi');
+    if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).show();
 }
 
 function openModalFeedback() {
-    var modal = new bootstrap.Modal(document.getElementById('modal-feedback'));
-    var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban-konversi'));
-    if (modalKonfirmasi) {
-        modalKonfirmasi.hide();
+    var el = document.getElementById('modal-feedback');
+    if (el && typeof bootstrap !== 'undefined') {
+        var modal = bootstrap.Modal.getOrCreateInstance(el);
+        var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban-konversi'));
+        if (modalKonfirmasi) {
+            modalKonfirmasi.hide();
+        }
+        modal.show();
     }
-    modal.show();
 }
+
+// Global safeguard: Hapus backdrop abu-abu yang tertinggal saat modal ditutup
+document.addEventListener('hidden.bs.modal', function () {
+    const openModals = document.querySelectorAll('.modal.show');
+    if (openModals.length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+});
 
 function submitKonversi() {
     var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban-konversi'));
@@ -81,17 +95,23 @@ function submitKonversi() {
             modalKonfirmasi.hide();
 
             // Jika benar, tampilkan modal correct dan hasil run Java
-            var modalCorrect = new bootstrap.Modal(document.getElementById('modal-feedback-correct-konversi'));
-            document.getElementById('java-run-result').textContent = response.java_output || '';
-            modalCorrect.show();
+            var modalCorrectEl = document.getElementById('modal-feedback-correct-konversi');
+            if (modalCorrectEl && typeof bootstrap !== 'undefined') {
+                var modalCorrect = bootstrap.Modal.getOrCreateInstance(modalCorrectEl);
+                document.getElementById('java-run-result').textContent = response.java_output || '';
+                modalCorrect.show();
+            }
 
-            document.querySelector('#modal-feedback-correct-konversi .btn-primary').onclick = function() {
-                let url = `${APP_URL}quiz/question-list?level=${document.getElementById('id-level').value}`;
-                if (response.konversi) {
-                    url += `&konversi_id=${encodeURIComponent(response.konversi.id)}`;
-                }
-                window.location.href = url;
-            };
+            var btnLanjut = document.querySelector('#modal-feedback-correct-konversi .btn-primary');
+            if (btnLanjut) {
+                btnLanjut.onclick = function() {
+                    let url = `${APP_URL}quiz/question-list?level=${document.getElementById('id-level').value}`;
+                    if (response.konversi) {
+                        url += `&konversi_id=${encodeURIComponent(response.konversi.id)}`;
+                    }
+                    window.location.href = url;
+                };
+            }
         },
         error: function(xhr) {
             const res = xhr.responseJSON;
@@ -127,15 +147,20 @@ function submitKonversi() {
 }
 
 function openModalFeedbackIncorrect(feedbackText, lives = null) {
-    // Tampilkan modal incorrect konversi
-    var modalIncorrect = new bootstrap.Modal(document.getElementById('modal-feedback-incorrect-konversi'));
+    var modalIncorrectEl = document.getElementById('modal-feedback-incorrect-konversi');
+    if (!modalIncorrectEl || typeof bootstrap === 'undefined') return;
+
+    var modalIncorrect = bootstrap.Modal.getOrCreateInstance(modalIncorrectEl);
     var modalKonfirmasi = bootstrap.Modal.getInstance(document.getElementById('modal-konfirmasi-jawaban-konversi'));
     var id_level = document.getElementById('id-level').value;
 
     // Ganti pesan dan tombol jika nyawa habis
     if (parseInt(lives) <= 0) {
-        document.getElementById('feedback-ujian-konversi').innerHTML =
-            '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
+        var fbEl = document.getElementById('feedback-ujian-konversi');
+        if (fbEl) {
+            fbEl.innerHTML =
+                '<span style="color:red;font-weight:bold;">Nyawa anda sudah habis, harap menunggu nyawa bertambah.</span>';
+        }
 
         // Ganti tombol modal
         var modalFooter = document.querySelector('#modal-feedback-incorrect-konversi .modal-footer');

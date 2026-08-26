@@ -30,15 +30,15 @@ initTable = () => {
                     orderable: true,
                     searchable: false,
                 },
-                { 
-                    data: "mahasiswa_name", 
-                    orderable: true, 
-                    searchable: true 
+                {
+                    data: "mahasiswa_name",
+                    orderable: true,
+                    searchable: true
                 },
-                { 
-                    data: "total_skor", 
-                    orderable: true, 
-                    searchable: false 
+                {
+                    data: "total_skor",
+                    orderable: true,
+                    searchable: false
                 },
                 {
                     data: "total_waktu",
@@ -58,10 +58,10 @@ initTable = () => {
                     render: function (data, type, row, meta) {
                         const esc = (v) =>
                             String(v ?? "").replace(/&/g, "&amp;")
-                                           .replace(/</g, "&lt;")
-                                           .replace(/>/g, "&gt;")
-                                           .replace(/"/g, "&quot;")
-                                           .replace(/'/g, "&#39;");
+                                .replace(/</g, "&lt;")
+                                .replace(/>/g, "&gt;")
+                                .replace(/"/g, "&quot;")
+                                .replace(/'/g, "&#39;");
                         const name = esc(row.mahasiswa_name);
                         const id = esc(row.id_user);
                         // keep id_user hidden, show only mahasiswa_name
